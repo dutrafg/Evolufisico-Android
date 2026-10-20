@@ -70,6 +70,14 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
     var favorites by remember(preferences) {
         mutableStateOf(WorkspaceFavorites.parse(preferences.getString("routes","").orEmpty()))
     }
+    var recents by remember(preferences) {
+        mutableStateOf(WorkspaceRecents.parse(preferences.getString("recent_routes","").orEmpty()))
+    }
+    fun navigate(route:String) {
+        recents=WorkspaceRecents.open(recents,route)
+        preferences.edit().putString("recent_routes",WorkspaceRecents.serialize(recents)).apply()
+        onNavigate(route)
+    }
     fun toggleFavorite(route:String) {
         val next=WorkspaceFavorites.toggle(favorites,route)
         favorites=next
@@ -77,7 +85,10 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
     }
     val modules=WorkspaceModules.filter(query,category)
     val pinned=if(query.isBlank() && category=="Todos")
-        modules.filter { it.route in favorites } else emptyList()
+        favorites.mapNotNull { key -> modules.firstOrNull { it.route==key } } else emptyList()
+    val recentItems=if(query.isBlank() && category=="Todos")
+        recents.mapNotNull { key -> modules.firstOrNull { it.route==key } }
+            .filterNot { it in pinned } else emptyList()
     LazyColumn(modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp)) {
         item {
@@ -102,17 +113,25 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
                 color=MaterialTheme.colorScheme.primary) }
             items(pinned.size) { index ->
                 val entry=pinned[index]
-                ModuleRow(entry,true,onNavigate) { toggleFavorite(entry.route) }
+                ModuleRow(entry,true,::navigate) { toggleFavorite(entry.route) }
+            }
+        }
+        if(recentItems.isNotEmpty()) {
+            item { Text("Acessados recentemente",style=MaterialTheme.typography.titleMedium,
+                color=MaterialTheme.colorScheme.primary) }
+            items(recentItems.size) { index ->
+                val entry=recentItems[index]
+                ModuleRow(entry,false,::navigate) { toggleFavorite(entry.route) }
             }
         }
         WorkspaceModules.categories.forEach { group ->
-            val entries=modules.filter { it.category==group && it !in pinned }
+            val entries=modules.filter { it.category==group && it !in pinned && it !in recentItems }
             if(entries.isNotEmpty()) {
                 item { Text(group,style=MaterialTheme.typography.titleMedium,
                     color=MaterialTheme.colorScheme.primary) }
                 items(entries.size) { index ->
                     val entry=entries[index]
-                    ModuleRow(entry,entry.route in favorites,onNavigate) {
+                    ModuleRow(entry,entry.route in favorites,::navigate) {
                         toggleFavorite(entry.route)
                     }
                 }
