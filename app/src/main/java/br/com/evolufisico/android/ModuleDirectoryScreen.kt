@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -77,7 +78,11 @@ object WorkspaceModules {
 }
 
 object WorkspaceGrid {
-    fun columns(screenWidthDp:Int):Int = if(screenWidthDp>=700) 3 else 2
+    fun columns(screenWidthDp:Int):Int = when {
+        screenWidthDp<360 -> 1
+        screenWidthDp<700 -> 2
+        else -> 3
+    }
 }
 
 @Composable
@@ -123,6 +128,9 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
             Text("Módulos",style=MaterialTheme.typography.headlineSmall,
                 fontWeight=FontWeight.Bold)
             Text("Encontre suas ferramentas por área.",
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Marque até 4 favoritos e organize a ordem pelas setas.",
+                style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(value=search,onValueChange={search=it.take(80)},
                 modifier=Modifier.fillMaxWidth(),singleLine=true,
@@ -191,6 +199,7 @@ private fun ModuleGridRow(
         entries.forEach { module ->
             ModuleTile(module,module.route in favorites,Modifier.weight(1f),
                 onOpen={onNavigate(module.route)},onFavorite={onToggle(module.route)},
+                canFavorite=module.route in favorites || favorites.size<4,
                 onUp=moveUp?.let { { it(module.route) } },
                 onDown=moveDown?.let { { it(module.route) } })
         }
@@ -201,7 +210,7 @@ private fun ModuleGridRow(
 @Composable
 private fun ModuleTile(
     module:WorkspaceModule,favorite:Boolean,modifier:Modifier,
-    onOpen:()->Unit,onFavorite:()->Unit,
+    onOpen:()->Unit,onFavorite:()->Unit,canFavorite:Boolean,
     onUp:(()->Unit)?=null,onDown:(()->Unit)?=null
 ) {
     val icon=when(module.route) {
@@ -216,7 +225,7 @@ private fun ModuleTile(
         "REPORTS" -> Icons.Outlined.Summarize
         else -> Icons.Outlined.Groups
     }
-    Card(modifier=modifier.heightIn(min=142.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=150.dp),onClick=onOpen,
         shape=androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(12.dp),
@@ -225,7 +234,8 @@ private fun ModuleTile(
                 Icon(icon,contentDescription=null,tint=MaterialTheme.colorScheme.primary,
                     modifier=Modifier.size(24.dp))
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick=onFavorite,modifier=Modifier.size(36.dp)) {
+                IconButton(onClick=onFavorite,enabled=canFavorite,
+                    modifier=Modifier.size(40.dp)) {
                     Icon(if(favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
                         contentDescription=if(favorite) "Remover dos favoritos" else "Favoritar",
                         tint=if(favorite) Color(0xFFE5A100)
