@@ -272,3 +272,17 @@
 - [ ] Confirmar restauração de backup JSON numa base isolada Alpha 10 e totais por cliente
 - [ ] Homologação integral das 100 etapas de cada Alpha ainda não demonstrada
 - [ ] Sem criptografia: usar somente dados fictícios
+
+
+## Alpha 10.1–15 — avaliação da reorganização
+
+- [x] Separar a Home de módulos e manter indicadores do dia e próximos atendimentos
+- [x] Adicionar novo diretório e menu inferior direcionado a atividades principais
+- [x] Cobrir rota dos módulos, buscas, filtros, atalhos e favoritos em JUnit
+- [x] Implementar hierarquia Voltar / Módulos no Android
+- [ ] Confirmar sucesso final de CI e testes instrumentados do último commit
+- [ ] Validar acessibilidade, rolagem, ícones e navegação em aparelho físico
+- [ ] Confirmar experiência de usuário em telas 320–420dp e tablets
+- [ ] Testar migração/restauração entre pacotes isolados (sem apagar original)
+- [ ] Resolver distribuição oficial com assinatura permanente
+- [ ] Homologar matriz de 600 checkpoints individualmente

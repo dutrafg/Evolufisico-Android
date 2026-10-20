@@ -264,3 +264,20 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] Homologar 100 etapas por ciclo de acordo com o arquivo `docs/ALPHAS_7_A_10_100_ETAPAS.md`
 - [ ] Conferir instalação Alpha 10, exportação e backup/restauração em smartphone real
 - [ ] Configurar assinatura permanente para APK principal, sem trocar pacote e sem perda de dados
+
+
+## Novo ciclo de UX: Alpha 10.1–15
+
+- [x] 10.1: remover cartões de módulos da tela inicial e manter métricas relevantes
+- [x] 11: navegação enxuta e tela Módulos com seções categorizadas
+- [x] 12: filtro por categoria e busca combinados
+- [x] 13: prioridades operacionais condicionais e correção de teste de busca da Alpha 12
+- [x] 14: favoritos limitados a quatro, locais e exclusivos do diretório
+- [x] 15: botão voltar no aplicativo e hierarquia coerente
+- [ ] Validar versões 10.1–15 em CI e emulador, conforme execuções GitHub Actions
+- [ ] Testar visual e comportamento com fonte grande em dispositivo físico Android 10+
+- [ ] Completar todos os 100 checkpoints por Alpha antes da homologação integral
+- [ ] Resolver certificado permanente para atualizações no mesmo pacote
+- [ ] Validar restauração JSON/SAF a partir de dados fictícios entre variantes
+
+Veja `docs/ALPHAS_10_A_15_100_ETAPAS.md`.

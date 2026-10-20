@@ -248,3 +248,15 @@ Painel no início com os cinco próximos atendimentos, por data e horário, e in
 **Dados:** todas as alterações acima atuam sobre o JSON já usado, sem esquema novo. Cada variante debug tem dados próprios; não atualiza nem lê diretamente os dados do app principal. Backup JSON/SAF é a ponte de migração, conferindo a restauração em base vazia antes de excluir qualquer instalação. Certificado fixo para APK com o mesmo pacote permanece pendente. Estes APKs de teste não devem ser usados com dados sensíveis reais enquanto os registros novos estiverem sem criptografia.
 
 Veja `docs/ALPHAS_7_A_10_100_ETAPAS.md` para as quatro listas de 100 etapas. Etapas sem validação permanecem pendentes, mesmo quando a versão já está compilando.
+
+
+## Alpha 10.1 até Alpha 15 — painel e navegação revisados
+
+- **10.1**: tela inicial deixou de apresentar todos os módulos e agora mantém visão resumida de clientes, Agenda e Cobranças, três próximos atendimentos e atalhos essenciais.
+- **11**: menu inferior Início, Clientes, Agenda, Cobranças, Módulos; rail lateral simplificado; catálogo pesquisável por categorias Atendimento, Gestão e Relatórios.
+- **12**: chips para selecionar categoria no diretório e combinar com pesquisa.
+- **13**: cartão contextual de pendências e ações, que aparece somente quando existem itens que exigem acompanhamento.
+- **14**: favoritar até quatro módulos, com persistência local e sem recolocar os cartões na Home.
+- **15**: botão Voltar e navegação Android coerentes com módulos e páginas principais.
+
+Consulte [matriz de 600 checkpoints](docs/ALPHAS_10_A_15_100_ETAPAS.md). Este documento NÃO afirma a conclusão de todos os 600 itens. Não apagar a instalação original: `applicationIdSuffix=.alpha15` cria pacote de teste isolado, sem a assinatura oficial permanente. Os dados JSON de prototipagem não são cifrados e requerem dados fictícios.

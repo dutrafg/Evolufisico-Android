@@ -3,6 +3,7 @@ package br.com.evolufisico.android
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -184,6 +186,10 @@ private fun AppContent(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val useRail = LocalConfiguration.current.screenWidthDp >= 840
+    fun goBack() {
+        current=Section.valueOf(WorkspaceNavigation.backTarget(current.name))
+    }
+    BackHandler(enabled=current!=Section.HOME) { goBack() }
 
     LaunchedEffect(repository) {
         val result = withContext(Dispatchers.IO) { runCatching {
@@ -240,6 +246,11 @@ private fun AppContent(
             CenterAlignedTopAppBar(
                 title = { Text(if (current == Section.HOME) "EvoluFísico" else current.title,
                     fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    if(current!=Section.HOME) IconButton(onClick=::goBack) {
+                        Icon(Icons.Outlined.ArrowBack,contentDescription="Voltar")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { current = Section.SETTINGS }) {
                         Icon(Icons.Outlined.Settings, contentDescription = "Configurações")
@@ -254,7 +265,7 @@ private fun AppContent(
                         Section.BILLING, Section.MODULES)
                 }.forEach { section ->
                     NavigationBarItem(
-                        selected = current == section,
+                        selected = WorkspaceNavigation.bottomSelection(current.name)==section.name,
                         onClick = { current = section },
                         icon = { Icon(section.icon, contentDescription = null) },
                         label = { Text(section.title, maxLines = 1) }
