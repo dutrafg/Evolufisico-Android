@@ -20,6 +20,7 @@ import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.*
 import br.com.evolufisico.android.agenda.WeeklyAppointments
 import br.com.evolufisico.android.agenda.AgendaIcs
+import br.com.evolufisico.android.agenda.AgendaCsv
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -100,6 +101,7 @@ private fun AppointmentsModule(
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var exportResult by remember { mutableStateOf<String?>(null) }
+    var pendingCsv by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     val today=LocalDate.now().toString()
     val visible=all.filter { a ->
         val matchPeriod=when(period) {
@@ -133,6 +135,29 @@ private fun AppointmentsModule(
                 exportResult=result.fold(
                     onSuccess={ "Agenda exportada em ICS ("+it+" bytes)." },
                     onFailure={ "Falha ao exportar ICS: "+(it.localizedMessage?:"Erro.") }
+                )
+            }
+        }
+    }
+    val csvLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri:Uri? ->
+        onDocumentFlow(false)
+        if(uri!=null) {
+            val snapshot=pendingCsv
+            scope.launch {
+                val result=withContext(Dispatchers.IO) {
+                    runCatching {
+                        val bytes=AgendaCsv.generate(snapshot,name)
+                        context.contentResolver.openOutputStream(uri,"w")?.use {
+                            it.write(bytes);it.flush()
+                        } ?: error("Não foi possível escrever o CSV.")
+                        snapshot.size
+                    }
+                }
+                exportResult=result.fold(
+                    onSuccess={ "CSV salvo com $it atendimento(s)." },
+                    onFailure={ "Falha ao exportar CSV: "+(it.localizedMessage?:"Erro.") }
                 )
             }
         }
@@ -172,6 +197,18 @@ private fun AppointmentsModule(
                     icsLauncher.launch("EvoluFisico_Agenda_"+today+".ics")
                 }
             ) { Text("Exportar atendimentos filtrados (.ics)") }
+            OutlinedButton(
+                enabled=!busy&&visible.isNotEmpty(),
+                modifier=Modifier.fillMaxWidth(),
+                onClick={
+                    pendingCsv=visible.toList()
+                    onDocumentFlow(true)
+                    csvLauncher.launch("EvoluFisico_Atendimentos_"+today+".csv")
+                }
+            ) { Text("Exportar lista filtrada (.csv)") }
+            Text("O CSV inclui todos os estados visíveis, inclusive faltas e cancelamentos.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Exporta somente atendimentos agendados para calendários externos.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
