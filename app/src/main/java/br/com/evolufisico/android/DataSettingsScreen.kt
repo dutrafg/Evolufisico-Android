@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
+import br.com.evolufisico.android.updates.InAppUpdatePanel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -259,7 +260,8 @@ fun DataSettingsScreen(
         ) { Text("Verificar integridade dos dados") }
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
-        Text("Versão 0.6.0-alpha (Fases 5 e 6)", style = MaterialTheme.typography.bodySmall)
+        InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
+        Text("Versão 0.10.0-alpha (Fases 7 a 10)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Sem backup automático: a senha nunca é guardada e os backups são iniciados manualmente. " +
             "O aplicativo não possui integração própria com nuvem.",

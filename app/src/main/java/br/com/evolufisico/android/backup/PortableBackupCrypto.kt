@@ -30,7 +30,7 @@ object PortableBackupCrypto {
     }
 
     fun decrypt(encoded: ByteArray, password: CharArray): ByteArray {
-        require(encoded.size in 53..(MAX_INPUT + 52)) { "Tamanho do backup inválido." }
+        require(encoded.size in 53..MAX_INPUT) { "Tamanho do backup inválido." }
         require(encoded.copyOfRange(0, marker.size).contentEquals(marker)) {
             "Formato do arquivo de backup não reconhecido."
         }

@@ -94,6 +94,11 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     Text("Recebido: ${reais(ChargeRules.total(charges,true))}")
+                    val month = java.time.YearMonth.now()
+                    Text("Mês atual (${month.monthValue.toString().padStart(2,'0')}/${month.year}):",
+                        style = MaterialTheme.typography.labelLarge)
+                    Text("Vence no mês: ${reais(ChargeRules.monthlyTotal(charges,false,month))}")
+                    Text("Recebido no mês: ${reais(ChargeRules.monthlyTotal(charges,true,month))}")
                 }
             }
         }

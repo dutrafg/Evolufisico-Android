@@ -129,7 +129,8 @@ fun AssessmentsScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
             Text("Nenhuma avaliação para este cliente.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(visible, key = { it.id }) { record ->
                     Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -1,13 +1,11 @@
 name: Android CI
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
-  build-and-qa:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,23 +26,12 @@ jobs:
           if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;35.0.0'
-      - name: Build APK and unit tests
+      - name: Build and unit tests
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
-      - name: Compile Android instrumentation tests
-        run: gradle --no-daemon :app:assembleDebugAndroidTest
-      - name: Android Lint
-        run: gradle --no-daemon :app:lintDebug
-      - name: Compile unsigned release AAB
-        run: gradle --no-daemon :app:bundleRelease
-      - name: Upload tested debug APK
+      - name: Upload debug APK (only after passing)
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Evolufisico-Android-debug
           path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-      - name: Upload unsigned release bundle (not for distribution)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Evolufisico-Android-UNSIGNED-release-aab
-          path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error

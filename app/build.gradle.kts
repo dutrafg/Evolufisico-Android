@@ -12,13 +12,24 @@ android {
         applicationId = "br.com.evolufisico.android"
         minSdk = 29 // Android 10+
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.6.0-alpha"
+        versionCode = 10
+        versionName = "0.10.0-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (!System.getenv("EF_KEYSTORE_FILE").isNullOrBlank()) {
+            create("distribution") {
+                storeFile = file(System.getenv("EF_KEYSTORE_FILE"))
+                storePassword = System.getenv("EF_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("EF_KEY_ALIAS")
+                keyPassword = System.getenv("EF_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfigs.findByName("distribution")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -40,6 +51,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.core:core:1.16.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

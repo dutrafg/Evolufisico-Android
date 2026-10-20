@@ -18,7 +18,10 @@ data class Assessment(
     val waistCm: Double?,
     val hipCm: Double?,
     val armCm: Double?,
-    val thighCm: Double?
+    val thighCm: Double?,
+    val healthHistory: String = "",
+    val dailyHabits: String = "",
+    val trainingExperience: String = ""
 ) {
     companion object {
         fun new(
@@ -51,6 +54,9 @@ object AssessmentRules {
         if (record.trainingLevel !in levels) return "Escolha um nível de atividade válido."
         if (record.goal.length > 200 || record.limitations.length > 600)
             return "O objetivo ou as observações ultrapassam o limite permitido."
+        if (record.healthHistory.length > 700 ||
+            record.dailyHabits.length > 700 || record.trainingExperience.length > 700)
+            return "Os campos da anamnese devem ter até 700 caracteres."
         if (record.weeklyFrequency !in 0..7) return "A frequência semanal deve estar entre 0 e 7."
         if (!record.weightKg.isFinite() || record.weightKg !in 10.0..500.0)
             return "Informe um peso entre 10 e 500 kg."

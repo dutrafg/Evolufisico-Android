@@ -33,6 +33,15 @@ class ChargeRulesTest {
             java.time.LocalDate.parse("2026-01-06")))
     }
 
+    @Test fun monthlyTotalsUseReceiptDateAndDueDateCorrectly() {
+        val pending = Charge("a","c","A",2000,"2026-10-31")
+        val received = Charge("b","c","B",3000,"2026-09-20","2026-10-02")
+        val month = java.time.YearMonth.of(2026,10)
+        assertEquals(2000L, ChargeRules.monthlyTotal(listOf(pending,received),false,month))
+        assertEquals(3000L, ChargeRules.monthlyTotal(listOf(pending,received),true,month))
+        assertEquals(0L, ChargeRules.monthlyTotal(listOf(pending,received),true,
+            java.time.YearMonth.of(2026,9)))
+    }
     @Test fun totalsAreSeparated() {
         val a = Charge("1","a","A",2000,"2026-10-01")
         val b = Charge("2","a","B",1000,"2026-10-01", "2026-10-02")

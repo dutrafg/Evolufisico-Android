@@ -1,29 +1,25 @@
-# QA · EvoluFísico Android 0.6.0-alpha
+# QA — EvoluFísico Android v0.10.0-alpha
 
-## Checagens estruturais e testes adicionados
+## Cobertura adicionada (implementação)
+- [x] Validação referencial entre clientes, avaliações e cobranças, integridade ao carregar
+- [x] Perguntas por nível, validação de campos, compatibilidade de leitura com JSON cifrado anterior
+- [x] Edição e estorno de cobranças, resumo mensal por pagamento/vencimento, testes com centavos
+- [x] NavigationRail de desktop/tablet, rolagens em formulários
+- [x] Checagem e download de GitHub Releases e APK local via SAF em Configurações
+- [x] Antes de iniciar instalação: packageName, versionCode crescente e assinatura digital
+- [x] HTTPS, lista de hosts de redirect permitidos, SHA-256 quando publicado, limite 250MB e FileProvider
+- [x] Confirmação de backup criptografado externo e instalação sujeita ao consentimento do Android
+- [x] Workflow de release assinado com segredos privados, bloqueado se não configurados
+- [x] Testes JUnit novos de política de atualização, integridade e cálculos
 
-- [x] Autenticação Android bloqueia a renderização dos módulos até confirmação do sistema
-- [x] Android 11+: diálogo com biometria forte e/ou credencial; Android 10: confirmação segura do dispositivo
-- [x] FLAG_SECURE configurado na Activity, relock ao background e bloqueio manual
-- [x] Permissão USE_BIOMETRIC; nenhuma permissão de Internet nem MANAGE_EXTERNAL_STORAGE
-- [x] Cobranças vencidas identificadas somente quando pendentes, cálculo em centavos
-- [x] Busca de cliente/serviço com limite de tamanho; filtros roláveis
-- [x] Diário de restauração escrito com fsync; limpeza de registros parciais em recuperação
-- [x] Verificação de integridade e diálogo de confirmação antes da seleção de backup
-- [x] Testes JUnit de atraso e testes anteriores de cripto, validação e evolução preservados
-- [x] Teste Android instrumentado criado para roundtrip Keystore/backup e janela FLAG_SECURE
-- [x] **CI aprovada em 20/10/2026**: [GitHub Actions #39427100179](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39427100179), commit `ca5ee156243bf040af77c5d1996a1ad7746b75a2`. `assembleDebug`, `testDebugUnitTest`, `assembleDebugAndroidTest`, `lintDebug` e `bundleRelease` concluídos com sucesso.
-- [x] APK debug disponibilizado no artifact `Evolufisico-Android-debug`; 57.753.521 bytes; SHA-256 `6c7ef27a31ac7583d4c1209f50464a1dc6fbbae317cce1da7e5bc91b5f917e0b`. ZIP verificado sem erros.
-- [x] AAB compilado e arquivado como `Evolufisico-Android-UNSIGNED-release-aab`, **sem assinatura de distribuição**; ZIP verificado sem erros.
-- [ ] Testes instrumentados estão **compilados**, mas não **executados**. Use o workflow `Android Emulator QA (manual)` para homologação em emulador Android 10.
-- [ ] Execução dos instrumentados no emulador: **workflow manual disponível; ainda não foi executado**
-- [ ] Testes em Android real, compatibilidade biométrica por fabricante, Android 10, SAF e cancelamento
-- [ ] Falhas forçadas no disco, queda de energia durante restauração e cópia SAF incompleta
-- [ ] Criptografia dos PDFs exportados, autenticação por operação e permissão por usuário não disponíveis
-- [ ] Revisão LGPD e modelo de ameaças, assinatura privada, QA de acessibilidade e publicação comercial
+## Não homologado
+- [ ] CI da 0.10.0-alpha: APK, JUnit, Lint, testes instrumentados compilados, AAB — verificar Actions
+- [ ] Execução dos testes instrumentados em emulador Android
+- [ ] Atualização de APK em aparelho real preservando dados locais/Keystore
+- [ ] Recusa de APK com outra assinatura em aparelho real
+- [ ] Restauração de .efbak em instalação vazia após desinstalação
+- [ ] Publicação da primeira release APK estável assinada: inexistente até configurar secrets
+- [ ] Segurança LGPD, UX leitor de tela, testes Android 10 a versões recentes
 
-## Resultado anterior
-
-0.4.0-alpha: [build e testes unitários aprovados no GitHub](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39423939587).
-
-**Não usar dados pessoais sensíveis reais antes de homologação.**
+Build da 0.6.0-alpha: [GitHub Actions aprovado](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39427100179).
+**Continua protótipo: não utilizar dados reais sensíveis.**

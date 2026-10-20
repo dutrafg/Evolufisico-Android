@@ -1,37 +1,33 @@
-# EvoluFísico Android · Roadmap
+# Roadmap EvoluFísico Android — v0.10.0-alpha
 
-## Fase 1 — Fundação
-- [x] Projeto Android 10+, Compose/Material Design 3; clientes com IDs, AES-GCM local
-- [x] CI, testes unitários
+## Fases 1 a 6
+- [x] Base Android10+ Compose, clientes, avaliações básicas, evolução e PDF, cobranças, backup portátil cifrado
+- [x] Autenticação do Android, bloqueio de sessão, GitHub Actions, Lint e compilação dos testes instrumentados
+- [ ] Testes físicos e instrumentados executados; LGPD; proteção de autenticação por operação
 
-## Fase 2 — Avaliações
-- [x] Anamnese básica, medidas, histórico e IMC/RCQ
-- [ ] Pollock, dobras, bioimpedância e migração Web
+## Fase 7 — Integridade e segurança
+- [x] Auditoria referencial cruzada entre módulos, incluindo testes unitários de registros órfãos
+- [x] Limite de sessão de 90 segundos para seletor de arquivos
+- [x] Recuperação de restauração incompleta
+- [ ] Homologação de falhas reais, pentest e revisão de criptografia
 
-## Fase 3 — Evolução
-- [x] Comparação individual, mensal/trimestral e relatórios PDF nativos
-- [ ] Validação de paginação PDF em aparelhos reais
+## Fase 8 — Anamnese avançada por nível
+- [x] Exemplos separados por iniciante, intermediário e avançado
+- [x] Novos campos: saúde, hábitos e experiência; AES-GCM e backup compatíveis
+- [ ] Protocolos clínicos avançados (Pollock/BIA/dobras), migração da Web
 
-## Fase 4 — Cobranças e backup
-- [x] Pendências, Receber, armazenamento AES-GCM e backup portátil por senha via SAF
-- [x] Restauração após validação em banco vazio
-- [ ] Rotina de backup automático com estratégia de chaves aprovada
+## Fase 9 — Financeiro
+- [x] Editar/excluir pendentes, estornar recebimentos com confirmação
+- [x] Resumo mensal por vencimento e pagamento, centavos inteiros
+- [ ] Pagamentos parciais, trilhas de auditoria e integração bancária/fiscal
 
-## Fase 5 — Segurança e QA (0.6.0-alpha)
-- [x] Tela de autenticação do Android antes dos módulos, Android 10+ (biometria forte ou credencial quando suportado)
-- [x] Bloqueio no background/manual, FLAG_SECURE, permissão USE_BIOMETRIC
-- [x] Compilação de testes instrumentados e workflow de execução em emulador via disparo manual
-- [ ] Testes instrumentados **executados**, testes físicos, pentest, threat model e LGPD
-- [ ] Autorização por usuário/perfil, validação criptográfica de autenticação por operação
+## Fase 10 — Interface e atualizações
+- [x] NavigationRail em telas largas, menus móveis, rolagem corrigida
+- [x] Atualizador em Configurações: GitHub Releases ou APK local por SAF
+- [x] Valida pacote, assinatura e versionCode; confirmação de backup e instalador Android
+- [x] Workflow de APK de release assinado **somente quando** segredos de assinatura configurados
+- [ ] Cadastrar segredos de assinatura e publicar primeira release; ainda não existem assets APK em Releases
+- [ ] Testar atualização preservando dados e Android Keystore em aparelhos físicos
+- [ ] Acessibilidade, testes em tablet e compatibilidade com políticas de distribuição
 
-## Fase 6 — Robustez e distribuição (0.6.0-alpha)
-- [x] Busca por cliente/serviço e filtro de cobranças atrasadas
-- [x] Verificação de integridade dos dados nas Configurações
-- [x] Jornal de restauração: detectar importação interrompida e limpar registros parciais
-- [x] Confirmação antes de selecionar backup a restaurar
-- [x] CI com lint, testes unitários, APK debug, testes instrumentados compilados e AAB de release sem assinatura
-- [ ] Validar rollback de restauração sob quedas reais e SAF externo; transação multi-arquivo robusta
-- [ ] Assinatura de distribuição, pipeline de publicação, documento de privacidade
-- [ ] Acessibilidade com leitor de tela, layouts em tablets e testes de orientação de tela
-
-**Fases 5 e 6 ainda não representam liberação para produção.**
+**Desinstalar apaga dados locais.** A única recuperação confiável prevista é backup portátil cifrado em pasta externa + restauração com senha.

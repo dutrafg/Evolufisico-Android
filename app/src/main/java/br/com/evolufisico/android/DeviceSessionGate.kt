@@ -7,6 +7,7 @@ import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -43,6 +44,8 @@ class DeviceSessionGate(private val activity: ComponentActivity) {
         private set
     private var checking = false
     private var externalDocumentFlow = false
+    private var documentStartedAt = 0L
+    private val documentGraceMillis = 90_000L
 
     private val credentialResult = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -58,15 +61,21 @@ class DeviceSessionGate(private val activity: ComponentActivity) {
     }
 
     fun isExternalDocumentFlow(): Boolean = externalDocumentFlow
-    fun externalDocumentFlow(active: Boolean) { externalDocumentFlow = active }
+    fun externalDocumentFlow(active: Boolean) {
+        externalDocumentFlow = active
+        documentStartedAt = if (active) SystemClock.elapsedRealtime() else 0L
+    }
 
     fun lock() {
         unlocked = false
         message = null
+        externalDocumentFlow = false
+        documentStartedAt = 0L
     }
 
     fun backgrounded() {
-        if (!externalDocumentFlow) lock()
+        if (!externalDocumentFlow ||
+            SystemClock.elapsedRealtime() - documentStartedAt > documentGraceMillis) lock()
     }
 
     fun openSecuritySettings() {

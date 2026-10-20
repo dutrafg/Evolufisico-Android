@@ -47,6 +47,13 @@ object ChargeRules {
         !charge.isReceived &&
             LocalDate.parse(charge.dueDateIso).isBefore(today)
 
+    fun monthlyTotal(items: List<Charge>, received: Boolean,
+        month: java.time.YearMonth): Long =
+        items.filter { it.isReceived == received }.filter { item ->
+            val date = if (received) item.receivedDateIso else item.dueDateIso
+            date != null && java.time.YearMonth.from(LocalDate.parse(date)) == month
+        }.sumOf { it.amountCents }
+
     fun total(items: List<Charge>, received: Boolean): Long =
         items.filter { it.isReceived == received }.sumOf { it.amountCents }
 }

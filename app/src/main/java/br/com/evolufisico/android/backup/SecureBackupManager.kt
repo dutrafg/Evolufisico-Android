@@ -90,6 +90,7 @@ class SecureBackupManager(context: Context) {
      */
     @Synchronized
     fun restore(input: InputStream, password: CharArray): BackupSnapshot {
+        check(!journal.exists()) { "Restauração anterior pendente. Reabra o aplicativo para recuperá-la." }
         val encrypted = input.use { source ->
             val target = ByteArrayOutputStream()
             val buffer = ByteArray(8192)
@@ -180,6 +181,10 @@ class SecureBackupManager(context: Context) {
     }
 
     private fun validate(snapshot: BackupSnapshot) {
+        val structureError = IntegrityReport.inspect(
+            snapshot.clients, snapshot.assessments, snapshot.charges
+        )
+        require(structureError == null) { structureError ?: "Dados inconsistentes." }
         require(snapshot.clients.size <= 20000 && snapshot.assessments.size <= 20000
             && snapshot.charges.size <= 20000)
         val ids = snapshot.clients.map { it.id }.toSet()

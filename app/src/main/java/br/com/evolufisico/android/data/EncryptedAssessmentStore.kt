@@ -68,6 +68,8 @@ class EncryptedAssessmentStore(context: Context) {
         .put("weightKg", a.weightKg).put("heightCm", a.heightCm)
         .put("waistCm", a.waistCm ?: JSONObject.NULL).put("hipCm", a.hipCm ?: JSONObject.NULL)
         .put("armCm", a.armCm ?: JSONObject.NULL).put("thighCm", a.thighCm ?: JSONObject.NULL)
+        .put("healthHistory", a.healthHistory).put("dailyHabits", a.dailyHabits)
+        .put("trainingExperience", a.trainingExperience)
 
     private fun fromJson(j: JSONObject): Assessment = Assessment(
         id = j.getString("id"), clientId = j.getString("clientId"),
@@ -76,7 +78,10 @@ class EncryptedAssessmentStore(context: Context) {
         weeklyFrequency = j.getInt("weeklyFrequency"),
         weightKg = j.getDouble("weightKg"), heightCm = j.getDouble("heightCm"),
         waistCm = optional(j, "waistCm"), hipCm = optional(j, "hipCm"),
-        armCm = optional(j, "armCm"), thighCm = optional(j, "thighCm")
+        armCm = optional(j, "armCm"), thighCm = optional(j, "thighCm"),
+        healthHistory = j.optString("healthHistory", ""),
+        dailyHabits = j.optString("dailyHabits", ""),
+        trainingExperience = j.optString("trainingExperience", "")
     )
 
     private fun optional(j: JSONObject, field: String): Double? =

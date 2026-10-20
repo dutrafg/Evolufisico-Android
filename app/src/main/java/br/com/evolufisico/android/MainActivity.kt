@@ -34,6 +34,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -55,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -143,6 +146,7 @@ private fun AppContent(
     var saving by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val useRail = LocalConfiguration.current.screenWidthDp >= 840
 
     LaunchedEffect(repository) {
         val result = withContext(Dispatchers.IO) { runCatching { backupManager.recoverInterruptedRestore(); repository.load() } }
@@ -199,7 +203,7 @@ private fun AppContent(
             )
         },
         bottomBar = {
-            NavigationBar {
+            if (!useRail) NavigationBar {
                 Section.entries.filter { it != Section.SETTINGS }.forEach { section ->
                     NavigationBarItem(
                         selected = current == section,
@@ -212,7 +216,20 @@ private fun AppContent(
         },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { insets ->
-        Surface(modifier = Modifier.fillMaxSize().padding(insets)) {
+        Row(modifier = Modifier.fillMaxSize().padding(insets)) {
+            if (useRail) {
+                NavigationRail {
+                    Section.entries.forEach { section ->
+                        NavigationRailItem(
+                            selected = current == section,
+                            onClick = { current = section },
+                            icon = { Icon(section.icon, contentDescription = section.title) },
+                            label = { Text(section.title, maxLines = 1) }
+                        )
+                    }
+                }
+            }
+            Surface(modifier = Modifier.weight(1f).fillMaxSize()) {
             if (loading) {
                 CenterMessage("Abrindo dados locais protegidos...")
             } else if (storageError != null) {
@@ -232,6 +249,7 @@ private fun AppContent(
                         current = Section.HOME
                     }
                 }
+            }
             }
         }
     }
