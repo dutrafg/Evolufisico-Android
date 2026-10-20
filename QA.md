@@ -12,6 +12,13 @@
 - [x] Workflow de release assinado com segredos privados, bloqueado se não configurados
 - [x] Testes JUnit novos de política de atualização, integridade e cálculos
 
+## Capturas de tela
+
+- [x] Captura de tela **permitida em versões alpha/beta/RC**, incluindo 0.10.0-alpha, para facilitar QA e reporte de bugs.
+- [x] Política automatizada: versão estável numerada sem sufixos ativa `FLAG_SECURE`; versões de teste removem esse bloqueio.
+- [x] Testes unitários da política e teste Android instrumentado adaptado para conferir o status conforme a versão.
+- [ ] Verificar manualmente capturas de tela e prévias recentes em aparelho real antes de marcar uma versão estável.
+
 ## Não homologado
 - [ ] CI da 0.10.0-alpha: APK, JUnit, Lint, testes instrumentados compilados, AAB — verificar Actions
 - [ ] Execução dos testes instrumentados em emulador Android

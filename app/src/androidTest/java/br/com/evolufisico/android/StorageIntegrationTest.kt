@@ -67,7 +67,11 @@ class StorageIntegrationTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val flags = activity.window.attributes.flags
-                assertTrue(flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+                @Suppress("DEPRECATION")
+                val versionName = activity.packageManager
+                    .getPackageInfo(activity.packageName, 0).versionName.orEmpty()
+                val blocked = flags and WindowManager.LayoutParams.FLAG_SECURE != 0
+                assertEquals(ScreenshotPolicy.shouldBlock(versionName), blocked)
             }
         }
     }

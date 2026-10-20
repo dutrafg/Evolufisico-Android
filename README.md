@@ -3,7 +3,7 @@
 App Android nativo (Kotlin / Compose / Material 3), Android 10+. Continuação independente das versões Web, Windows e Linux.
 
 ## Fases 7 a 10
-- **Fase 7 — Segurança:** conferência dos vínculos entre clientes, avaliações e cobranças; checagem antes de abrir os dados; recuperação de restauração interrompida; limite de 90 s para exceção de sessão em seletor de arquivos; bloqueio Android e FLAG_SECURE.
+- **Fase 7 — Segurança:** conferência dos vínculos entre clientes, avaliações e cobranças; checagem antes de abrir os dados; recuperação de restauração interrompida; limite de 90 s para exceção de sessão em seletor de arquivos; bloqueio Android. **Capturas de tela liberadas nas versões alpha/beta/RC para testes**, com `FLAG_SECURE` ativado automaticamente na versão estável (número sem sufixo).
 - **Fase 8 — Anamnese:** campos opcionais para histórico de saúde, sono/hábitos e experiência de treinamento com perguntas-exemplo diferentes para Iniciante, Intermediário e Avançado. Não preencher automaticamente respostas pessoais. Dados antigos legíveis e campos novos incluídos no banco AES-GCM e backup portátil.
 - **Fase 9 — Cobranças:** editar ou excluir lançamentos pendentes, estornar recebimentos com confirmação, resumos mensais, pendências e filtros. Valores em centavos `Long`. Estorno aqui altera status local, **não é operação bancária**.
 - **Fase 10 — Responsividade:** menu lateral em telas >=840dp, menu inferior no celular, melhores rolagens em avaliações e cobranças.

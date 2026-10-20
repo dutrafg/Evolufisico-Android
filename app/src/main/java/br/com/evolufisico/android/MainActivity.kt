@@ -89,7 +89,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var session: DeviceSessionGate
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        @Suppress("DEPRECATION")
+        val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+        if (ScreenshotPolicy.shouldBlock(currentVersion)) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
         session = DeviceSessionGate(this)
         val repository = EncryptedClientStore(applicationContext)
         val assessmentRepository = EncryptedAssessmentStore(applicationContext)
