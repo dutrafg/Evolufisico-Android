@@ -1,38 +1,35 @@
-# EvoluFísico Android — 0.1.0-alpha
+# EvoluFísico Android — 0.2.0-alpha
 
-Projeto **Android nativo** e independente das versões Web, Windows e Linux.
+Aplicativo **Android nativo**, independente das versões Web, Windows e Linux, em **Kotlin / Jetpack Compose / Material Design 3**. Idioma: português brasileiro. Android 10+.
 
-## Escopo entregue na etapa inicial
+## Recursos implementados
 
-- Kotlin + Jetpack Compose + Material Design 3; interface em português.
-- Compatível com Android 10+ (minSdk 29).
-- Navegação: Início, Clientes, Avaliações, Evolução, Cobranças e Configurações.
-- **Clientes**: adicionar, editar e excluir, com validação de nome, IDs estáveis e persistência local.
-- **Criptografia local**: registros de nomes protegidos com AES-256-GCM e chave no Android Keystore; falha de leitura/gravação não é mascarada.
-- Tema claro/escuro persistido localmente.
-- Sem permissão de Internet nem integração com Google Drive.
-- Testes unitários de validação e um workflow de compilação CI.
+- **Clientes:** cadastrar, editar e excluir; IDs estáveis e armazenamento AES-256-GCM (Android Keystore), com escrita atômica.
+- **Avaliações — Fase 2:** escolher cliente, criar/editar/excluir avaliações, consultar histórico individual ordenado pela data.
+- **Anamnese:** objetivo, nível (iniciante/intermediário/avançado), frequência semanal e campo de limitações/cuidados.
+- **Antropometria:** data, peso, altura, cintura, quadril, braço e coxa, com valores obrigatórios e opcionais validados.
+- **Indicadores automáticos:** IMC e relação cintura/quadril (RCQ), sem classificação ou diagnóstico clínico.
+- **Proteção dos vínculos:** a exclusão de um cliente com avaliações é bloqueada; exclua as avaliações desse cliente primeiro.
+- **Persistência de avaliações:** `assessments.enc` separado de `clients.enc`, ambos com AES-GCM, chave mantida no Android Keystore. Falhas de leitura/salvamento são exibidas e os dados não são descartados silenciosamente.
+- **Interface:** modo claro/escuro persistido, telas Início, Clientes, Avaliações, Evolução, Cobranças, Configurações.
+- **Sem permissão de Internet** e sem integração com Google Drive.
 
-**Importante:** Avaliações, Evolução e Cobranças ainda são *telas de estrutura*, sem lógica de produção. Não há migração de clientes/avaliações da versão web, backup, PDF ou autenticação nesta etapa. A criptografia protege os arquivos em repouso, mas **não equivale a bloqueio de acesso ao aplicativo**.
+Os dados de anamnese são sensíveis. A criptografia de arquivos não substitui autenticação no aplicativo: **não use com dados reais de pacientes/clientes até concluir PIN/biometria, política de backup e testes de segurança**.
 
 ## Abrir no Android Studio
 
-1. Descompacte a pasta `Evolufisico-Android` e abra-a no Android Studio (`Open`).
-2. Configure **JDK 17**, Android SDK **API 36** e Gradle **8.13**.
-3. Este pacote contém as configurações do Gradle Wrapper, mas **não inclui o arquivo binário `gradle-wrapper.jar`** porque não estava disponível no ambiente de geração. Instale Gradle 8.13 e execute `gradle wrapper --gradle-version 8.13` na raiz do projeto uma vez, ou ajuste o projeto para usar uma distribuição Gradle local no Android Studio. O comando gera os scripts e JAR oficiais do wrapper.
-4. Sincronize o Gradle e execute a configuração `app` num emulador Android 10+ ou celular com depuração USB.
-5. Para criar um APK de teste, execute `gradle :app:assembleDebug` (ou `./gradlew :app:assembleDebug` após configurar o wrapper).
+Abra esta pasta como projeto Gradle, com Android SDK API 36, Java/JDK 17 e Gradle 8.13. O projeto publica a configuração `gradle-wrapper.properties`, mas ainda não inclui o binário `gradle-wrapper.jar`: execute `gradle wrapper --gradle-version 8.13` uma vez num ambiente com Gradle instalado, ou use Gradle 8.13 diretamente.
 
-Nenhuma compilação Android real foi executada neste ambiente, que não possui o Android SDK/Gradle. Veja `QA.md`.
+Compilar: `gradle :app:assembleDebug`. Testes: `gradle :app:testDebugUnitTest`.
 
-## Código-fonte no GitHub
+O workflow em `.github/workflows/android-ci.yml` executa essas etapas no GitHub Actions e, se ambas passarem, publica um APK de depuração no artifact **Evolufisico-Android-debug**. Consulte a aba [Actions](https://github.com/dutrafg/Evolufisico-Android/actions); nunca presuma que a compilação passou antes de conferir a execução.
 
-Repositório oficial desta edição Android: `https://github.com/dutrafg/Evolufisico-Android`.
+## Limitações e próximas etapas
 
-O workflow em `.github/workflows/android-ci.yml` é disparado em pushes para `main`, instala o Gradle e o Android SDK, e executa build e testes unitários. A publicação do código não constitui aprovação do build; consulte a aba **Actions** para ver o resultado.
+- Avaliações da versão Web não são importadas automaticamente. Exigem um migrador validado com consentimento e verificação de dados.
+- Protocolos completos de dobras cutâneas, bioimpedância, fórmulas específicas de percentual de gordura e PDF clínico ainda não foram implementados.
+- Evolução, Cobranças, PIN/biometria, exportação, backup e restauração ainda estão pendentes.
+- O formato atual (JSON cifrado) é adequado ao protótipo, não substitui banco transacional com schema/versionamento para produção.
+- Desinstalar o app ou perder o Keystore pode tornar os dados irrecuperáveis enquanto não existir backup cifrado/exportação.
 
-Não copie bancos de dados reais, senhas, certificados, arquivos `local.properties` ou `*.jks` para o repositório.
-
-## Fontes de referência
-
-EvoluFísico Web: `https://github.com/dutrafg/EvoluFisico`. Projeto reescrito nativamente, **não** é uma cópia funcional do app web.
+Veja `ROADMAP.md` e `QA.md` para o escopo e a verificação.

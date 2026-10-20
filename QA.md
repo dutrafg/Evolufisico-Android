@@ -1,28 +1,25 @@
-# QA — EvoluFísico Android 0.1.0-alpha
+# QA — EvoluFísico Android 0.2.0-alpha
 
-## Verificação realizada no pacote
+## Cobertura implementada / revisão estática
 
-- [x] Estrutura de diretórios Kotlin, AndroidManifest e recursos XML.
-- [x] Presença de configuração Gradle e workflow CI.
-- [x] Exigência de Android 10+ e ausência da permissão de Internet.
-- [x] Persistência criptografada via Android Keystore + AES-GCM, sem armazenamento em texto puro no arquivo de clientes.
-- [x] Dados do app excluídos de backup/transferência automática.
-- [x] Validação de nome e proteção contra substituição silenciosa em erro de acesso a dados.
-- [ ] **Build Gradle/Android não executado**: SDK e Gradle indisponíveis neste ambiente.
-- [ ] **Testes unitários não executados**: requerem Gradle/SDK.
-- [ ] Testes em emulador e Android físico.
-- [ ] Verificação de acessibilidade, telas pequenas, rotação, modo escuro e comportamento de reinstalação.
-- [ ] Testes de perda de chave Keystore e corrupção de arquivo (devem mostrar erro, não sobrescrever dados).
-- [ ] Auditoria de segurança aprofundada e pentest.
+- [x] Avaliações ligadas a IDs de clientes; histórico não depende do nome.
+- [x] Anamnese: objetivo, nível de atividade, frequência semanal e limitações.
+- [x] Antropometria com campos numéricos, vírgula e ponto decimal, faixa validada.
+- [x] IMC = peso / (altura em m)^2; RCQ = cintura / quadril.
+- [x] Entradas NaN/Infinity, datas futuras e cliente inexistente são rejeitados.
+- [x] Gravação cifrada AES-GCM/Keystore e AtomicFile; arquivos não incluídos no backup do sistema.
+- [x] Bloqueio de exclusão de cliente que tenha avaliações.
+- [x] Testes JUnit 4 adicionados para validações e fórmulas.
+- [x] Workflow preparado para rodar assembleDebug/testDebugUnitTest e publicar artifact em caso de sucesso.
 
-## Checklist manual após abrir no Android Studio
+## Verificações ainda necessárias
 
-1. Compilar `assembleDebug` e executar `testDebugUnitTest`.
-2. Criar um cliente e reiniciar o processo para conferir persistência.
-3. Editar e excluir cliente; verificar que nomes vazios são rejeitados.
-4. Alternar tema, fechar e reabrir aplicativo.
-5. Testar sem Internet, em Android 10 e versão atual.
-6. Inspecionar arquivos internos para confirmar que `clients.enc` não contém os nomes legíveis.
-7. Forçar falha de leitura usando um arquivo corrompido e confirmar que a interface informa o problema sem apagar o arquivo.
+- [ ] **Compilação GitHub Actions:** verificar a execução mais recente. A CI da versão 0.1 falhou; na primeira tentativa faltava Android SDK, na segunda havia incompatibilidade Compose/API 37. A versão 0.2 fixa BOM anterior.
+- [ ] Confirmar resultados dos testes em Actions (não marcar como aprovados antes de executar).
+- [ ] Testes em emulador/telefone Android 10+ e versão recente.
+- [ ] Avaliação de segurança de chaves, corrupção de arquivos, exclusão e recuperação.
+- [ ] Acessibilidade e layout em telas pequenas/teclado físico.
+- [ ] Teste de comportamento com clientes antigos da v0.1 e registros quebrados.
+- [ ] Migração/importação Web, backup e restauração não implementados.
 
-Nenhum item não testado deve ser marcado como aprovado.
+**Não inserir dados reais sensíveis antes de autenticação, backup cifrado e QA de segurança.**
