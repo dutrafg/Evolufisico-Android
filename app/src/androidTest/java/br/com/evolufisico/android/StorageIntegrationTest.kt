@@ -71,10 +71,9 @@ class StorageIntegrationTest {
                     .isFailure)
             val incorrect = "SenhaPortatilIncorreta123".toCharArray()
             try {
-                assertTrue("Senha incorreta deve falhar",
-                    runCatching {
-                        manager.inspectBackup(ByteArrayInputStream(data), incorrect)
-                    }.isFailure)
+                // JSON do protótipo não precisa de senha.
+                assertEquals(4,
+                    manager.inspectBackup(ByteArrayInputStream(data), incorrect).recordCount)
             } finally { incorrect.fill('\u0000') }
             assertEquals("Inspeção nunca deve modificar dados", 1, clients.load().size)
             assertEquals(1, clients.load().size) // Verificação não pode alterar o banco
@@ -83,6 +82,13 @@ class StorageIntegrationTest {
                 data, password)
             val restoredOld = manager.inspectBackup(ByteArrayInputStream(oldEncrypted), password)
             assertEquals(4, restoredOld.recordCount)
+            val wrongPassword = "SenhaPortatilIncorreta123".toCharArray()
+            try {
+                assertTrue("Backup .efbak antigo exige senha correta",
+                    runCatching {
+                        manager.inspectBackup(ByteArrayInputStream(oldEncrypted), wrongPassword)
+                    }.isFailure)
+            } finally { wrongPassword.fill('\u0000') }
             forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())
