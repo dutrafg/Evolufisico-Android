@@ -83,10 +83,14 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
             "sem apagar clientes ou avaliações. É necessário confirmar a atualização no instalador " +
             "do sistema. Não há instalação silenciosa.",
             style = MaterialTheme.typography.bodySmall)
-        Text("IMPORTANTE: as versões precisam usar a MESMA assinatura digital. " +
-            "APKs de depuração gerados em máquinas diferentes podem ser incompatíveis.",
+        Text("Importante: cada APK DEBUG do GitHub Actions pode ter um certificado diferente. " +
+            "As atualizações sem reinstalação exigem versões RELEASE assinadas sempre " +
+            "com a mesma chave privada. Não desinstale antes de verificar seu backup .efbak.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(service.installedVersionDiagnostics(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary)
         OutlinedButton(
             enabled = !checking,
             modifier = Modifier.fillMaxWidth(),
@@ -102,7 +106,9 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                     result.onSuccess {
                         available = it
                         message = if (it == null)
-                            "Nenhum APK publicado em GitHub Releases. Use o arquivo APK local."
+                            "Ainda não há APK RELEASE oficial publicado. Os APKs DEBUG de " +
+                                "outras execuções não conseguirão atualizar esta instalação. " +
+                                "Use um APK local somente se a assinatura for idêntica."
                         else "Disponível no repositório: ${it.tag}. O arquivo será conferido antes de instalar."
                     }.onFailure {
                         message = "Falha ao consultar GitHub Releases: ${it.message}"

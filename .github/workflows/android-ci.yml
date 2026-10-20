@@ -36,10 +36,18 @@ jobs:
         run: gradle --no-daemon :app:lintDebug
       - name: Compile unsigned release AAB
         run: gradle --no-daemon :app:bundleRelease
-      - name: Upload tested debug APK
+      - name: Print debug certificate for diagnostic comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs \
+            app/build/outputs/apk/debug/app-debug.apk |
+            grep -E "Signer #1 certificate SHA-256 digest|Signer #1 certificate DN"
+          echo "::warning::DEBUG APK uses ephemeral CI signing. It cannot update a different run or official RELEASE."
+      - name: Upload tested debug APK (NOT UPDATEABLE)
         uses: actions/upload-artifact@v4
         with:
-          name: Evolufisico-Android-debug
+          name: Evolufisico-Android-QA-DEBUG-NAO-ATUALIZAVEL
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
       - name: Upload unsigned release bundle (not for distribution)

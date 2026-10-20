@@ -6,7 +6,7 @@ on:
       tag:
         description: "Release tag (for example v0.10.0-alpha)"
         required: true
-        default: "v0.10.0-alpha"
+        default: "v0.20.0-alpha"
 
 permissions:
   contents: write
@@ -60,9 +60,34 @@ jobs:
           gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          PACKAGE_INFO="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -1)"
+          [[ "$PACKAGE_INFO" == *"versionName='${TAG#v}'"* ]] || {
+            echo "Tag does not match APK versionName"; exit 1;
+          }
+          CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" |
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          test -n "$CERT"
+          printf '%s\n' "$CERT" > Evolufisico-Android-release.cert.sha256
           cp "$APK" Evolufisico-Android-release.apk
           sha256sum Evolufisico-Android-release.apk > Evolufisico-Android-release.apk.sha256
+      - name: Reject changed signing key from previous release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PREVIOUS="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // ""')"
+          if [ -n "$PREVIOUS" ]; then
+            mkdir -p "$RUNNER_TEMP/previous-release"
+            gh release download "$PREVIOUS" --pattern 'Evolufisico-Android-release.cert.sha256' \
+              --dir "$RUNNER_TEMP/previous-release"
+            cmp "$RUNNER_TEMP/previous-release/Evolufisico-Android-release.cert.sha256" \
+              Evolufisico-Android-release.cert.sha256 || {
+              echo "Signing certificate changed! Update would erase installation continuity."
+              exit 1
+            }
+          fi
       - name: Publish GitHub Release after signature verification
         shell: bash
         env:
@@ -75,6 +100,7 @@ jobs:
           }
           gh release create "$TAG" Evolufisico-Android-release.apk \
             Evolufisico-Android-release.apk.sha256 \
+            Evolufisico-Android-release.cert.sha256 \
             --title "EvoluFísico Android $TAG" --prerelease \
             --notes "Android native signed release. Use the in-app updater; Android verifies the installed signing identity. Export an encrypted backup before updating."
       - name: Remove private keystore

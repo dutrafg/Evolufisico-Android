@@ -172,6 +172,22 @@ class AppUpdateService(private val context: Context) {
         }
     }
 
+    /** Diagnóstico visível: o certificado é público; a chave privada jamais é lida. */
+    @Suppress("DEPRECATION")
+    fun installedVersionDiagnostics(): String = runCatching {
+        val info = context.packageManager.getPackageInfo(pkg, PackageManager.GET_SIGNING_CERTIFICATES)
+        val cert = info.signingInfo?.apkContentsSigners?.firstOrNull()
+        val fp = cert?.toByteArray()?.let { certificateSha256(it) } ?: "não disponível"
+        val debuggable = context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
+        "Instalada: ${info.versionName} (código ${info.longVersionCode}) · " +
+            (if (debuggable) "APK DEBUG" else "APK RELEASE") +
+            " · certificado SHA-256: ${fp.take(16)}…"
+    }.getOrElse { "Não foi possível consultar a assinatura instalada." }
+
+    private fun certificateSha256(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02X".format(it) }
+
     @Suppress("DEPRECATION")
     fun validate(file: File): String {
         val flags = PackageManager.GET_SIGNING_CERTIFICATES
@@ -193,8 +209,16 @@ class AppUpdateService(private val context: Context) {
             current.map { it.toByteArray() }, incoming.map { it.toByteArray() }
         )
         require(matching) {
-            "Assinatura incompatível. A atualização no mesmo app foi bloqueada para preservar seus dados. " +
-                "Exporte um backup criptografado antes de considerar uma reinstalação."
+            val installedFingerprint = current.firstOrNull()?.toByteArray()
+                ?.let { certificateSha256(it) } ?: "indisponível"
+            val candidateFingerprint = incoming.firstOrNull()?.toByteArray()
+                ?.let { certificateSha256(it) } ?: "indisponível"
+            "ASSINATURA INCOMPATÍVEL. Instalada: ${installedFingerprint.take(16)}… " +
+                "Nova: ${candidateFingerprint.take(16)}…. " +
+                "O GitHub Actions usou certificados DEBUG diferentes. Não existe atualização " +
+                "direta segura entre essas assinaturas. Faça backup .efbak fora do app, " +
+                "verifique o backup e só então planeje uma migração. " +
+                "Para atualizações futuras use sempre o mesmo APK RELEASE assinado."
         }
         return "APK compatível: versãoCode ${installed.longVersionCode} → ${candidate.longVersionCode}."
     }
