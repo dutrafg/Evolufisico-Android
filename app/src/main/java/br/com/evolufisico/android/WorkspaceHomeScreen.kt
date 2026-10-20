@@ -16,6 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Today
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -216,9 +223,13 @@ fun WorkspaceHomeScreen(
         item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                 Button(modifier=Modifier.weight(1f),onClick={onNavigate("CLIENTS")}) {
+                    Icon(Icons.Outlined.People,contentDescription=null)
+                    Spacer(Modifier.size(6.dp))
                     Text("Clientes")
                 }
                 Button(modifier=Modifier.weight(1f),onClick={onNavigate("AGENDA")}) {
+                    Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
+                    Spacer(Modifier.size(6.dp))
                     Text("Agenda")
                 }
             }
@@ -242,6 +253,14 @@ private fun WorkspaceMetric(
         shape=RoundedCornerShape(12.dp),
         colors=CardDefaults.cardColors(containerColor=palette.first)) {
         Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+            val icon=when(label) {
+                "Clientes" -> Icons.Outlined.People
+                "Hoje" -> Icons.Outlined.Today
+                "Agenda pendente" -> Icons.Outlined.Schedule
+                else -> Icons.Outlined.Payments
+            }
+            Icon(icon,contentDescription=null,tint=palette.second,
+                modifier=Modifier.size(19.dp))
             Text(label,style=MaterialTheme.typography.labelMedium,color=palette.second)
             Spacer(Modifier.height(3.dp))
             Text(value,style=MaterialTheme.typography.headlineMedium,

@@ -271,3 +271,10 @@ Consulte [matriz de 600 checkpoints](docs/ALPHAS_10_A_15_100_ETAPAS.md). Este do
 - **Alpha 20:** CSV das cobranças filtradas via Android SAF, valores em centavos, neutralização básica de fórmulas e testes.
 
 Veja [matriz de 500 checkpoints](docs/ALPHAS_16_A_20_100_ETAPAS.md). A matriz não afirma conclusão integral. O APK debug Alpha 20 usa o identificador independente `br.com.evolufisico.android.alpha20`, sem acesso automático ao banco do original. Preserve o APK antigo e verifique backup antes de migrar. Sem criptografia de registros novos durante esta etapa do protótipo, utilize dados fictícios. Atualização na mesma instalação exige assinatura permanente ainda não configurada.
+
+
+## Alpha 21–25: renovação visual (Material Design 3)
+
+O início apresenta quatro indicadores com cores suaves, próximos atendimentos reais e acesso rápido. A área Módulos usa cartões em grade com busca, filtros, favoritos e recentes; layout com 1/2/3 colunas em telas estreitas/telefones/tablets. Cores e formas claro/escuro receberam padronização corporativa. A Alpha 25 acrescenta ícones e QA automatizado. Código e checkpoints em `docs/ALPHAS_21_A_25_VISUAL.md`.
+
+APK debug independente (`.alpha25`), banco próprio. Antes de mudar de instalação, faça backup JSON e valide restauração. Assinatura oficial permanente e QA visual físico ainda pendentes.

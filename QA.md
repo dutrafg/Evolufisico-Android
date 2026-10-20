@@ -299,3 +299,14 @@
 - [ ] Teste de navegação e filtros num smartphone Android real
 - [ ] Teste físico de CSV pelo seletor SAF e planilhas
 - [ ] Assinatura de distribuição permanente e instalação sobre APK anterior
+
+
+## Alpha 21–25 — QA do redesign
+
+- [x] Testes unitários acrescentados para iniciais, datas Hoje/Amanhã e número de colunas da grade
+- [x] Módulos e armazenamento mantidos, sem mudança de schema JSON
+- [x] Tema claro/escuro e navegação existentes preservados
+- [ ] Conferir resultado final Android CI / lint / emulador para Alpha 25
+- [ ] Testar em aparelho real fontes grandes, sobreposição, contraste e toque
+- [ ] Testar restauração de backup JSON de teste em pacote isolado Alpha 25
+- [ ] Validar assinatura release persistente antes de atualizar aplicativo oficial
