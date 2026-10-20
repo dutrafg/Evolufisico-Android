@@ -170,3 +170,10 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [x] 116 modelo de anotação por cliente; 117 validar data, categoria, título e texto; 118 CRUD, fixação e filtros; 119 integrar backup, CSV, ficha, PDF e proteção na exclusão de clientes
 - [x] 120 testes unitários de busca, anotações e teste instrumentado de restauração estendidos
 - [ ] Testes visuais e de navegação em smartphone Android real, assinatura release fixa e homologação de dados
+
+### Homologação automática da atualização Alpha 2 — 2.0.3-alpha.2
+- [x] CI final [39488146237](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39488146237): build, JUnit, Lint, AAB e teste de assinatura descartável
+- [x] Emulador Android 10 [39488146518](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39488146518): 3/3 instrumentados, sem falhas
+- [x] APK debug extraído com ZIP íntegro e SHA-256 registrado em QA.md
+- [ ] Homologação manual de Anotações/Busca/Dados e Privacidade em smartphone real
+- [ ] Assinatura release permanente para permitir atualização entre versões sem troca do certificado

@@ -177,3 +177,14 @@
 - [ ] CI e QA em emulador pendentes da nova versão
 - [ ] Teste funcional de filtros, teclado e relatórios em smartphone físico
 - [ ] App ainda usa JSON sem criptografia e assinatura debug não garante atualização da instalação anterior
+
+## Alpha 2 — validação final do ciclo 2.0.3-alpha.2
+
+- [x] **CI aprovado:** [run 39488146237](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39488146237); compilação, unit tests, Android Lint, AAB e verificação descartável de assinatura
+- [x] **Instrumentados no Android 10:** [run 39488146518](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39488146518), 3 de 3 testes aprovados
+- [x] Artifact `Evolufisico-Android-QA-DEBUG-NAO-ATUALIZAVEL` id `12294142206` extraído, ZIP sem corrupção
+- [x] APK `app-debug.apk`: **60.156.912 bytes**, SHA-256 `2b99f0f08a7d9b05579d39deabab4f71932e634af13d04764cbd065fac5b25f3`
+- [x] Ícone de Comparativos corrigido, mantendo módulo e navegação existentes
+- [ ] Testes manuais de experiência real no celular: Configurações, exportação SAF, Agenda, Busca e Anotações
+- [ ] APK **debug** não garante compatibilidade de assinatura com builds anteriores; não desinstalar sem backup externo validado
+- [ ] Armazenamento JSON permanece sem criptografia nesta fase de desenvolvimento
