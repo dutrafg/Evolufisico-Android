@@ -226,3 +226,12 @@
 - [ ] Validação de backup/restauração SAF no smartphone.
 - [ ] Assinatura de distribuição fixa para atualizar sem reinstalar. O APK debug não resolve isso.
 - [ ] Somente após essas etapas, considerar a homologação final da Alpha 3.
+
+## Alpha 4 4.0.0-alpha.4
+
+- [x] Resumo por cliente calculado do armazenamento atual, sem banco auxiliar.
+- [x] JUnit: pagamentos vencidos vs futuros, valores recebidos e pendentes, faltas e progresso de comparecimento.
+- [x] Filtros por nome, atraso, metas, cobranças e faltas com navegação.
+- [ ] Compilação e testes unitários CI da Alpha 4 aguardando execução.
+- [ ] QA em emulador Android 10 e testes visuais pendentes.
+- [ ] APK debug pode não atualizar assinatura anterior; mantenha backup externo verificado.

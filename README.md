@@ -209,3 +209,9 @@ O módulo **Comparativos** diferencia *Faltou* de *Cancelado*. Apresenta faltas 
 A **Agenda** permite exportar os atendimentos filtrados e ainda agendados como arquivo `.ics` pela pasta escolhida no Android (SAF). O arquivo usa horários locais flutuantes, identificador único por atendimento, escape de descrição e quebra de linhas UTF-8. Pode ser importado manualmente por aplicativos de calendário, sem autenticação na nuvem. Atendimentos com status Concluído, Cancelado ou Faltou não são exportados para novos compromissos.
 
 Testes JUnit verificam competências financeiras, comparecimento, seleção de estados e a sintaxe do calendário.
+
+## Alpha 4 — Resumo operacional por cliente (4.0.0-alpha.4)
+
+Introduz o módulo nativo **Resumo por cliente**, exibido na tela inicial e na navegação desktop. Calcula sob demanda — sem adicionar tabelas nem modificar registros — atendimentos agendados, concluídos, faltas, cancelamentos, metas ativas/concluídas, pagamentos recebidos, pendentes e vencidos. Valores financeiros permanecem em centavos internamente; comparecimento usa apenas concluídos + faltas no denominador. Os cartões permitem abrir Agenda, Metas e Cobranças. Busca pelo nome do cliente e filtros Com pendências, Em atraso, Com faltas e Com metas. Os totais são recalculados ao tocar Atualizar dados.
+
+Estes incrementos formam a **primeira entrega da Alpha 4**, sem alegar que as 100 etapas do ciclo estejam integralmente homologadas. A próxima Alpha 5 terá funcionalidades adicionais e um APK de teste. A assinatura debug não resolve atualização sobre instalações assinadas com outro certificado.

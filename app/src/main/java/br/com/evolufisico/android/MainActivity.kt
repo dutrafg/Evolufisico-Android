@@ -96,6 +96,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     SERVICES("Serviços", Icons.Outlined.Storefront),
     REPORTS("Relatórios", Icons.Outlined.Description),
     INSIGHTS("Indicadores", Icons.Outlined.TrendingUp),
+    CLIENT_SUMMARY("Resumo por cliente", Icons.Outlined.People),
     TRENDS("Comparativos", Icons.Outlined.Assessment),
     SEARCH("Busca global", Icons.Outlined.Search),
     NOTES("Anotações", Icons.Outlined.Description),
@@ -294,6 +295,11 @@ private fun AppContent(
                         onAgenda = { current = Section.AGENDA },
                         onBilling = { current = Section.BILLING },
                         onGoals = { current = Section.GOALS })
+                    Section.CLIENT_SUMMARY -> ClientOperationsScreen(backupManager,
+                        onClients = { current = Section.CLIENTS },
+                        onAgenda = { current = Section.AGENDA },
+                        onBilling = { current = Section.BILLING },
+                        onGoals = { current = Section.GOALS })
                     Section.TRENDS -> TrendsScreen(clients.toList(), backupManager)
                     Section.SEARCH -> GlobalSearchScreen(backupManager, onOpen = { key ->
                         Section.entries.firstOrNull { it.name == key }?.let { current = it }
@@ -358,6 +364,8 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
             { onNavigate(Section.REPORTS) }) }
         item { FeatureCard("Indicadores", "Cobranças, atendimentos e prazos de metas",
             { onNavigate(Section.INSIGHTS) }) }
+        item { FeatureCard("Resumo por cliente", "Faltas, metas e cobrança em um painel",
+            { onNavigate(Section.CLIENT_SUMMARY) }) }
         item { FeatureCard("Comparativos", "Atendimentos e valores mensais por cliente",
             { onNavigate(Section.TRENDS) }) }
         item { FeatureCard("Busca global", "Localizar clientes e registros em todos os módulos",

@@ -206,3 +206,18 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] Validação manual em smartphone real, restauração a partir de backup externo e atualização assinada de forma permanente
 
 **Ciclos seguintes:** Alpha 4, Alpha 5 etc. somente conforme necessidades funcionais reais. A transição para **Beta** será baseada nos critérios definidos em `BETA_CRITERIOS.md`, não numa contagem arbitrária de etapas.
+
+## Alpha 4 — ciclo 0 a 100 (em desenvolvimento)
+
+- [x] 0–5: versionamento crescente `4.0.0-alpha.4`, preservando registros e módulos existentes
+- [x] 6–10: agregar dados sem duplicar arquivos JSON locais
+- [x] 11–15: contar por situação agendada, concluída, cancelada e Faltou
+- [x] 16–20: comparar comparecimento usando concluídos + faltas
+- [x] 21–25: agregar metas individuais ativas e concluídas
+- [x] 26–30: consolidar cobrança recebida, pendente e vencida em centavos
+- [x] 31–35: tela nativa, cartões por cliente e indicadores, busca e filtros
+- [x] 36–40: navegação aos módulos de origem, atualização sob demanda e testes JUnit
+- [ ] 41–60: relatórios avançados de atividades, período e comparecimento
+- [ ] 61–80: produtividade, acessibilidade e fluxos de operação
+- [ ] 81–100: QA em Android real, exportações SAF, backup e atualização com certificado válido
+- [ ] Homologação manual e assinatura estável permanecem pendentes
