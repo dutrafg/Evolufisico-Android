@@ -17,6 +17,14 @@ class WorkspaceFavoritesTest {
         val old=set.first()
         assertFalse(old in WorkspaceFavorites.toggle(set,old))
     }
+    @Test fun reordersFavoritesWithinBounds() {
+        val initial=linkedSetOf("GOALS","FORMS","REPORTS")
+        val moved=WorkspaceFavorites.move(initial,"REPORTS",-1)
+        assertEquals(listOf("GOALS","REPORTS","FORMS"),moved.toList())
+        assertEquals(initial,WorkspaceFavorites.move(initial,"GOALS",-1))
+        assertEquals(initial,WorkspaceFavorites.move(initial,"UNKNOWN",1))
+        assertEquals(moved,WorkspaceFavorites.parse(WorkspaceFavorites.serialize(moved)))
+    }
     @Test fun unknownShortcutIsIgnored() {
         assertTrue(WorkspaceFavorites.toggle(emptySet(),"UNLISTED").isEmpty())
     }

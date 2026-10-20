@@ -78,10 +78,15 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
         preferences.edit().putString("recent_routes",WorkspaceRecents.serialize(recents)).apply()
         onNavigate(route)
     }
-    fun toggleFavorite(route:String) {
-        val next=WorkspaceFavorites.toggle(favorites,route)
+    fun saveFavorites(next:Set<String>) {
         favorites=next
         preferences.edit().putString("routes",WorkspaceFavorites.serialize(next)).apply()
+    }
+    fun toggleFavorite(route:String) {
+        saveFavorites(WorkspaceFavorites.toggle(favorites,route))
+    }
+    fun moveFavorite(route:String,direction:Int) {
+        saveFavorites(WorkspaceFavorites.move(favorites,route,direction))
     }
     val modules=WorkspaceModules.filter(query,category)
     val pinned=if(query.isBlank() && category=="Todos")
@@ -113,7 +118,10 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
                 color=MaterialTheme.colorScheme.primary) }
             items(pinned.size) { index ->
                 val entry=pinned[index]
-                ModuleRow(entry,true,::navigate) { toggleFavorite(entry.route) }
+                ModuleRow(entry,true,::navigate,
+                    onMoveUp=if(index>0) ({ moveFavorite(entry.route,-1) }) else null,
+                    onMoveDown=if(index<pinned.lastIndex) ({ moveFavorite(entry.route,1) }) else null
+                ) { toggleFavorite(entry.route) }
             }
         }
         if(recentItems.isNotEmpty()) {
@@ -145,6 +153,7 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
 @Composable
 private fun ModuleRow(
     entry:WorkspaceModule, favorite:Boolean, onNavigate:(String)->Unit,
+    onMoveUp:(()->Unit)?=null,onMoveDown:(()->Unit)?=null,
     onToggle:()->Unit
 ) {
     Card(modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),
@@ -153,8 +162,12 @@ private fun ModuleRow(
             Text(entry.title,style=MaterialTheme.typography.titleSmall)
             Text(entry.subtitle,style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick=onToggle) {
-                Text(if(favorite) "Remover favorito" else "Adicionar aos favoritos")
+            Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick=onToggle) {
+                    Text(if(favorite) "Remover favorito" else "Favoritar")
+                }
+                if(onMoveUp!=null) TextButton(onClick=onMoveUp) { Text("↑ Subir") }
+                if(onMoveDown!=null) TextButton(onClick=onMoveDown) { Text("↓ Descer") }
             }
         }
     }
