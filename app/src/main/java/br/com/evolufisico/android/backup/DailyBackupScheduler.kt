@@ -18,5 +18,7 @@ object BackupClock {
 
 data class DailyBackupState(
     val active: Boolean, val hour: Int, val minute: Int,
-    val folderUri: String?, val lastSuccessMillis: Long, val lastError: String?
+    val folderUri: String?, val lastSuccessMillis: Long, val lastError: String?,
+    val lastAttemptMillis: Long = 0L, val enabledAtMillis: Long = 0L,
+    val lastRecordCount: Int = 0, val lastFileName: String? = null
 )

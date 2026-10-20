@@ -27,7 +27,11 @@ class DailyBackupScheduler(private val context: Context) {
         prefs.getInt("hour",22),prefs.getInt("minute",0),
         prefs.getString("folder",null),
         prefs.getLong("last_success",0),
-        prefs.getString("last_error",null)
+        prefs.getString("last_error",null),
+        prefs.getLong("last_attempt",0),
+        prefs.getLong("enabled_at",0),
+        prefs.getInt("last_records",0),
+        prefs.getString("last_file",null)
     )
 
     fun activate(folder: String, hour: Int, minute: Int, password: CharArray) {
@@ -41,9 +45,15 @@ class DailyBackupScheduler(private val context: Context) {
         // Verifica o acesso e o banco antes de habilitar agendamento.
         SecureBackupManager(context).summary()
         keys.save(password)
-        check(prefs.edit().putBoolean("active",true)
+        val saved = prefs.edit().putBoolean("active",true)
             .putInt("hour",hour).putInt("minute",minute).putString("folder",folder)
-            .remove("last_error").commit()) { "Falha ao salvar programação." }
+            .putLong("enabled_at",System.currentTimeMillis())
+            .putLong("last_success",0L).putLong("last_attempt",0L)
+            .remove("last_file").remove("last_error").putInt("last_records",0).commit()
+        if (!saved) {
+            keys.clear()
+            error("Falha ao salvar programação.")
+        }
         try { enqueue(hour,minute) }
         catch (e: Exception) {
             disable()
@@ -69,8 +79,14 @@ class DailyBackupScheduler(private val context: Context) {
         )
     }
 
-    fun markSuccess() {
+    fun markAttempt() {
+        prefs.edit().putLong("last_attempt",System.currentTimeMillis())
+            .remove("last_error").commit()
+    }
+    fun markSuccess(report: BackupRunReport) {
         prefs.edit().putLong("last_success",System.currentTimeMillis())
+            .putString("last_file",report.fileName)
+            .putInt("last_records",report.recordCount)
             .remove("last_error").commit()
     }
     fun markFailure(error: String) {
@@ -81,50 +97,9 @@ class DailyBackupScheduler(private val context: Context) {
 class DailyBackupWorker(appContext: Context, workerParameters: WorkerParameters):
     CoroutineWorker(appContext,workerParameters) {
     override suspend fun doWork(): Result {
-        val scheduler = DailyBackupScheduler(applicationContext)
-        val state = scheduler.state()
-        if (!state.active) return Result.success()
-        val secret = try { SealedBackupCredential(applicationContext).read() }
-            catch (e: Exception) {
-                scheduler.markFailure("Não foi possível abrir a senha protegida: " + e.javaClass.simpleName)
-                return Result.success()
-            }
-        try {
-            val location = Uri.parse(state.folderUri ?: error("Selecione novamente a pasta de backups."))
-            require(applicationContext.contentResolver.persistedUriPermissions.any {
-                it.uri == location && it.isReadPermission && it.isWritePermission
-            }) { "Permissão da pasta expirou; selecione novamente." }
-            val manager = SecureBackupManager(applicationContext)
-            val data = manager.export(secret)
-            val parent = DocumentsContract.buildDocumentUriUsingTree(
-                location,DocumentsContract.getTreeDocumentId(location))
-            val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"))
-            val destination = DocumentsContract.createDocument(
-                applicationContext.contentResolver,parent,"application/octet-stream",
-                "EvoluFisico_AUTO_${stamp}.efbak"
-            ) ?: error("A pasta não aceita novos arquivos.")
-            try {
-                applicationContext.contentResolver.openOutputStream(destination,"w")?.use {
-                    it.write(data); it.flush()
-                } ?: error("Falha ao criar backup automático.")
-                // Verificação criptográfica real por releitura, não apenas tamanho.
-                val input = applicationContext.contentResolver.openInputStream(destination)
-                    ?: error("Não foi possível reler o arquivo de backup.")
-                val checked = manager.inspectBackup(input,secret)
-                check(checked.recordCount == manager.summary().recordCount) {
-                    "Contagem de registros inconsistente; confira o backup."
-                }
-                scheduler.markSuccess()
-            } catch (e: Exception) {
-                runCatching {
-                    DocumentsContract.deleteDocument(applicationContext.contentResolver,destination)
-                }
-                throw e
-            } finally { data.fill(0) }
-        } catch (e: Exception) {
-            scheduler.markFailure(e.localizedMessage ?: e.javaClass.simpleName)
-        } finally { secret.fill('\u0000') }
-        // Periódico permanece agendado; erro visível em Configurações.
+        if (!DailyBackupScheduler(applicationContext).state().active) return Result.success()
+        // Falhas são registradas no próprio executor e não desabilitam o agendamento.
+        runCatching { VerifiedBackupExecutor.execute(applicationContext) }
         return Result.success()
     }
 }

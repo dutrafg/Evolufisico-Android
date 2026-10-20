@@ -12,8 +12,8 @@ android {
         applicationId = "br.com.evolufisico.android"
         minSdk = 29 // Android 10+
         targetSdk = 35
-        versionCode = 25
-        versionName = "0.25.0-alpha"
+        versionCode = 30
+        versionName = "0.30.0-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

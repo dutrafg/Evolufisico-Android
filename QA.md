@@ -1,4 +1,4 @@
-# QA — EvoluFísico Android 0.25.0-alpha
+# QA — EvoluFísico Android 0.30.0-alpha
 
 ## Alterações e verificações adicionadas
 - [x] Formulários: busca e filtros sem gravar ou transmitir respostas
@@ -57,3 +57,16 @@
 - [ ] Android não garante disparo exato no minuto, mesmo que horário desejado esteja salvo
 
 **Aviso:** APK debug CI usa assinatura efêmera; não desinstale 0.15.0-alpha ou outro app com dados sem verificar um backup externo. Nenhuma versão alpha dispensa homologação com dados fictícios.
+
+## Validação das Fases 26–30
+
+- [x] Unificação entre execução automática agendada e execução imediata pelo botão
+- [x] Gravação em novo arquivo SAF com releitura, verificação criptográfica e limpeza tentativa em falha
+- [x] Bloqueio intra-processo para não haver backups concorrentes gerados pelo próprio aplicativo
+- [x] Registro de tentativa, sucesso verificado, nome de arquivo, contagem e último erro; alerta após 36 h
+- [x] Testes unitários para regra de alerta de backup atrasado e cómputo de próximo horário
+- [x] Testes instrumentados reforçados: arquivo cifrado adulterado, senha incorreta, credencial AES-GCM adulterada
+- [ ] CI da 0.30.0-alpha — aguarda execução e validação
+- [ ] Testes instrumentados da 0.30.0-alpha em emulador — aguarda execução
+- [ ] Execução real do WorkManager/SAF e verificação de restauração em aparelho físico
+- [ ] Assinatura estável para instalação por atualização; não disponível em build DEBUG CI

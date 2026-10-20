@@ -42,3 +42,12 @@
 - [x] **25:** painel com estado, última execução, último erro; testes de calendário e credencial do Keystore
 - [ ] Homologar execução diária durante Doze, reinicialização e provedor SAF externo no aparelho real
 - [ ] Auditoria de privacidade e segurança, retenção configurável com confirmação, recuperação ante interrupções físicas
+
+## Fases 26 a 30 — Verificação e operação de backup
+- [x] **26:** botão de backup imediato com a pasta e senha já configuradas, sem esperar até o dia seguinte
+- [x] **27:** executor comum manual/automático, gravação em arquivo separado, releitura e autenticação do backup antes de declarar sucesso
+- [x] **28:** últimas tentativas, último sucesso, contagem, nome do arquivo, erro recente e alerta após 36 h sem confirmação
+- [x] **29:** testes de senha de backup incorreta, corrupção do arquivo e alteração da credencial cifrada; não sobrescrever base existente
+- [x] **30:** testes unitários adicionais, compilação instrumentada e QA de regressão
+- [ ] Validar visualmente e com uso real em Android 10+, pasta SAF local ou externa, reinício, Doze e restrições de fabricante
+- [ ] Implementar uma release de distribuição assinada de forma permanente para permitir atualizações sem reinstalar

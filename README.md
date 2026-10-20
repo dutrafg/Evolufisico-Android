@@ -1,4 +1,4 @@
-# EvoluFísico Android — 0.25.0-alpha
+# EvoluFísico Android — 0.30.0-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -85,3 +85,22 @@ Configurações apresenta horário configurado, estado ligado/desligado, último
 ### Atenção ao problema anterior de assinatura
 
 Esta versão continua sendo um APK **DEBUG não atualizável sobre builds DEBUG anteriores gerados com certificados diferentes**. Nenhum código pode contornar a verificação de assinatura do Android. Para proteger seus registros na 0.15.0-alpha, não desinstale sem backup criptografado externo conferido. A distribuição de releases com assinatura fixa ainda precisa da chave privada estável no GitHub.
+
+## Fases 26–30 — Teste imediato do backup e confiabilidade (0.30.0-alpha)
+
+### Fase 26 — Backup agora
+Após ativar o backup diário em Configurações, toque em **Fazer backup agora e verificar arquivo**. O aplicativo usa a pasta SAF e a senha já cifrada pelo Android Keystore; não espera pelo horário agendado. Não altera o próximo horário do trabalho periódico. O botão só aparece habilitado com o agendamento ativo.
+
+### Fase 27 — Executor seguro e verificação real
+A mesma implementação atende o WorkManager e o botão de teste imediato. Cria um arquivo novo `EvoluFisico_AUTO_*.efbak`, grava pelo seletor de documentos Android, reabre e valida a cifra AES-GCM e a integridade do conteúdo antes de confirmar sucesso. Em falha, registra o erro e tenta apagar o arquivo incompleto; nunca sobrescreve backups anteriores. A operação é serializada no processo para impedir duas exportações simultâneas vindas do aplicativo.
+
+### Fase 28 — Histórico e alerta de atraso
+Configurações mostra última **tentativa**, último **sucesso verificado**, nome do arquivo, número de registros e último erro. Exibe alerta quando o backup diário está ativo e decorrem mais de 36 horas sem confirmação desde o agendamento/último sucesso. Esse alerta informa uma possível falha, não é confirmação de execução em segundo plano.
+
+### Fase 29 — Segurança e recuperação
+Foram acrescentados testes instrumentados Android que verificam: senha errada e arquivo corrompido recusados na inspeção do backup, sem alterar registros locais; credencial Keystore adulterada recusada. A restauração permanece limitada à base vazia, com pré-verificação não destrutiva disponível. **Não desinstale o aplicativo atual sem antes exportar e verificar seu backup externo e guardar a senha.**
+
+### Fase 30 — Testes, versão e documentação
+Versão `0.30.0-alpha` (`versionCode=30`), testes unitários do estado de backup e calendário, compilação, Android Lint, AAB não assinado, teste Android instrumentado no emulador (quando aprovado). Testes físicos de Doze, persistência de permissões do provedor SAF, reinício e bateria permanecem pendentes. Nenhum APK debug CI se torna atualizável por cima de outro certificado distinto: é necessário configurar uma chave de assinatura de distribuição permanente.
+
+**Limites do agendamento:** WorkManager não garante o minuto exato nem execução após encerramento forçado pelo usuário/fornecedor. O backup local usa a pasta escolhida; o app não possui integração própria com Google Drive.

@@ -64,6 +64,19 @@ class StorageIntegrationTest {
             val data = manager.export(password)
             val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
             assertEquals(4, inspected.recordCount)
+            val damaged = data.clone()
+            damaged[damaged.lastIndex] = (damaged.last().toInt() xor 1).toByte()
+            assertTrue("Backup corrompido deve falhar validação AES-GCM",
+                runCatching { manager.inspectBackup(ByteArrayInputStream(damaged), password) }
+                    .isFailure)
+            val incorrect = "SenhaPortatilIncorreta123".toCharArray()
+            try {
+                assertTrue("Senha incorreta deve falhar",
+                    runCatching {
+                        manager.inspectBackup(ByteArrayInputStream(data), incorrect)
+                    }.isFailure)
+            } finally { incorrect.fill('\u0000') }
+            assertEquals("Inspeção nunca deve modificar dados", 1, clients.load().size)
             assertEquals(1, clients.load().size) // Verificação não pode alterar o banco
             assertFalse(String(data, Charsets.ISO_8859_1).contains("Pessoa de Teste"))
             forms.save(emptyList(), emptySet())
@@ -98,6 +111,9 @@ class StorageIntegrationTest {
             val restored = store.read()
             assertEquals(String(secret),String(restored))
             restored.fill('\u0000')
+            // Qualquer alteração na credencial autenticada deve provocar falha segura.
+            prefs.edit().putString("sealed_password","AAAA").commit()
+            assertTrue(runCatching { store.read() }.isFailure)
         } finally {
             secret.fill('\u0000')
             store.clear()
