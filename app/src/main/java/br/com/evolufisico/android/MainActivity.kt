@@ -76,10 +76,13 @@ import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.forms.EncryptedFormStore
 import br.com.evolufisico.android.ops.OperationalStore
+import br.com.evolufisico.android.agenda.AgendaHome
+import br.com.evolufisico.android.agenda.UpcomingAppointment
 import br.com.evolufisico.android.backup.SecureBackupManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
 
 private val brandBlue = Color(0xFF235C91)
 private val lightScheme = lightColorScheme(primary = brandBlue, secondary = Color(0xFF44749A),
@@ -325,16 +328,26 @@ private fun AppContent(
 @Composable
 private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onNavigate: (Section) -> Unit) {
     var overview by remember { mutableStateOf<String?>(null) }
+    var nextAppointments by remember { mutableStateOf<List<UpcomingAppointment>>(emptyList()) }
+    var pendingCount by remember { mutableStateOf(0) }
     LaunchedEffect(backupManager) {
-        overview = withContext(Dispatchers.IO) {
-            runCatching { backupManager.summary() }.fold(
-                onSuccess={ s ->
-                    "Agenda: " + s.operations.appointments.count { it.status=="Agendado" } +
-                    " · Metas: " + s.operations.goals.count { !it.completed } +
-                    " · Serviços: " + s.operations.services.count { it.enabled }
-                }, onFailure={ "Indicadores temporariamente indisponíveis" }
-            )
+        val loaded=withContext(Dispatchers.IO) {
+            runCatching {
+                val s=backupManager.summary()
+                val now=LocalDateTime.now()
+                val names=s.clients.associate { it.id to it.name }
+                Triple(
+                    "Agenda: "+s.operations.appointments.count{it.status=="Agendado"}+
+                        " · Metas: "+s.operations.goals.count{!it.completed}+
+                        " · Serviços: "+s.operations.services.count{it.enabled},
+                    AgendaHome.next(s.operations.appointments,names,now),
+                    AgendaHome.pendingCount(s.operations.appointments,now)
+                )
+            }
         }
+        loaded.onSuccess { data ->
+            overview=data.first;nextAppointments=data.second;pendingCount=data.third
+        }.onFailure { overview="Indicadores temporariamente indisponíveis" }
     }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
@@ -351,6 +364,31 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
                     Text("$clientCount", style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Button(onClick = { onNavigate(Section.CLIENTS) }) { Text("Gerenciar clientes") }
+                }
+            }
+        }
+        item {
+            Card(shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Text("Próximos atendimentos",style=MaterialTheme.typography.titleMedium,
+                        fontWeight=FontWeight.SemiBold)
+                    if (nextAppointments.isEmpty()) {
+                        Text("Nenhum atendimento futuro agendado.",
+                            color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        nextAppointments.forEach { a ->
+                            Text(a.startIso.replace('T',' ')+" · "+a.clientName)
+                            Text(a.service,color=MaterialTheme.colorScheme.onSurfaceVariant,
+                                style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    if (pendingCount>0) {
+                        Text("$pendingCount atendimento(s) de datas anteriores ainda pendente(s)",
+                            color=MaterialTheme.colorScheme.error)
+                    }
+                    Button(onClick={onNavigate(Section.AGENDA)}) {
+                        Text("Abrir Agenda")
+                    }
                 }
             }
         }

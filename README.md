@@ -233,3 +233,18 @@ A Agenda agora exporta **todos os atendimentos filtrados** para CSV, incluindo f
 A Agenda recebe contadores de atendimentos **hoje**, **próximos sete dias**, **pendentes com datas anteriores à atual**, **concluídos no mês** e **faltas no mês**. Novos filtros **Semana** e **Pendentes** respeitam o status Agendado. O filtro Dia só pode ser selecionado após a escolha de uma data no calendário. Os CSV e ICS preservam os filtros existentes e não fazem sincronização externa automática.
 
 A build debug Alpha 7 usa o identificador `br.com.evolufisico.android.alpha7`, para instalação em paralelo com o aplicativo principal e com os APKs de homologação Alpha 5/6. **Ela inicia com base própria vazia**: para dados de teste, use backup JSON externo e restaure apenas em base vazia. Não desinstale a versão antiga sem verificar o backup. Essa opção **não resolve** a assinatura de atualização no mesmo pacote; assinatura de distribuição permanente segue pendente. Use dados fictícios enquanto o JSON estiver sem criptografia.
+
+## EvoluFísico Android Alpha 8 a 10 — novas funcionalidades
+
+### Alpha 8 (8.0.0-alpha.8, versionCode 112)
+Duplicação de atendimento para sete dias depois com novo ID e validação de conflito, confirmação para Concluir, Cancelar ou Registrar falta, reabertura de atendimento sem conflito, testes JUnit. Para preservar o app original, a variante de testes usa `br.com.evolufisico.android.alpha8`.
+
+### Alpha 9 (9.0.0-alpha.9, versionCode 113)
+Busca na Agenda sem diferenças de acentos/maiúsculas, inclusive observações; filtro explícito por cliente; contagem de resultados; exportação ICS/CSV baseada numa cópia dos registros visíveis no momento da escolha do arquivo. Variante debug: `br.com.evolufisico.android.alpha9`.
+
+### Alpha 10 (10.0.0-alpha.10, versionCode 114)
+Painel no início com os cinco próximos atendimentos, por data e horário, e indicador de atendimentos antigos ainda agendados, com atalho para Agenda. Ordenação determinística, dados inválidos ignorados e módulos existentes preservados. Variante debug: `br.com.evolufisico.android.alpha10`. A versão de produção retém `br.com.evolufisico.android`.
+
+**Dados:** todas as alterações acima atuam sobre o JSON já usado, sem esquema novo. Cada variante debug tem dados próprios; não atualiza nem lê diretamente os dados do app principal. Backup JSON/SAF é a ponte de migração, conferindo a restauração em base vazia antes de excluir qualquer instalação. Certificado fixo para APK com o mesmo pacote permanece pendente. Estes APKs de teste não devem ser usados com dados sensíveis reais enquanto os registros novos estiverem sem criptografia.
+
+Veja `docs/ALPHAS_7_A_10_100_ETAPAS.md` para as quatro listas de 100 etapas. Etapas sem validação permanecem pendentes, mesmo quando a versão já está compilando.

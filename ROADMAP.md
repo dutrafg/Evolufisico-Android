@@ -254,3 +254,13 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] Instalação física e comparação de backups entre variantes
 - [ ] Assinatura release fixa para atualização direta do APK original
 - [ ] Homologação visual/acessibilidade completa das 100 etapas de cada ciclo
+
+
+## Alpha 8 a 10 — entregas incrementais
+
+- [x] Alpha 8: duplicação +7 dias validada, alterações de status confirmadas, reabertura protegida, testes JUnit
+- [x] Alpha 9: busca acento-insensível na Agenda, filtro por cliente, exportações com snapshot consistente, testes JUnit
+- [x] Alpha 10: painel inicial com cinco próximos atendimentos e pendências, testes JUnit
+- [ ] Homologar 100 etapas por ciclo de acordo com o arquivo `docs/ALPHAS_7_A_10_100_ETAPAS.md`
+- [ ] Conferir instalação Alpha 10, exportação e backup/restauração em smartphone real
+- [ ] Configurar assinatura permanente para APK principal, sem trocar pacote e sem perda de dados

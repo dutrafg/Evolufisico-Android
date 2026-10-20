@@ -260,3 +260,15 @@
 - [ ] Comprovar atualização da variante oficial com assinatura release persistente
 
 **Atenção:** pacotes debug das Alpha 5/6/7 são isolados para proteger o principal. Sem a mesma assinatura, não substituem instalações anteriores. Dados JSON do protótipo ainda não estão criptografados.
+
+
+## Alpha 8–10: QA incremental
+
+- [x] Novos testes JUnit: validação de duplicação +7 dias, conflitos e reversão de status (Alpha 8)
+- [x] Novos testes JUnit: busca sem acentos, seleção por cliente e observações (Alpha 9)
+- [x] Novos testes JUnit: próximas sessões ordenadas, limite e datas inválidas (Alpha 10)
+- [ ] Registrar evidência de CI e emulador Alpha 8, 9 e 10 após a execução
+- [ ] Validar em Android físico tela inicial, Agenda, duplicação, confirmação, filtros, arquivos CSV/ICS
+- [ ] Confirmar restauração de backup JSON numa base isolada Alpha 10 e totais por cliente
+- [ ] Homologação integral das 100 etapas de cada Alpha ainda não demonstrada
+- [ ] Sem criptografia: usar somente dados fictícios
