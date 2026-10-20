@@ -23,6 +23,7 @@ import br.com.evolufisico.android.agenda.AgendaIcs
 import br.com.evolufisico.android.agenda.AgendaCsv
 import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.AgendaActions
+import br.com.evolufisico.android.agenda.AgendaFilters
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -94,6 +95,8 @@ private fun AppointmentsModule(
     save:(List<Appointment>)->Unit
 ) {
     var search by remember { mutableStateOf("") }
+    var selectedClientId by remember { mutableStateOf<String?>(null) }
+    var clientSelector by remember { mutableStateOf(false) }
     var period by remember { mutableStateOf("Todas") }
     var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
     var editing by remember { mutableStateOf<Appointment?>(null) }
@@ -106,14 +109,13 @@ private fun AppointmentsModule(
     val scope=rememberCoroutineScope()
     var exportResult by remember { mutableStateOf<String?>(null) }
     var pendingCsv by remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    var pendingIcs by remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    var pendingIcsNames by remember { mutableStateOf<Map<String,String>>(emptyMap()) }
+    var pendingCsvNames by remember { mutableStateOf<Map<String,String>>(emptyMap()) }
     val todayDate=LocalDate.now()
     val today=todayDate.toString()
     val pulse=AgendaPulse.summarize(all,todayDate)
-    val visible=all.filter { a ->
-        val matchPeriod=AgendaPulse.matches(a,period,selectedDay,todayDate)
-        matchPeriod && (search.isBlank() || a.service.contains(search,true) ||
-            (name[a.clientId]?:"").contains(search,true) || a.startIso.contains(search))
-    }.sortedBy { it.startIso }
+    val visible=AgendaFilters.filter(all,name,period,selectedDay,todayDate,search,selectedClientId)
     val icsLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/calendar")
     ) { uri:Uri? ->
@@ -122,8 +124,7 @@ private fun AppointmentsModule(
             scope.launch {
                 val result=withContext(Dispatchers.IO) {
                     runCatching {
-                        val bytes=AgendaIcs.generate(
-                            visible.filter { it.status=="Agendado" },name)
+                        val bytes=AgendaIcs.generate(pendingIcs,pendingIcsNames)
                         context.contentResolver.openOutputStream(uri,"w")?.use {
                             it.write(bytes);it.flush()
                         } ?: error("Não foi possível escrever arquivo ICS.")
@@ -146,7 +147,7 @@ private fun AppointmentsModule(
             scope.launch {
                 val result=withContext(Dispatchers.IO) {
                     runCatching {
-                        val bytes=AgendaCsv.generate(snapshot,name)
+                        val bytes=AgendaCsv.generate(snapshot,pendingCsvNames)
                         context.contentResolver.openOutputStream(uri,"w")?.use {
                             it.write(bytes);it.flush()
                         } ?: error("Não foi possível escrever o CSV.")
@@ -183,7 +184,25 @@ private fun AppointmentsModule(
                 onClick={ editing=null;editingOpen=true }) { Text("Novo atendimento") }
             if(clients.isEmpty()) Text("Cadastre um cliente antes de agendar.")
             OutlinedTextField(search,{search=it.take(80)},modifier=Modifier.fillMaxWidth(),
-                label={Text("Buscar cliente, serviço ou data")},singleLine=true)
+                label={Text("Buscar cliente, serviço, observação ou data")},singleLine=true)
+            Box {
+                OutlinedButton(onClick={clientSelector=true}) {
+                    Text("Cliente: "+(selectedClientId?.let{name[it]}?:"Todos"))
+                }
+                DropdownMenu(expanded=clientSelector,onDismissRequest={clientSelector=false}) {
+                    DropdownMenuItem(text={Text("Todos os clientes")},onClick={
+                        selectedClientId=null;clientSelector=false
+                    })
+                    clients.sortedBy{it.name}.forEach{c->
+                        DropdownMenuItem(text={Text(c.name)},onClick={
+                            selectedClientId=c.id;clientSelector=false
+                        })
+                    }
+                }
+            }
+            Text("Resultados: "+visible.size+" atendimento(s)",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
                 listOf("Todas","Hoje","Dia","Semana","Pendentes","Futuras",
                     "Concluídas","Canceladas","Faltas").forEach { c ->
@@ -199,6 +218,8 @@ private fun AppointmentsModule(
                 enabled=!busy&&visible.any{it.status=="Agendado"},
                 modifier=Modifier.fillMaxWidth(),
                 onClick={
+                    pendingIcs=visible.filter { it.status=="Agendado" }.toList()
+                    pendingIcsNames=name.toMap()
                     onDocumentFlow(true)
                     icsLauncher.launch("EvoluFisico_Agenda_"+today+".ics")
                 }
@@ -208,6 +229,7 @@ private fun AppointmentsModule(
                 modifier=Modifier.fillMaxWidth(),
                 onClick={
                     pendingCsv=visible.toList()
+                    pendingCsvNames=name.toMap()
                     onDocumentFlow(true)
                     csvLauncher.launch("EvoluFisico_Atendimentos_"+today+".csv")
                 }
