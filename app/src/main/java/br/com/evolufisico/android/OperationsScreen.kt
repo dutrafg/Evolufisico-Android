@@ -22,6 +22,7 @@ import br.com.evolufisico.android.agenda.WeeklyAppointments
 import br.com.evolufisico.android.agenda.AgendaIcs
 import br.com.evolufisico.android.agenda.AgendaCsv
 import br.com.evolufisico.android.agenda.AgendaPulse
+import br.com.evolufisico.android.agenda.AgendaActions
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -98,6 +99,8 @@ private fun AppointmentsModule(
     var editing by remember { mutableStateOf<Appointment?>(null) }
     var editingOpen by remember { mutableStateOf(false) }
     var remove by remember { mutableStateOf<Appointment?>(null) }
+    var duplicate by remember { mutableStateOf<Appointment?>(null) }
+    var transition by remember { mutableStateOf<Pair<Appointment,String>?>(null) }
     val name=clients.associate{it.id to it.name}
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -230,6 +233,7 @@ private fun AppointmentsModule(
                     Row(Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                         TextButton(enabled=!busy,onClick={editing=a;editingOpen=true}) {Text("Editar")}
+                        TextButton(enabled=!busy,onClick={duplicate=a}) {Text("Duplicar +7d")}
                         TextButton(onClick={
                             val text=AppointmentShareText.format(
                                 a,name[a.clientId]?:"Cliente")
@@ -244,14 +248,18 @@ private fun AppointmentsModule(
                         }) { Text("Compartilhar") }
                         if(a.status=="Agendado") {
                             TextButton(enabled=!busy,onClick={
-                                save(all.map{if(it.id==a.id)it.copy(status="Concluído") else it})
+                                transition=a to "Concluído"
                             }) {Text("Concluir")}
                             TextButton(enabled=!busy,onClick={
-                                save(all.map{if(it.id==a.id)it.copy(status="Cancelado") else it})
+                                transition=a to "Cancelado"
                             }) {Text("Cancelar")}
                             TextButton(enabled=!busy,onClick={
-                                save(all.map{if(it.id==a.id)it.copy(status="Faltou") else it})
+                                transition=a to "Faltou"
                             }) {Text("Registrar falta")}
+                        } else {
+                            TextButton(enabled=!busy,onClick={
+                                transition=a to "Agendado"
+                            }) {Text("Reabrir")}
                         }
                         TextButton(enabled=!busy,onClick={remove=a}) {Text("Excluir")}
                     }
@@ -259,7 +267,40 @@ private fun AppointmentsModule(
             }
         }
     }
-    if(editingOpen) AppointmentEditor(clients,services,editing,all,selectedDay,
+    duplicate?.let { a ->
+        AlertDialog(onDismissRequest={duplicate=null},
+            title={Text("Duplicar atendimento?")},
+            text={Text("Criar um novo atendimento sete dias depois, com os mesmos "+
+                "cliente, serviço e duração? O original será preservado.")},
+            confirmButton={Button(enabled=!busy,onClick={
+                val result=runCatching {
+                    AgendaActions.duplicateNextWeek(a,all,clients.map{it.id}.toSet())
+                }
+                result.onSuccess { save(all+it) }
+                    .onFailure { exportResult=it.localizedMessage?:"Não foi possível duplicar." }
+                duplicate=null
+            }) {Text("Duplicar")}},
+            dismissButton={TextButton(onClick={duplicate=null}) {Text("Voltar")}})
+    }
+    transition?.let { (a,nextStatus) ->
+        AlertDialog(onDismissRequest={transition=null},
+            title={Text("Confirmar alteração?")},
+            text={Text("Alterar o atendimento de "+
+                (name[a.clientId]?:"Cliente")+" para "+nextStatus+"?")},
+            confirmButton={Button(enabled=!busy,onClick={
+                val result=runCatching {
+                    AgendaActions.changeStatus(a,nextStatus,all)
+                }
+                result.onSuccess { changed ->
+                    save(all.map { if(it.id==a.id) changed else it })
+                }.onFailure {
+                    exportResult=it.localizedMessage?:"Não foi possível alterar a situação."
+                }
+                transition=null
+            }) {Text("Confirmar")}},
+            dismissButton={TextButton(onClick={transition=null}) {Text("Voltar")}})
+    }
+    if(editingOpen && clients.isNotEmpty()) AppointmentEditor(clients,services,editing,all,selectedDay,
         onDismiss={editingOpen=false},onSave={ generated ->
             save(if(editing==null) all+generated else
                 all.map { old -> if(old.id==generated.first().id)generated.first() else old })
