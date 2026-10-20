@@ -1,4 +1,4 @@
-# EvoluFísico Android — 0.20.0-alpha
+# EvoluFísico Android — 0.20.1-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -50,3 +50,13 @@ gradle :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :
 Existe também o workflow [QA em emulador Android 10](https://github.com/dutrafg/Evolufisico-Android/actions/workflows/android-emulator-qa.yml) para testar AES-GCM/Keystore, gravação/leitura e backup. Testes em emulador não substituem validação física.
 
 Captura de tela continua permitida nas versões alpha/beta/RC, com bloqueio `FLAG_SECURE` definido para versões estáveis. Ainda faltam homologação de protocolos clínicos avançados, migração Web, auditoria LGPD, assinatura de APK permanente e segurança física antes de inserir dados reais sensíveis.
+
+## Correção das atualizações — versão 0.20.1-alpha
+
+**Diagnóstico comprovado pela inspeção das assinaturas dos APKs:** a 0.15.0-alpha, a 0.20.0-alpha e outras versões DEBUG foram assinadas por certificados **diferentes**. O GitHub Actions cria uma chave temporária quando não há uma identidade de assinatura configurada. O Android recusa instalar qualquer APK com uma assinatura diferente por cima da instalação atual, mesmo que o ID e a versão estejam corretos.
+
+**Não há como alterar a assinatura da instalação 0.15.0-alpha sem a chave privada de quem a assinou.** A nova versão apresenta diagnósticos de certificado e versão, e o CI agora identifica os APKs de debug como **NÃO ATUALIZÁVEIS**. Um workflow de release com keystore estável é o único caminho seguro para atualizações futuras. O workflow também bloqueia mudanças acidentais de certificado entre releases.
+
+**Migrar com dados existentes:** na versão ainda instalada, exportar .efbak para fora do app, verificar integridade/senha com uma ferramenta confiável independente (ver arquivo HTML de verificação local fornecido no chat), conservar cópia redundante, e somente então instalar uma release oficialmente assinada em uma instalação limpa. Restaurar o .efbak em banco vazio. A desinstalação remove normalmente os dados internos e as chaves Keystore. Não desinstale antes de confirmar a integridade do backup!
+
+O repositório atualmente **não tem nenhuma versão com APK publicada no GitHub Releases**, portanto "Procurar atualizações" não pode oferecer uma versão assinada até a configuração do workflow. Para ativar releases, é necessário criar e guardar um keystore privado duradouro **no computador do proprietário** e adicionar os quatro GitHub Actions Secrets: `EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS`, `EF_KEY_PASSWORD`. Nunca envie chaves privadas ou senhas no chat nem as inclua em commits.

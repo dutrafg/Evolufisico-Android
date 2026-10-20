@@ -6,7 +6,7 @@ on:
       tag:
         description: "Release tag (for example v0.10.0-alpha)"
         required: true
-        default: "v0.20.0-alpha"
+        default: "v0.20.1-alpha"
 
 permissions:
   contents: write
@@ -61,7 +61,7 @@ jobs:
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
-          PACKAGE_INFO="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -1)"
+          PACKAGE_INFO="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | sed -n '1p')"
           [[ "$PACKAGE_INFO" == *"versionName='${TAG#v}'"* ]] || {
             echo "Tag does not match APK versionName"; exit 1;
           }

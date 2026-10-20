@@ -312,7 +312,7 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.20.0-alpha (Fases 16 a 20)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.20.1-alpha (correção de atualizações)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Sem backup automático: a senha nunca é guardada e os backups são iniciados manualmente. " +
             "O aplicativo não possui integração própria com nuvem.",

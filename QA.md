@@ -26,3 +26,14 @@
 - [x] ZIP debug de 0.20.0-alpha verificado sem corrupção, contendo `app-debug.apk`.
 - [x] APK debug extraído com **58.187.368 bytes** e SHA-256 `67b3f4862065756cf2c3ac07ab57838fc17210f64877031e1bdf4a035a4eea69`.
 - [ ] **Teste com seu aparelho Android e dados fictícios ainda pendente**, incluindo PDFs exportados e backup em pasta externa.
+
+## Investigação de incompatibilidade de assinatura (0.20.1-alpha)
+
+- [x] Reproduzida por comparação dos certificados extraídos dos APKs debug anteriores: `0.15.0-alpha` = `CCFD2796386C85221B0201750296D0554010F6EA1717546451D4FD5D8F4EF884`; `0.20.0-alpha` = `B3DE359672040E308185822EF7FAC4B80063630E1B89B246A5B8A84302631A20`.
+- [x] Confirmação: certificados de assinatura diferentes tornam **impossível** uma atualização direta preservando a instalação.
+- [x] Diagnóstico no aplicativo exibe versão instalada e resumo do certificado, e erro de incompatibilidade distingue certificados.
+- [x] Artifact debug renomeado com **NAO-ATUALIZAVEL** para evitar confusão.
+- [x] Workflow de release publica impressão digital do certificado e, a partir da segunda release, rejeita assinatura diferente da release anterior.
+- [ ] Workflow de release **não pode executar ainda** sem uma chave permanente configurada pelo proprietário como segredo do GitHub.
+- [ ] Testar com dois APKs release assinados usando exatamente o mesmo keystore, com versionCode crescente, em Android real e com backup externo.
+- [ ] CI de `0.20.1-alpha` a conferir antes de marcar a compilação aprovada.
