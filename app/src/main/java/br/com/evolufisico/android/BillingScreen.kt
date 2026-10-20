@@ -1,5 +1,9 @@
 package br.com.evolufisico.android
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
@@ -40,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.billing.Charge
 import br.com.evolufisico.android.billing.ChargeRules
 import br.com.evolufisico.android.billing.BillingFilters
+import br.com.evolufisico.android.billing.BillingCsv
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.OperationalStore
@@ -51,7 +56,9 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationalStore: OperationalStore) {
+fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
+    operationalStore: OperationalStore, onDocumentFlow:(Boolean)->Unit={}
+) {
     var charges by remember { mutableStateOf<List<Charge>>(emptyList()) }
     var services by remember { mutableStateOf<List<ServiceItem>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -62,6 +69,10 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
     var search by remember { mutableStateOf("") }
     var selectedClientId by remember { mutableStateOf<String?>(null) }
     var clientPickerOpen by remember { mutableStateOf(false) }
+    val context=LocalContext.current
+    var exportStatus by remember { mutableStateOf<String?>(null) }
+    var pendingCsv by remember { mutableStateOf<List<Charge>>(emptyList()) }
+    var pendingNames by remember { mutableStateOf<Map<String,String>>(emptyMap()) }
     var editing by remember { mutableStateOf<Charge?>(null) }
     var deleting by remember { mutableStateOf<Charge?>(null) }
     var reversing by remember { mutableStateOf<Charge?>(null) }
@@ -96,6 +107,30 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
 
     val clientNames = clients.associate { it.id to it.name }
     val visible = BillingFilters.filter(charges,clientNames,status,search,LocalDate.now(),selectedClientId)
+    val csvLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri:Uri? ->
+        onDocumentFlow(false)
+        if(uri!=null) {
+            val snapshot=pendingCsv.toList()
+            val names=pendingNames.toMap()
+            scope.launch {
+                val result=withContext(Dispatchers.IO) {
+                    runCatching {
+                        val bytes=BillingCsv.generate(snapshot,names)
+                        context.contentResolver.openOutputStream(uri,"w")?.use {
+                            it.write(bytes);it.flush()
+                        } ?: error("Falha ao escrever arquivo CSV.")
+                        snapshot.size
+                    }
+                }
+                exportStatus=result.fold(
+                    onSuccess={ "CSV exportado com $it cobrança(s)." },
+                    onFailure={ "Falha ao exportar: "+(it.localizedMessage?:"Erro.") }
+                )
+            }
+        }
+    }
     LazyColumn(modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -161,6 +196,16 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
                 reais(visible.sumOf { it.amountCents }),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(
+                enabled=!busy&&visible.isNotEmpty(),modifier=Modifier.fillMaxWidth(),
+                onClick={
+                    pendingCsv=visible.toList()
+                    pendingNames=clientNames.toMap()
+                    onDocumentFlow(true)
+                    csvLauncher.launch("EvoluFisico_Cobrancas_"+LocalDate.now()+".csv")
+                }
+            ) { Text("Exportar cobranças filtradas (.csv)") }
+            exportStatus?.let { Text(it,color=MaterialTheme.colorScheme.primary) }
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
         if (visible.isEmpty()) item { Text("Nenhuma cobrança nesta categoria.") }

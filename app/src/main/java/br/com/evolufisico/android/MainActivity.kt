@@ -329,7 +329,7 @@ private fun AppContent(
                     })
                     Section.NOTES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.NOTES)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
-                    Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
+                    Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository, onDocumentFlow)
                     Section.SETTINGS -> DataSettingsScreen(
                         darkMode, onDarkModeChange, backupManager, onDocumentFlow, onLock
                     ) { snapshot ->
