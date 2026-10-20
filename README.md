@@ -1,6 +1,6 @@
 > **Protótipo sem criptografia:** novos registros em `clients.json`, `assessments.json`, `forms.json` e `charges.json` ficam legíveis no armazenamento interno do aplicativo. Novos backups são arquivos `.json` sem senha. Dados pessoais reais não devem ser usados nesta fase. Antes de atualizar, mantenha cópia de seus backups antigos.
 
-# EvoluFísico Android — 0.40.1-alpha
+# EvoluFísico Android — 0.100.0-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -136,3 +136,16 @@ Para acelerar o desenvolvimento funcional:
 - A rotina diária dispensa guardar credenciais criptográficas; o agendamento, a pasta SAF e a validação do conteúdo continuam funcionando.
 
 **Compatibilidade:** atualização direta ainda depende da mesma assinatura do APK. A retirada da criptografia **não corrige certificados incompatíveis** nem torna segura uma desinstalação sem backup. Não usar clientes reais sensíveis enquanto o protótipo estiver sem criptografia.
+
+## Fases 41–100 — Atendimentos, metas e serviços
+
+A versão **0.100.0-alpha** introduz três módulos funcionais, com dados guardados em **`operations.json`** local. A API de armazenamento é intencionalmente simples, sem criptografia, para continuar o desenvolvimento do protótipo.
+
+- **Agenda** (Fases 41–60): criar, editar, excluir com confirmação e vincular atendimentos a clientes; registrar data, hora, duração, serviço, observações e situação; concluir/cancelar atendimento; validar campos e conflitos entre intervalos; pesquisar por cliente/serviço/data; filtros Hoje/Futuras/Concluídas/Canceladas; ordenar cronologicamente; indicadores de atendimentos do dia e concluídos. No celular, abra Agenda pela Área de trabalho; em telas largas, pelo menu lateral.
+- **Metas** (Fases 61–80): objetivo individual por cliente, valor inicial, alvo, atual, unidade e prazo; edição e exclusão confirmada; progresso visual até 100%, inclusive metas descendentes; concluir/reabrir; filtrar ativas/concluídas; ordenar por prazo; resumo na ficha individual e no PDF.
+- **Serviços** (Fases 81–91): catálogo com cadastro, edição, exclusão, ativação/desativação, pesquisa, preço em centavos inteiros, duração em minutos e ordenação alfabética.
+- **Integrações** (Fases 92–100): escolha de serviço ativo no agendamento e na cobrança; preenchimento automático da duração/preço; atalhos e indicadores na Área de trabalho; navegação lateral rolável; inclusão de atendimentos, metas e catálogo em backup JSON e restauração de base vazia. Backups antigos sem a seção `operations` continuam legíveis, com listas vazias para os três módulos. Bloqueio de exclusão de cliente com registros vinculados. Testes Kotlin e Android de integração ampliados.
+
+Os nomes das fases representam **incrementos funcionais de um mesmo módulo**, não 60 aplicativos independentes. Os três módulos ainda são protótipos e não oferecem pagamentos bancários, integração com calendário externo, notificações ou sincronização na nuvem.
+
+**Avisos de compatibilidade:** o formato JSON é legível; não utilize informações pessoais sensíveis reais. O APK continua sujeito à mesma assinatura digital exigida pelo Android para atualizar sem desinstalar; a migração por backup não contorna essa exigência.

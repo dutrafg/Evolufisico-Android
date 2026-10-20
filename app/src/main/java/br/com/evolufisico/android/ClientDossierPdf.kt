@@ -90,6 +90,20 @@ object ClientDossierPdf {
                 line(c.dueDateIso + " | " + c.description + " | " + value +
                     if (c.isReceived) " | Recebida" else " | Pendente")
             }
+            y += 15f
+            val appointments=data.operations.appointments.filter { it.clientId==client.id }
+                .sortedByDescending { it.startIso }
+            line("Atendimentos (" + appointments.size + ")", true)
+            appointments.forEach { a ->
+                line(a.startIso.replace('T',' ')+" | "+a.service+" | "+a.status)
+            }
+            y += 15f
+            val goals=data.operations.goals.filter { it.clientId==client.id }
+            line("Metas (" + goals.size + ")", true)
+            goals.forEach { g ->
+                line(g.title+" | Atual "+g.current+" "+g.unit+" | Alvo "+g.target+" "+g.unit+
+                    if(g.completed) " | Concluída" else " | Em andamento")
+            }
             y += 17f
             line("Documento informativo. Não substitui laudo ou diagnóstico.")
             doc.finishPage(page!!)

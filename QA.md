@@ -116,3 +116,16 @@
 - [ ] Migração do banco legada em smartphone com dados antigos: ainda não homologada.
 - [ ] Testar migração dos bancos AES-GCM em dispositivo contendo dados anteriores.
 - [ ] Uso de dados reais sensíveis **não permitido neste protótipo sem criptografia**.
+
+## Testes da versão 0.100.0-alpha — Fases 41–100
+
+- [x] Validar modelos de Agenda: datas, duração, situação, IDs de clientes e conflitos de horários
+- [x] Validar Metas: metas ascendentes/descendentes, zero, percentuais, prazo e valores finitos
+- [x] Validar Serviços: centavos inteiros, limites e duração
+- [x] Interface integrada: atalhos Home, menu lateral rolável, Agenda, Metas e Serviços, ficha de cliente, PDF e cobranças
+- [x] JSON operacional incluído no backup, validação de vínculos e restauração sem sobrescrita; backups antigos sem `operations` aceitos
+- [x] Teste instrumentado estendido: grava/carrega dados operacionais, exporta backup, restaura e confere clientes e serviços
+- [ ] Aprovação da compilação, JUnit, Lint, AAB e testes instrumentados em emulador deste commit — **verificar execução CI**
+- [ ] Testes visuais em smartphone e tablet físicos
+- [ ] Homologação de assinatura de APK release com chave permanente
+- [ ] Protótipo sem criptografia: não utilizar dados sensíveis reais

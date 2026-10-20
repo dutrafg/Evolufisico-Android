@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Home
@@ -68,6 +73,7 @@ import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.forms.EncryptedFormStore
+import br.com.evolufisico.android.ops.OperationalStore
 import br.com.evolufisico.android.backup.SecureBackupManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,6 +89,9 @@ private enum class Section(val title: String, val icon: ImageVector) {
     CLIENTS("Clientes", Icons.Outlined.People),
     ASSESSMENTS("Avaliações", Icons.Outlined.Assessment),
     FORMS("Formulários", Icons.Outlined.Description),
+    AGENDA("Agenda", Icons.Outlined.CalendarMonth),
+    GOALS("Metas", Icons.Outlined.Flag),
+    SERVICES("Serviços", Icons.Outlined.Storefront),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -104,6 +113,7 @@ class MainActivity : ComponentActivity() {
         val assessmentRepository = EncryptedAssessmentStore(applicationContext)
         val chargeRepository = EncryptedChargeStore(applicationContext)
         val formRepository = EncryptedFormStore(applicationContext)
+        val operationalRepository = OperationalStore(applicationContext)
         val backupManager = SecureBackupManager(applicationContext)
         val themePrefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
         setContent {
@@ -119,6 +129,7 @@ class MainActivity : ComponentActivity() {
                     assessmentRepository = assessmentRepository,
                     chargeRepository = chargeRepository,
                     formRepository = formRepository,
+                    operationalRepository = operationalRepository,
                     backupManager = backupManager,
                     onDocumentFlow = { session.externalDocumentFlow(it) },
                     onLock = { session.lock() },
@@ -145,6 +156,7 @@ private fun AppContent(
     assessmentRepository: EncryptedAssessmentStore,
     chargeRepository: EncryptedChargeStore,
     formRepository: EncryptedFormStore,
+    operationalRepository: OperationalStore,
     backupManager: SecureBackupManager,
     onDocumentFlow: (Boolean) -> Unit,
     onLock: () -> Unit,
@@ -167,7 +179,7 @@ private fun AppContent(
             repository.load()
         } }
         result.onSuccess { clients.addAll(it) }
-            .onFailure { storageError = "Não foi possível abrir os dados protegidos: ${it.message}" }
+            .onFailure { storageError = "Não foi possível abrir os dados locais: ${it.message}" }
         loading = false
     }
 
@@ -182,10 +194,12 @@ private fun AppContent(
                         (
                             assessmentRepository.load().any { it.clientId in removedIds } ||
                             chargeRepository.load().any { it.clientId in removedIds } ||
-                            formRepository.load().any { it.clientId in removedIds }
+                            formRepository.load().any { it.clientId in removedIds } ||
+                            operationalRepository.load().appointments.any { it.clientId in removedIds } ||
+                            operationalRepository.load().goals.any { it.clientId in removedIds }
                         )) {
                         throw IllegalArgumentException(
-                            "Cliente possui avaliações, formulários ou cobranças. Exclua os registros vinculados antes de excluir o cliente."
+                            "Cliente possui registros vinculados em avaliações, formulários, agenda, metas ou cobranças. Exclua-os antes de remover o cadastro."
                         )
                     }
                     repository.save(next)
@@ -194,7 +208,7 @@ private fun AppContent(
             result.onSuccess {
                 clients.clear()
                 clients.addAll(next)
-                snackbar.showSnackbar("Dados salvos com segurança neste dispositivo.")
+                snackbar.showSnackbar("Dados salvos neste dispositivo.")
             }.onFailure {
                 if (it is IllegalArgumentException) {
                     snackbar.showSnackbar(it.message ?: "Exclusão bloqueada.")
@@ -239,6 +253,7 @@ private fun AppContent(
         Row(modifier = Modifier.fillMaxSize().padding(insets)) {
             if (useRail) {
                 NavigationRail {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
                     Section.entries.forEach { section ->
                         NavigationRailItem(
                             selected = current == section,
@@ -247,22 +262,26 @@ private fun AppContent(
                             label = { Text(section.title, maxLines = 1) }
                         )
                     }
+                    }
                 }
             }
             Surface(modifier = Modifier.weight(1f).fillMaxSize()) {
             if (loading) {
-                CenterMessage("Abrindo dados locais protegidos...")
+                CenterMessage("Abrindo dados locais...")
             } else if (storageError != null) {
                 CenterMessage(storageError ?: "Erro ao acessar dados")
             } else {
                 when (current) {
-                    Section.HOME -> HomeScreen(clients.size, onNavigate = { current = it })
+                    Section.HOME -> HomeScreen(clients.size, backupManager, onNavigate = { current = it })
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, backupManager,
                         onDocumentFlow, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
                     Section.FORMS -> FormsScreen(clients.toList(), formRepository, onDocumentFlow)
+                    Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.AGENDA)
+                    Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)
+                    Section.SERVICES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.SERVICES)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
-                    Section.BILLING -> BillingScreen(clients.toList(), chargeRepository)
+                    Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
                     Section.SETTINGS -> DataSettingsScreen(
                         darkMode, onDarkModeChange, backupManager, onDocumentFlow, onLock
                     ) { snapshot ->
@@ -278,12 +297,25 @@ private fun AppContent(
 }
 
 @Composable
-private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
+private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onNavigate: (Section) -> Unit) {
+    var overview by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(backupManager) {
+        overview = withContext(Dispatchers.IO) {
+            runCatching { backupManager.summary() }.fold(
+                onSuccess={ s ->
+                    "Agenda: " + s.operations.appointments.count { it.status=="Agendado" } +
+                    " · Metas: " + s.operations.goals.count { !it.completed } +
+                    " · Serviços: " + s.operations.services.count { it.enabled }
+                }, onFailure={ "Indicadores temporariamente indisponíveis" }
+            )
+        }
+    }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Text("Área de trabalho", style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold)
-            Text("Aplicativo nativo • privacidade e dados locais", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Aplicativo nativo • dados locais em desenvolvimento", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            overview?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -300,6 +332,9 @@ private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
         item { FeatureCard("Formulários", "Anamnese por nível, prontidão e hábitos", { onNavigate(Section.FORMS) }) }
         item { FeatureCard("Evolução", "Gráficos por período e relatórios PDF", { onNavigate(Section.EVOLUTION) }) }
         item { FeatureCard("Cobranças", "Recebimentos e pendências por cliente", { onNavigate(Section.BILLING) }) }
+        item { FeatureCard("Agenda", "Planeje e acompanhe atendimentos", { onNavigate(Section.AGENDA) }) }
+        item { FeatureCard("Metas", "Objetivos e evolução por cliente", { onNavigate(Section.GOALS) }) }
+        item { FeatureCard("Serviços", "Catálogo de valores e duração", { onNavigate(Section.SERVICES) }) }
     }
 }
 

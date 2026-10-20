@@ -73,3 +73,22 @@
 - [x] Migrar de forma não destrutiva a leitura dos arquivos cifrados antigos.
 - [x] Gerar backups JSON sem senha e continuar aceitando .efbak antigos com senha.
 - [ ] Revisar a proteção de dados e políticas de criptografia quando o produto estiver funcionalmente completo.
+
+## Fases 41–100 — Operação diária (0.100.0-alpha)
+
+### 41–60: Agenda
+- [x] 41 Modelo Appointment; 42 JSON atômico; 43 cliente vinculado; 44 data ISO; 45 hora; 46 duração validada; 47 serviço; 48 observações; 49 criar; 50 editar
+- [x] 51 exclusão confirmada; 52 concluir; 53 cancelar; 54 filtro Hoje; 55 Futuras; 56 Concluídas; 57 Canceladas; 58 busca por cliente; 59 busca por serviço e data; 60 detecção de conflitos e ordenação cronológica
+
+### 61–80: Metas
+- [x] 61 modelo Goal; 62 vínculo por cliente; 63 criar; 64 editar; 65 alvo; 66 valor inicial; 67 valor atual; 68 unidade; 69 prazo; 70 validação numérica e data
+- [x] 71 barra de progresso; 72 metas descendentes; 73 limite percentual de 0 a 100; 74 concluir; 75 reabrir; 76 filtro Ativas; 77 filtro Concluídas; 78 ordenar por prazo; 79 excluir com confirmação; 80 resumo na ficha e no PDF
+
+### 81–100: Serviços e integração
+- [x] 81 modelo ServiceItem; 82 cadastro; 83 edição; 84 exclusão; 85 ativação; 86 desativação; 87 preço em centavos; 88 duração; 89 busca; 90 filtro de ativos
+- [x] 91 ordem alfabética; 92 escolher serviço no agendamento; 93 preencher duração; 94 escolher serviço na cobrança; 95 preencher preço; 96 atalhos na Área de trabalho; 97 contadores do painel; 98 menu lateral com rolagem; 99 backup/restauração das operações e compatibilidade com backups antigos; 100 validações e testes automatizados
+
+### Próxima homologação
+- [ ] Testar em dispositivos físicos Android 10+ toda a navegação, teclado, formulários, rolagens e geração de PDF
+- [ ] Testar restore sem perder dados, SAF em diferentes provedores e atualização com assinatura idêntica
+- [ ] Criar assinatura release permanente e auditar privacidade antes de usar dados reais

@@ -422,7 +422,7 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.40.1-alpha (JSON local para desenvolvimento)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.100.0-alpha (Fases 41–100)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Backup automático usa WorkManager e JSON sem senha durante a fase alpha. " +
             "Não existe sincronização própria com nuvem ou garantia de execução no minuto exato.",

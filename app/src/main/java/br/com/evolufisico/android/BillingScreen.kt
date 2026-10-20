@@ -17,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +38,8 @@ import br.com.evolufisico.android.billing.Charge
 import br.com.evolufisico.android.billing.ChargeRules
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.data.Client
+import br.com.evolufisico.android.ops.OperationalStore
+import br.com.evolufisico.android.ops.ServiceItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,8 +47,9 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
+fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationalStore: OperationalStore) {
     var charges by remember { mutableStateOf<List<Charge>>(emptyList()) }
+    var services by remember { mutableStateOf<List<ServiceItem>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -59,9 +63,13 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
     var confirmation by remember { mutableStateOf<Charge?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(store) {
-        val result = withContext(Dispatchers.IO) { runCatching { store.load() } }
-        result.onSuccess { charges = it }
+    LaunchedEffect(store,operationalStore) {
+        val result = withContext(Dispatchers.IO) { runCatching {
+            val existing=store.load()
+            val catalog=operationalStore.load().services
+            existing to catalog
+        } }
+        result.onSuccess { charges = it.first;services=it.second }
             .onFailure { error = "Não foi possível abrir as cobranças protegidas. Dados preservados." }
         loading = false
     }
@@ -176,7 +184,7 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
             }
         }
     }
-    if (editor) ChargeEditor(clients, editing, onDismiss = { editor = false }, onSave = {
+    if (editor) ChargeEditor(clients, services, editing, onDismiss = { editor = false }, onSave = {
         val next = if (editing == null) charges + it else
             charges.map { old -> if (old.id == editing?.id) it else old }
         persist(next)
@@ -229,7 +237,8 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
 
 @Composable
 private fun ChargeEditor(
-    clients: List<Client>, existing: Charge?, onDismiss: () -> Unit, onSave: (Charge) -> Unit
+    clients: List<Client>, services:List<ServiceItem>, existing: Charge?,
+    onDismiss: () -> Unit, onSave: (Charge) -> Unit
 ) {
     var clientId by remember(existing?.id) {
         mutableStateOf(existing?.clientId ?: clients.first().id)
@@ -263,6 +272,15 @@ private fun ChargeEditor(
                                 clientId = client.id; choosing = false
                             }
                         )
+                    }
+                }
+                Row(modifier=Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                    services.filter{it.enabled}.take(10).forEach{item ->
+                        AssistChip(onClick={
+                            description=item.name
+                            amount=ChargeRules.formatInput(item.priceCents)
+                        },label={Text(item.name)})
                     }
                 }
                 OutlinedTextField(value = description,

@@ -92,7 +92,7 @@ fun ClientOverviewDialog(
                 Text(client.name, color = MaterialTheme.colorScheme.primary)
                 Column(Modifier.heightIn(max = 475.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (loading) Text("Verificando histórico criptografado…")
+                    if (loading) Text("Carregando histórico local…")
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     snapshot?.let { data ->
                         val assessments = data.assessments.filter { it.clientId == client.id }
@@ -107,6 +107,18 @@ fun ClientOverviewDialog(
                         forms.sortedByDescending { it.dateIso }.take(4).forEach {
                             Text(it.dateIso + " · " +
                                 (FormCatalog.find(it.templateId)?.title ?: "Modelo indisponível"))
+                        }
+                        val appointments = data.operations.appointments.filter { it.clientId == client.id }
+                        val goals = data.operations.goals.filter { it.clientId == client.id }
+                        Text("Agenda: " + appointments.size + " agendamentos",
+                            style = MaterialTheme.typography.titleMedium)
+                        appointments.sortedByDescending { it.startIso }.take(3).forEach {
+                            Text(it.startIso.replace('T',' ')+" · "+it.service+" · "+it.status)
+                        }
+                        Text("Metas: " + goals.size + " cadastradas",
+                            style = MaterialTheme.typography.titleMedium)
+                        goals.filterNot { it.completed }.take(3).forEach {
+                            Text(it.title+" · "+br.com.evolufisico.android.ops.OperationalRules.progress(it)+"%")
                         }
                         Text("Cobranças: " + charges.size, style = MaterialTheme.typography.titleMedium)
                         Text("Pendentes: " + charges.count { !it.isReceived } +

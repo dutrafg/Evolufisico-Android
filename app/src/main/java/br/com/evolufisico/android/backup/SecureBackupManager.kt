@@ -15,6 +15,8 @@ import br.com.evolufisico.android.forms.EncryptedFormStore
 import br.com.evolufisico.android.forms.FormResponse
 import br.com.evolufisico.android.forms.FormsJson
 import br.com.evolufisico.android.forms.FormRules
+import br.com.evolufisico.android.ops.OperationalStore
+import br.com.evolufisico.android.ops.OperationsData
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -27,9 +29,11 @@ data class BackupSnapshot(
     val clients: List<Client>,
     val assessments: List<Assessment>,
     val charges: List<Charge>,
-    val forms: List<FormResponse> = emptyList()
+    val forms: List<FormResponse> = emptyList(),
+    val operations: OperationsData = OperationsData()
 ) {
-    val recordCount: Int get() = clients.size + assessments.size + charges.size + forms.size
+    val recordCount: Int get() = clients.size + assessments.size + charges.size + forms.size +
+        operations.appointments.size + operations.goals.size + operations.services.size
 }
 
 /**
@@ -43,6 +47,7 @@ class SecureBackupManager(context: Context) {
     private val assessmentStore = EncryptedAssessmentStore(context.applicationContext)
     private val chargeStore = EncryptedChargeStore(context.applicationContext)
     private val formStore = EncryptedFormStore(context.applicationContext)
+    private val operationsStore = OperationalStore(context.applicationContext)
 
     /**
      * Se o processo morreu no meio da restauração, limpa os dados parciais.
@@ -55,6 +60,7 @@ class SecureBackupManager(context: Context) {
         require(journal.readText(Charsets.US_ASCII) == "EF_RESTORE_V1") {
             "Estado de restauração inesperado. Dados protegidos."
         }
+        operationsStore.save(OperationsData(),emptySet())
         formStore.save(emptyList(), emptySet())
         chargeStore.save(emptyList(), emptySet())
         assessmentStore.save(emptyList())
@@ -66,7 +72,8 @@ class SecureBackupManager(context: Context) {
     fun export(password: CharArray): ByteArray {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
         val snapshot = BackupSnapshot(
-            clientStore.load(), assessmentStore.load(), chargeStore.load(), formStore.load()
+            clientStore.load(), assessmentStore.load(), chargeStore.load(),
+            formStore.load(), operationsStore.load()
         )
         validate(snapshot)
         val json = JSONObject()
@@ -93,6 +100,7 @@ class SecureBackupManager(context: Context) {
             })
             .put("charges", ChargeJson.toArray(snapshot.charges))
             .put("forms", FormsJson.toArray(snapshot.forms))
+            .put("operations", OperationalStore.encode(snapshot.operations))
         return json.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -134,7 +142,8 @@ class SecureBackupManager(context: Context) {
         check(!journal.exists()) { "Restauração anterior pendente. Reabra o aplicativo para recuperá-la." }
         val snapshot = inspectBackup(input, password)
         require(clientStore.load().isEmpty() && assessmentStore.load().isEmpty()
-            && chargeStore.load().isEmpty() && formStore.load().isEmpty()) {
+            && chargeStore.load().isEmpty() && formStore.load().isEmpty() &&
+            operationsStore.load() == OperationsData()) {
             "Restauração permitida apenas numa base vazia. Nenhum dado foi sobrescrito."
         }
         FileOutputStream(journal).use { out ->
@@ -146,9 +155,11 @@ class SecureBackupManager(context: Context) {
             assessmentStore.save(snapshot.assessments)
             chargeStore.save(snapshot.charges, snapshot.clients.map { it.id }.toSet())
             formStore.save(snapshot.forms, snapshot.clients.map { it.id }.toSet())
+            operationsStore.save(snapshot.operations, snapshot.clients.map { it.id }.toSet())
             check(journal.delete()) { "Falha ao concluir a transação de restauração." }
         } catch (error: Exception) {
             val failures = listOf(
+                runCatching { operationsStore.save(OperationsData(), emptySet()) },
                 runCatching { formStore.save(emptyList(), emptySet()) },
                 runCatching { chargeStore.save(emptyList(), emptySet()) },
                 runCatching { assessmentStore.save(emptyList()) },
@@ -177,7 +188,7 @@ class SecureBackupManager(context: Context) {
     fun summary(): BackupSnapshot {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
         return BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load(),
-            formStore.load()).also { validate(it) }
+            formStore.load(), operationsStore.load()).also { validate(it) }
     }
 
     private fun parse(plaintext: String): BackupSnapshot {
@@ -207,8 +218,10 @@ class SecureBackupManager(context: Context) {
         }
         val forms = if (root.has("forms") && !root.isNull("forms"))
             FormsJson.fromArray(root.getJSONArray("forms")) else emptyList()
+        val ops = if (root.has("operations") && !root.isNull("operations"))
+            OperationalStore.decode(root.getJSONObject("operations")) else OperationsData()
         return BackupSnapshot(clients, assessments,
-            ChargeJson.fromArray(root.getJSONArray("charges")), forms)
+            ChargeJson.fromArray(root.getJSONArray("charges")), forms, ops)
     }
 
     private fun validate(snapshot: BackupSnapshot) {
@@ -233,5 +246,6 @@ class SecureBackupManager(context: Context) {
         require(snapshot.forms.all { FormRules.validate(it, ids) == null }) {
             "Formulários inválidos no backup."
         }
+        OperationalStore.validate(snapshot.operations, ids)
     }
 }
