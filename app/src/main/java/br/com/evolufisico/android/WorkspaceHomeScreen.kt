@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +41,25 @@ data class WorkspaceMetrics(
     val next:List<UpcomingAppointment>
 )
 
+data class WorkspaceAction(val label:String,val route:String)
+
+object WorkspaceAttention {
+    fun actions(metrics:WorkspaceMetrics):List<WorkspaceAction> = buildList {
+        if(metrics.overdueAppointments>0) {
+            add(WorkspaceAction("Revisar "+metrics.overdueAppointments+" atendimento(s) pendente(s)",
+                "AGENDA"))
+        }
+        if(metrics.appointmentsToday>0) {
+            add(WorkspaceAction("Conferir "+metrics.appointmentsToday+" atendimento(s) de hoje",
+                "AGENDA"))
+        }
+        if(metrics.pendingCharges>0) {
+            add(WorkspaceAction("Consultar "+metrics.pendingCharges+" cobrança(s) pendente(s)",
+                "BILLING"))
+        }
+    }
+}
+
 object WorkspaceSummary {
     fun calculate(snapshot:BackupSnapshot, now:LocalDateTime):WorkspaceMetrics {
         val names=snapshot.clients.associate { it.id to it.name }
@@ -48,7 +68,9 @@ object WorkspaceSummary {
             appointmentsToday=snapshot.operations.appointments.count { a ->
                 a.status=="Agendado" && a.startIso.substringBefore('T')==now.toLocalDate().toString()
             },
-            overdueAppointments=AgendaHome.pendingCount(snapshot.operations.appointments,now),
+            overdueAppointments=snapshot.operations.appointments.count { a ->
+                a.status=="Agendado" && a.startIso.substringBefore('T')<now.toLocalDate().toString()
+            },
             pendingCharges=snapshot.charges.count { !it.isReceived },
             next=AgendaHome.next(snapshot.operations.appointments,names,now,3)
         )
@@ -102,11 +124,26 @@ fun WorkspaceHomeScreen(
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                 WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),
                     Modifier.weight(1f),onClick={onNavigate("AGENDA")})
-                WorkspaceMetric("A receber",(metrics?.pendingCharges?:0).toString(),
+                WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),
                     Modifier.weight(1f),onClick={onNavigate("BILLING")})
             }
         }
         if (loading) item { Text("Atualizando indicadores…") }
+        metrics?.let { value ->
+            val attention=WorkspaceAttention.actions(value)
+            if(attention.isNotEmpty()) item {
+                Card(shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Acompanhar hoje",style=MaterialTheme.typography.titleMedium)
+                        attention.forEach { action ->
+                            TextButton(onClick={onNavigate(action.route)}) {
+                                Text(action.label)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         error?.let { issue -> item {
             Text(issue,color=MaterialTheme.colorScheme.error)
         } }

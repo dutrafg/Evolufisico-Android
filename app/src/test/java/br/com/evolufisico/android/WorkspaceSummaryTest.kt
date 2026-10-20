@@ -25,6 +25,12 @@ class WorkspaceSummaryTest {
         assertEquals("a",metrics.next.single().id)
         assertEquals(0,metrics.pendingCharges)
     }
+    @Test fun actionableAlertsShowOnlyNeededShortcuts() {
+        val m=WorkspaceMetrics(4,2,1,3,emptyList())
+        val actions=WorkspaceAttention.actions(m)
+        assertEquals(listOf("AGENDA","AGENDA","BILLING"),actions.map{it.route})
+        assertTrue(WorkspaceAttention.actions(WorkspaceMetrics(0,0,0,0,emptyList())).isEmpty())
+    }
     @Test fun emptyDatabaseProducesZeroes() {
         val m=WorkspaceSummary.calculate(BackupSnapshot(emptyList(),emptyList(),emptyList()),
             LocalDateTime.parse("2026-10-20T09:00"))
