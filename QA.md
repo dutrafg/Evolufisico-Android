@@ -286,3 +286,16 @@
 - [ ] Testar migração/restauração entre pacotes isolados (sem apagar original)
 - [ ] Resolver distribuição oficial com assinatura permanente
 - [ ] Homologar matriz de 600 checkpoints individualmente
+
+
+## Alpha 16–20: testes e acompanhamento
+
+- [x] JUnit para histórico recente e deduplicação
+- [x] JUnit para alteração da ordem dos favoritos
+- [x] JUnit para regras financeiras de data e busca normalizada
+- [x] JUnit para isolamento de cliente por ID
+- [x] JUnit para CSV financeiro, centavos e caracteres de planilha
+- [ ] CI final, Android Lint e testes Android instrumentados da Alpha 20
+- [ ] Teste de navegação e filtros num smartphone Android real
+- [ ] Teste físico de CSV pelo seletor SAF e planilhas
+- [ ] Assinatura de distribuição permanente e instalação sobre APK anterior

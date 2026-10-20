@@ -260,3 +260,14 @@ Veja `docs/ALPHAS_7_A_10_100_ETAPAS.md` para as quatro listas de 100 etapas. Eta
 - **15**: botão Voltar e navegação Android coerentes com módulos e páginas principais.
 
 Consulte [matriz de 600 checkpoints](docs/ALPHAS_10_A_15_100_ETAPAS.md). Este documento NÃO afirma a conclusão de todos os 600 itens. Não apagar a instalação original: `applicationIdSuffix=.alpha15` cria pacote de teste isolado, sem a assinatura oficial permanente. Os dados JSON de prototipagem não são cifrados e requerem dados fictícios.
+
+
+## Alpha 16–20: melhorias operacionais
+
+- **Alpha 16:** módulos recentes, com apenas os três últimos IDs conhecidos e preferências locais.
+- **Alpha 17:** ordenação manual dos quatro favoritos no diretório, sem acrescentar cartões na Home.
+- **Alpha 18:** Cobranças tem filtro Próximos 7 dias, busca normalizada e totais da seleção.
+- **Alpha 19:** filtro de cobranças por cliente, combinável com a busca e situação; usa IDs únicos.
+- **Alpha 20:** CSV das cobranças filtradas via Android SAF, valores em centavos, neutralização básica de fórmulas e testes.
+
+Veja [matriz de 500 checkpoints](docs/ALPHAS_16_A_20_100_ETAPAS.md). A matriz não afirma conclusão integral. O APK debug Alpha 20 usa o identificador independente `br.com.evolufisico.android.alpha20`, sem acesso automático ao banco do original. Preserve o APK antigo e verifique backup antes de migrar. Sem criptografia de registros novos durante esta etapa do protótipo, utilize dados fictícios. Atualização na mesma instalação exige assinatura permanente ainda não configurada.

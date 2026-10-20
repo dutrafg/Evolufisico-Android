@@ -281,3 +281,19 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] Validar restauração JSON/SAF a partir de dados fictícios entre variantes
 
 Veja `docs/ALPHAS_10_A_15_100_ETAPAS.md`.
+
+
+## Alpha 16–20 — novos incrementos
+
+- [x] Alpha 16: seção de histórico de três módulos acessados, validada por ID
+- [x] Alpha 17: favoritos com ordem modificável e persistência local
+- [x] Alpha 18: próximos sete dias, busca sem acentos e soma dos valores selecionados
+- [x] Alpha 19: Cobranças filtradas por cliente e ID individual
+- [x] Alpha 20: exportação financeira CSV pelo seletor de arquivos Android
+- [ ] Aprovar CI, Lint e emulador Android 10 do commit final
+- [ ] Testar interfaces em smartphone, com fonte grande e leitor de tela
+- [ ] Testar exportação e restauração de dados fictícios via SAF
+- [ ] Completar os 100 checkpoints individualmente em cada ciclo
+- [ ] Configurar assinatura release fixa para atualizar sem perder dados
+
+Detalhes em `docs/ALPHAS_16_A_20_100_ETAPAS.md`.
