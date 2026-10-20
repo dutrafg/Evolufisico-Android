@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -91,6 +92,7 @@ private val darkScheme = darkColorScheme(primary = Color(0xFF9CCBFF), secondary 
 
 private enum class Section(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Outlined.Home),
+    MODULES("Módulos", Icons.Outlined.Apps),
     CLIENTS("Clientes", Icons.Outlined.People),
     ASSESSMENTS("Avaliações", Icons.Outlined.Assessment),
     FORMS("Formulários", Icons.Outlined.Description),
@@ -248,8 +250,8 @@ private fun AppContent(
         bottomBar = {
             if (!useRail) NavigationBar {
                 Section.entries.filter {
-                    it in listOf(Section.HOME, Section.CLIENTS, Section.ASSESSMENTS,
-                        Section.FORMS, Section.BILLING)
+                    it in listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
+                        Section.BILLING, Section.MODULES)
                 }.forEach { section ->
                     NavigationBarItem(
                         selected = current == section,
@@ -266,7 +268,10 @@ private fun AppContent(
             if (useRail) {
                 NavigationRail {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Section.entries.forEach { section ->
+                    Section.entries.filter { it in listOf(
+                        Section.HOME, Section.CLIENTS, Section.AGENDA, Section.BILLING,
+                        Section.MODULES, Section.SETTINGS
+                    ) }.forEach { section ->
                         NavigationRailItem(
                             selected = current == section,
                             onClick = { current = section },
@@ -285,6 +290,9 @@ private fun AppContent(
             } else {
                 when (current) {
                     Section.HOME -> HomeScreen(clients.size, backupManager, onNavigate = { current = it })
+                    Section.MODULES -> ModuleDirectoryScreen { key ->
+                        Section.entries.firstOrNull { it.name == key }?.let { current = it }
+                    }
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, backupManager,
                         onDocumentFlow, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
