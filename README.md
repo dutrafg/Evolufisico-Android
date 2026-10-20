@@ -185,3 +185,11 @@ Depois de Indicadores e Comparativos, adicionamos **Busca global** sem rede e **
 - A versão passa a ser `2.0.3-alpha.2` (`versionCode=104`). Mantidos Indicadores, Comparativos e linha do tempo da versão anterior.
 
 O armazenamento continua sem criptografia nesta fase de protótipo. Use apenas dados fictícios.
+
+## Alpha 3 — calendário mensal e ciclo progressivo
+
+**Alpha 3** inicia um novo ciclo funcional 0–100 sem apagar os dados da Alpha 2. Versão Android `3.0.0-alpha.3`, `versionCode=105`, pacote `br.com.evolufisico.android` preservado.
+
+O primeiro incremento acrescenta ao módulo **Agenda** uma visualização mensal iniciada na segunda-feira, com navegação para o mês anterior e seguinte, contagens por estado, indicador de atendimentos ativos por dia, seleção de dia e botão **Ir para hoje**. Ao escolher um dia, os atendimentos são filtrados para aquela data; um novo atendimento começa com o dia pré-preenchido. Os testes unitários cobrem o calendário de outubro, fevereiro de ano bissexto, horários e a separação de atendimentos concluídos e cancelados.
+
+O aplicativo ainda usa JSON local sem criptografia conforme a decisão de desenvolvimento, não devendo receber registros reais sensíveis. O APK de teste permanece sujeito à compatibilidade de assinatura exigida pelo Android.

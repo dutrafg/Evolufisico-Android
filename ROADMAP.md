@@ -177,3 +177,19 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [x] APK debug extraído com ZIP íntegro e SHA-256 registrado em QA.md
 - [ ] Homologação manual de Anotações/Busca/Dados e Privacidade em smartphone real
 - [ ] Assinatura release permanente para permitir atualização entre versões sem troca do certificado
+
+## Alpha 3 — novo ciclo de desenvolvimento (0–100)
+
+- [x] 0: preservar a estrutura e os dados de Alpha 2, iniciar versionamento Alpha 3
+- [x] 1–5: modelo puro de calendário com segunda-feira inicial, semanas completas e dias de cada mês
+- [x] 6–9: totalização por estado, filtro de dia e proteção contra contagem de cancelados como ativos
+- [x] 10–13: calendário Compose responsivo, botões mês anterior/próximo e hoje, seleção e limpeza
+- [x] 14–16: calendário ligado à Agenda, criação de atendimento com data selecionada e filtros existentes preservados
+- [x] 17–20: testes de fevereiro bissexto, outubro, horários, seleção e regressões
+- [ ] 21–40: produtividade da agenda (agendamento recorrente com validação e cancelamento)
+- [ ] 41–60: organização financeira e indicadores por mês/cliente
+- [ ] 61–80: integração de formulários, histórico e relatórios operacionais
+- [ ] 81–100: acessibilidade, responsividade e QA automatizado de todos os fluxos
+- [ ] Validação manual em smartphone real, restauração a partir de backup externo e atualização assinada de forma permanente
+
+**Ciclos seguintes:** Alpha 4, Alpha 5 etc. somente conforme necessidades funcionais reais. A transição para **Beta** será baseada nos critérios definidos em `BETA_CRITERIOS.md`, não numa contagem arbitrária de etapas.

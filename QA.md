@@ -188,3 +188,13 @@
 - [ ] Testes manuais de experiência real no celular: Configurações, exportação SAF, Agenda, Busca e Anotações
 - [ ] APK **debug** não garante compatibilidade de assinatura com builds anteriores; não desinstalar sem backup externo validado
 - [ ] Armazenamento JSON permanece sem criptografia nesta fase de desenvolvimento
+
+## Alpha 3 — Agenda calendário (3.0.0-alpha.3)
+
+- [x] Calendário mensal com dias e semanas corretos e contagem de atendimentos
+- [x] Seleção de dia e pré-preenchimento do próximo atendimento, sem alterar o JSON existente
+- [x] Testes JUnit de mês, ano bissexto, estados e filtro de data
+- [ ] CI / compilação APK, Lint e testes JUnit na versão 3.0.0-alpha.3
+- [ ] Testes instrumentados Android 10 da versão 3.0.0-alpha.3
+- [ ] Teste visual do calendário no smartphone, diferentes tamanhos de tela e contraste
+- [ ] Homologação de backup externo, atualização com assinatura e segurança de dados

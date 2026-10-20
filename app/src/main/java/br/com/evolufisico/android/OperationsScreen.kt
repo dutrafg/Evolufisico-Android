@@ -81,6 +81,7 @@ private fun AppointmentsModule(
 ) {
     var search by remember { mutableStateOf("") }
     var period by remember { mutableStateOf("Todas") }
+    var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
     var editing by remember { mutableStateOf<Appointment?>(null) }
     var editingOpen by remember { mutableStateOf(false) }
     var remove by remember { mutableStateOf<Appointment?>(null) }
@@ -89,6 +90,7 @@ private fun AppointmentsModule(
     val visible=all.filter { a ->
         val matchPeriod=when(period) {
             "Hoje" -> a.startIso.startsWith(today)
+            "Dia" -> selectedDay != null && a.startIso.startsWith(selectedDay.toString())
             "Futuras" -> a.startIso.substringBefore('T')>=today && a.status=="Agendado"
             "Concluídas" -> a.status=="Concluído"
             "Canceladas" -> a.status=="Cancelado"
@@ -107,13 +109,19 @@ private fun AppointmentsModule(
                 " · Concluídos: "+all.count{it.status=="Concluído"})
         }
         item {
+            AgendaCalendarPanel(all,selectedDay,onSelect={ day ->
+                selectedDay=day
+                period=if(day==null) "Todas" else "Dia"
+            })
+        }
+        item {
             Button(modifier=Modifier.fillMaxWidth(),enabled=!busy&&clients.isNotEmpty(),
                 onClick={ editing=null;editingOpen=true }) { Text("Novo atendimento") }
             if(clients.isEmpty()) Text("Cadastre um cliente antes de agendar.")
             OutlinedTextField(search,{search=it.take(80)},modifier=Modifier.fillMaxWidth(),
                 label={Text("Buscar cliente, serviço ou data")},singleLine=true)
             Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                listOf("Todas","Hoje","Futuras","Concluídas","Canceladas").forEach { c ->
+                listOf("Todas","Hoje","Dia","Futuras","Concluídas","Canceladas").forEach { c ->
                     FilterChip(selected=period==c,onClick={period=c},label={Text(c)})
                 }
             }
@@ -145,7 +153,7 @@ private fun AppointmentsModule(
             }
         }
     }
-    if(editingOpen) AppointmentEditor(clients,services,editing,all,
+    if(editingOpen) AppointmentEditor(clients,services,editing,all,selectedDay,
         onDismiss={editingOpen=false},onSave={
             save(if(editing==null) all+it else all.map{old->if(old.id==it.id)it else old})
             editingOpen=false
@@ -163,10 +171,12 @@ private fun AppointmentsModule(
 @Composable
 private fun AppointmentEditor(
     clients:List<Client>,services:List<ServiceItem>,current:Appointment?,existing:List<Appointment>,
+    preferredDay:LocalDate?,
     onDismiss:()->Unit,onSave:(Appointment)->Unit
 ) {
     var clientId by remember(current?.id){mutableStateOf(current?.clientId?:clients.first().id)}
-    var date by remember(current?.id){mutableStateOf(current?.startIso?.substringBefore('T')?:LocalDate.now().toString())}
+    var date by remember(current?.id){mutableStateOf(current?.startIso?.substringBefore('T')?:
+        preferredDay?.toString()?:LocalDate.now().toString())}
     var time by remember(current?.id){mutableStateOf(current?.startIso?.substringAfter('T')?:"14:00")}
     var mins by remember(current?.id){mutableStateOf((current?.durationMinutes?:60).toString())}
     var service by remember(current?.id){mutableStateOf(current?.service?:"Avaliação física")}
