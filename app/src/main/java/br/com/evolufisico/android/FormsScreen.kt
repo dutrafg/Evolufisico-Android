@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -70,6 +71,8 @@ fun FormsScreen(
     var deleting by remember { mutableStateOf<FormResponse?>(null) }
     var pendingExport by remember { mutableStateOf<FormResponse?>(null) }
     var choosingClient by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var filter by remember { mutableStateOf("Todos") }
 
     LaunchedEffect(store) {
         val result = withContext(Dispatchers.IO) { runCatching { store.load() } }
@@ -130,8 +133,14 @@ fun FormsScreen(
     if (fatal != null) { FormNotice(fatal!!); return }
     if (clients.isEmpty()) { FormNotice("Cadastre um cliente para preencher formulários."); return }
 
-    val visible = records.filter { it.clientId == selectedId }
-        .sortedWith(compareByDescending<FormResponse> { it.dateIso }.thenByDescending { it.id })
+    val visible = records.filter { record ->
+        val model = FormCatalog.find(record.templateId)
+        record.clientId == selectedId &&
+            (filter == "Todos" || (filter == "Anamneses" && record.templateId.startsWith("anamnese")) ||
+                (filter == "Outros" && !record.templateId.startsWith("anamnese"))) &&
+            (query.isBlank() || (model?.title ?: "").contains(query.trim(),ignoreCase = true) ||
+                record.dateIso.contains(query.trim()))
+    }.sortedWith(compareByDescending<FormResponse> { it.dateIso }.thenByDescending { it.id })
 
     LazyColumn(modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -156,12 +165,25 @@ fun FormsScreen(
             }
         }
         item {
+            OutlinedTextField(
+                value = query, onValueChange = { query = it.take(80) },
+                label = { Text("Buscar modelo ou data (AAAA-MM-DD)") },
+                modifier = Modifier.fillMaxWidth(), singleLine = true
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Todos", "Anamneses", "Outros").forEach { choice ->
+                    FilterChip(selected = choice == filter, onClick = { filter = choice },
+                        label = { Text(choice) })
+                }
+            }
+        }
+        item {
             Button(modifier = Modifier.fillMaxWidth(), enabled = !saving, onClick = {
                 editing = null
                 editingOpen = true
             }) { Text("Novo formulário") }
             status?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            Text("Histórico · " + visible.size + " registros",
+            Text("Histórico filtrado · " + visible.size + " registros",
                 style = MaterialTheme.typography.titleMedium)
         }
         if (visible.isEmpty()) {

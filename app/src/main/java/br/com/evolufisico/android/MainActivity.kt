@@ -257,7 +257,8 @@ private fun AppContent(
             } else {
                 when (current) {
                     Section.HOME -> HomeScreen(clients.size, onNavigate = { current = it })
-                    Section.CLIENTS -> ClientsScreen(clients.toList(), saving, onPersist = ::persist)
+                    Section.CLIENTS -> ClientsScreen(clients.toList(), saving, backupManager,
+                        onDocumentFlow, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
                     Section.FORMS -> FormsScreen(clients.toList(), formRepository, onDocumentFlow)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
@@ -313,10 +314,14 @@ private fun FeatureCard(title: String, subtitle: String, action: () -> Unit) {
 }
 
 @Composable
-private fun ClientsScreen(clients: List<Client>, saving: Boolean, onPersist: (List<Client>) -> Unit) {
+private fun ClientsScreen(
+    clients: List<Client>, saving: Boolean, backupManager: SecureBackupManager,
+    onDocumentFlow: (Boolean) -> Unit, onPersist: (List<Client>) -> Unit
+) {
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Client?>(null) }
     var deleting by remember { mutableStateOf<Client?>(null) }
+    var overview by remember { mutableStateOf<Client?>(null) }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween) {
@@ -334,6 +339,9 @@ private fun ClientsScreen(clients: List<Client>, saving: Boolean, onPersist: (Li
                         Column(Modifier.padding(16.dp)) {
                             Text(client.name, style = MaterialTheme.typography.titleMedium)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { overview = client }) {
+                                    Text("Ficha")
+                                }
                                 TextButton(enabled = !saving, onClick = { editing = client; editorOpen = true }) {
                                     Text("Editar")
                                 }
@@ -359,6 +367,9 @@ private fun ClientsScreen(clients: List<Client>, saving: Boolean, onPersist: (Li
                 editorOpen = false
             }
         )
+    }
+    overview?.let { client ->
+        ClientOverviewDialog(client, backupManager, onDocumentFlow, onDismiss = { overview = null })
     }
     deleting?.let { client ->
         AlertDialog(

@@ -92,6 +92,43 @@ fun DataSettingsScreen(
         }
     }
 
+    val inspectDocument = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        onDocumentFlow(false)
+        val credential = pendingPassword
+        pendingPassword = null
+        password = ""
+        if (uri != null && credential != null) {
+            busy = true
+            scope.launch {
+                val check = withContext(Dispatchers.IO) {
+                    try {
+                        runCatching {
+                            val input = context.contentResolver.openInputStream(uri)
+                                ?: error("Não foi possível abrir o backup escolhido.")
+                            backupManager.inspectBackup(input, credential)
+                        }
+                    } finally { credential.fill('\u0000') }
+                }
+                message = check.fold(
+                    onSuccess = { data ->
+                        "Backup íntegro e senha correta: " +
+                            "${data.clients.size} clientes, " +
+                            "${data.assessments.size} avaliações, " +
+                            "${data.forms.size} formulários e " +
+                            "${data.charges.size} cobranças. Nada foi restaurado."
+                    },
+                    onFailure = {
+                        "Backup não pôde ser verificado: " +
+                            (it.localizedMessage ?: "Senha, formato ou integridade inválidos.")
+                    }
+                )
+                busy = false
+            }
+        } else credential?.fill('\u0000')
+    }
+
     val openDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -231,6 +268,19 @@ fun DataSettingsScreen(
             onClick = { exportToFolder() }, modifier = Modifier.fillMaxWidth()
         ) { Text("Salvar novo backup na pasta") }
         HorizontalDivider()
+        Text("Verificar backup antes de atualizar", style = MaterialTheme.typography.titleMedium)
+        Text("Verifica o arquivo e sua senha sem alterar o banco do dispositivo. " +
+            "É recomendado antes de atualizar ou reinstalar o aplicativo.",
+            style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(
+            enabled = !busy && password.length >= 10,
+            onClick = {
+                pendingPassword = password.toCharArray()
+                onDocumentFlow(true)
+                inspectDocument.launch(arrayOf("*/*"))
+            }, modifier = Modifier.fillMaxWidth()
+        ) { Text("Verificar arquivo .efbak") }
+        HorizontalDivider()
         Text("Restaurar arquivo de backup", style = MaterialTheme.typography.titleMedium)
         Text(
             "Por segurança, a restauração só é permitida se clientes, avaliações, formulários e cobranças locais " +
@@ -262,7 +312,7 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.15.0-alpha (Fases 11 a 15)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.20.0-alpha (Fases 16 a 20)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Sem backup automático: a senha nunca é guardada e os backups são iniciados manualmente. " +
             "O aplicativo não possui integração própria com nuvem.",

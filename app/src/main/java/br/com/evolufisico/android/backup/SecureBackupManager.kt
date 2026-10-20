@@ -101,15 +101,19 @@ class SecureBackupManager(context: Context) {
      * Descriptografa e valida tudo ANTES de alterar o banco.
      * NUNCA mistura dados nem sobrescreve base preexistente.
      */
+    /**
+     * Verifica um arquivo .efbak SEM escrever em qualquer banco.
+     * Permite conferir o backup antes de atualizar ou reinstalar.
+     */
     @Synchronized
-    fun restore(input: InputStream, password: CharArray): BackupSnapshot {
-        check(!journal.exists()) { "Restauração anterior pendente. Reabra o aplicativo para recuperá-la." }
+    fun inspectBackup(input: InputStream, password: CharArray): BackupSnapshot {
+        check(!journal.exists()) { "Há restauração pendente de recuperação." }
         val encrypted = input.use { source ->
             val target = ByteArrayOutputStream()
             val buffer = ByteArray(8192)
             while (true) {
                 val read = source.read(buffer)
-                if (read == -1) break
+                if (read < 0) break
                 target.write(buffer, 0, read)
                 require(target.size() <= 16 * 1024 * 1024) {
                     "Arquivo de backup excede 16 MB."
@@ -118,9 +122,15 @@ class SecureBackupManager(context: Context) {
             target.toByteArray()
         }
         val plain = PortableBackupCrypto.decrypt(encrypted, password)
-        val snapshot = try { parse(String(plain, Charsets.UTF_8)) }
-            finally { plain.fill(0) }
-        validate(snapshot)
+        try {
+            return parse(String(plain, Charsets.UTF_8)).also { validate(it) }
+        } finally { plain.fill(0); encrypted.fill(0) }
+    }
+
+    @Synchronized
+    fun restore(input: InputStream, password: CharArray): BackupSnapshot {
+        check(!journal.exists()) { "Restauração anterior pendente. Reabra o aplicativo para recuperá-la." }
+        val snapshot = inspectBackup(input, password)
         require(clientStore.load().isEmpty() && assessmentStore.load().isEmpty()
             && chargeStore.load().isEmpty() && formStore.load().isEmpty()) {
             "Restauração permitida apenas numa base vazia. Nenhum dado foi sobrescrito."

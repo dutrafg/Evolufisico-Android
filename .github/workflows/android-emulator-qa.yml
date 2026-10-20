@@ -2,16 +2,10 @@ name: Android Emulator QA (manual)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'app/src/**'
-      - 'app/build.gradle.kts'
 
 jobs:
   instrumented:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
     permissions:
       contents: read
     steps:

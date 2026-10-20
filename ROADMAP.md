@@ -1,34 +1,35 @@
-# Roadmap — EvoluFísico Android
+# EvoluFísico Android — Roadmap
 
-## Fases 1 a 10
-- [x] Clientes, avaliações, evolução e PDF, cobranças, backup portátil
-- [x] Autenticação Android, tema, política de capturas por versão, atualizador APK via GitHub Releases/SAF
-- [x] Checagens de vínculos, anamnese básica, resumos financeiros e layout responsivo
-- [ ] Distribuição assinada com chave estável, homologação Android físico e ensaios de recuperação
+## Fases 1 a 15 (implementadas em versões anteriores)
+- [x] Clientes, avaliações, formulários, evolução, PDFs, cobranças, backup criptografado e autenticação Android
+- [x] IV gerado pelo Android Keystore ao salvar os quatro bancos, teste instrumentado Android 10
+- [x] Formulários por iniciante/intermediário/avançado, prontidão e hábitos
+- [ ] Migração Web, protocolos clínicos adicionais, homologação em aparelhos reais
 
-## Fase 11 — Formulários
-- [x] Módulo próprio no menu, cadastro de registros por ID do cliente e histórico
-- [x] Edição e exclusão com confirmação
-- [x] Campos de dados estruturados, validação e arquivo separado
+## Fase 16 — Busca de formulários
+- [x] Filtros Todos/Anamneses/Outros e pesquisa local por nome do modelo ou data
+- [ ] Personalização de modelos mediante gestão de versões de perguntas
 
-## Fase 12 — Templates
-- [x] Anamnese para iniciantes, intermediários e avançados, cada uma com exemplos
-- [x] Modelos de prontidão e hábitos, perguntas obrigatórias e seleções Sim/Não
-- [ ] Editor de templates personalizados e assinatura digital de consentimento juridicamente validada
+## Fase 17 — Ficha de cliente
+- [x] Resumo consolidado somente leitura por cliente em Clientes > Ficha
+- [x] Listagens resumidas de avaliações, formulários e situação financeira
+- [ ] Calendário individual completo e navegação direta para edição de outros módulos
 
-## Fase 13 — Relatórios de formulários
-- [x] Geração de PDF independente do painel, paginação e exportação pelo SAF
-- [ ] Testes instrumentados visuais de renderização, integração de logotipo e PDF com senha
+## Fase 18 — Ficha PDF
+- [x] Exportação via SAF de PDF paginado para o cliente selecionado
+- [x] Medidas existentes e histórico financeiro descritivo, sem diagnóstico
+- [ ] PDF com senha, assinatura e testes visuais em aparelhos
 
-## Fase 14 — Backup
-- [x] AES-GCM com Keystore para `forms.enc`, escrita atômica
-- [x] Incluir formulários em backup `.efbak`, restauração em base vazia e proteção contra exclusão de cliente
-- [x] Retrocompatibilidade com backups sem formulários
-- [ ] Testar falha abrupta/restauração em Android real, backup agendado seguro
+## Fase 19 — Financeiro
+- [x] Busca de cobrança e filtro de vencidas
+- [x] Edição/exclusão de pendentes e estorno confirmado de recebimentos
+- [x] Resumos mensais por competência de vencimento/recebimento em centavos
+- [ ] Pagamentos parciais, trilha auditável de estornos e integração bancária
 
-## Fase 15 — Segurança e testes
-- [x] Consertar o uso de IV fornecido pelo app nos três bancos antigos, agora IV do Android Keystore
-- [x] Manter formato de arquivo/nonce para leitura de registros já gravados
-- [x] Estender teste instrumentado para gravar/ler formulários e restaurar backup com todos os módulos
-- [ ] Executar teste instrumentado no emulador e validar o erro original no aparelho do usuário
-- [ ] Auditoria externa de segurança e homologação LGPD
+## Fase 20 — Segurança, backup e QA
+- [x] Verificador de backup portátil sem escrita e com validação de integridade/senha
+- [x] Testes instrumentados de inspeção não destrutiva e testes unitários financeiros
+- [ ] Auditoria LGPD e segurança, testes físicos de atualização e restauração
+- [ ] Assinatura permanente dos APKs de distribuição e política de recuperação
+
+**Status:** versão alpha. Não utilizar dados reais de clientes antes da homologação final.

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -49,6 +51,10 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
     var error by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("Pendentes") }
+    var search by remember { mutableStateOf("") }
+    var editing by remember { mutableStateOf<Charge?>(null) }
+    var deleting by remember { mutableStateOf<Charge?>(null) }
+    var reversing by remember { mutableStateOf<Charge?>(null) }
     var editor by remember { mutableStateOf(false) }
     var confirmation by remember { mutableStateOf<Charge?>(null) }
     val scope = rememberCoroutineScope()
@@ -75,8 +81,16 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
     if (error != null) { BillingNotice(error!!); return }
 
     val clientNames = clients.associate { it.id to it.name }
-    val visible = charges.filter {
-        status == "Todas" || if (status == "Pendentes") !it.isReceived else it.isReceived
+    val visible = charges.filter { charge ->
+        val statusMatches = when (status) {
+            "Pendentes" -> !charge.isReceived
+            "Atrasadas" -> ChargeRules.isOverdue(charge)
+            "Recebidas" -> charge.isReceived
+            else -> true
+        }
+        statusMatches && (search.isBlank() ||
+            charge.description.contains(search.trim(),ignoreCase = true) ||
+            (clientNames[charge.clientId] ?: "").contains(search.trim(),ignoreCase = true))
     }.sortedWith(compareBy<Charge> { it.dueDateIso }.thenBy { it.id })
     LazyColumn(modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -95,6 +109,10 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
                         fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     Text("Recebido: ${reais(ChargeRules.total(charges,true))}")
                     val month = java.time.YearMonth.now()
+                    Text("No mês atual: " + month.monthValue.toString().padStart(2,'0') + "/" + month.year)
+                    Text("Vence no mês: " + reais(ChargeRules.monthlyTotal(charges,false,month)))
+                    Text("Recebido no mês: " + reais(ChargeRules.monthlyTotal(charges,true,month)))
+                    val month = java.time.YearMonth.now()
                     Text("Mês atual (${month.monthValue.toString().padStart(2,'0')}/${month.year}):",
                         style = MaterialTheme.typography.labelLarge)
                     Text("Vence no mês: ${reais(ChargeRules.monthlyTotal(charges,false,month))}")
@@ -104,14 +122,22 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
         }
         item {
             Button(enabled = !busy && clients.isNotEmpty(),
-                onClick = { editor = true }, modifier = Modifier.fillMaxWidth()) {
+                onClick = { editing = null; editor = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Nova cobrança")
             }
             if (clients.isEmpty()) Text("Cadastre um cliente antes de criar cobranças.")
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Pendentes", "Recebidas", "Todas").forEach { choice ->
+            OutlinedTextField(
+                value = search, onValueChange = { search = it.take(80) },
+                modifier = Modifier.fillMaxWidth(), singleLine = true,
+                label = { Text("Buscar cliente ou serviço") }
+            )
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf("Pendentes", "Atrasadas", "Recebidas", "Todas").forEach { choice ->
                     FilterChip(selected = status == choice, onClick = { status = choice },
                         label = { Text(choice) })
                 }
@@ -128,22 +154,67 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
                     Text(reais(charge.amountCents), color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.titleMedium)
                     Text("Vencimento: ${displayDate(charge.dueDateIso)}")
-                    Text(if (charge.isReceived)
-                        "Recebido em ${displayDate(charge.receivedDateIso!!)}" else "Pendente",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (!charge.isReceived) {
-                        Button(enabled = !busy, onClick = { confirmation = charge }) {
-                            Text("Receber")
+                    Text(when {
+                        charge.isReceived -> "Recebido em " + displayDate(charge.receivedDateIso!!)
+                        ChargeRules.isOverdue(charge) -> "Atrasada"
+                        else -> "Pendente"
+                    }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        if (!charge.isReceived) {
+                            TextButton(enabled = !busy, onClick = {
+                                editing = charge; editor = true
+                            }) { Text("Editar") }
+                            TextButton(enabled = !busy, onClick = { deleting = charge }) {
+                                Text("Excluir")
+                            }
+                            Button(enabled = !busy, onClick = { confirmation = charge }) {
+                                Text("Receber")
+                            }
+                        } else {
+                            OutlinedButton(enabled = !busy, onClick = { reversing = charge }) {
+                                Text("Estornar recebimento")
+                            }
                         }
                     }
                 }
             }
         }
     }
-    if (editor) ChargeEditor(clients, onDismiss = { editor = false }, onSave = {
-        persist(charges + it)
+    if (editor) ChargeEditor(clients, editing, onDismiss = { editor = false }, onSave = {
+        val next = if (editing == null) charges + it else
+            charges.map { old -> if (old.id == editing?.id) it else old }
+        persist(next)
         editor = false
     })
+    deleting?.let { charge ->
+        AlertDialog(onDismissRequest = { deleting = null },
+            title = { Text("Excluir cobrança pendente?") },
+            text = { Text("Excluir o lançamento: " + charge.description + "?") },
+            confirmButton = {
+                Button(onClick = {
+                    if (!charge.isReceived) persist(charges.filterNot { it.id == charge.id })
+                    deleting = null
+                }) { Text("Excluir") }
+            },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancelar") } }
+        )
+    }
+    reversing?.let { charge ->
+        AlertDialog(onDismissRequest = { reversing = null },
+            title = { Text("Confirmar estorno?") },
+            text = { Text("O lançamento voltará ao estado pendente. Este estorno não é bancário.") },
+            confirmButton = {
+                Button(onClick = {
+                    if (charge.isReceived) persist(charges.map {
+                        if (it.id == charge.id) it.copy(receivedDateIso = null) else it
+                    })
+                    reversing = null
+                }) { Text("Confirmar estorno") }
+            },
+            dismissButton = { TextButton(onClick = { reversing = null }) { Text("Cancelar") } }
+        )
+    }
     confirmation?.let { charge ->
         AlertDialog(onDismissRequest = { confirmation = null },
             title = { Text("Confirmar recebimento?") },
@@ -162,18 +233,29 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
 }
 
 @Composable
-private fun ChargeEditor(clients: List<Client>, onDismiss: () -> Unit, onSave: (Charge) -> Unit) {
-    var clientId by remember { mutableStateOf(clients.first().id) }
-    var description by remember { mutableStateOf("Avaliação física") }
-    var amount by remember { mutableStateOf("25,00") }
-    var due by remember { mutableStateOf(LocalDate.now().toString()) }
+private fun ChargeEditor(
+    clients: List<Client>, existing: Charge?, onDismiss: () -> Unit, onSave: (Charge) -> Unit
+) {
+    var clientId by remember(existing?.id) {
+        mutableStateOf(existing?.clientId ?: clients.first().id)
+    }
+    var description by remember(existing?.id) {
+        mutableStateOf(existing?.description ?: "Avaliação física")
+    }
+    var amount by remember(existing?.id) {
+        mutableStateOf(existing?.let { ChargeRules.formatInput(it.amountCents) } ?: "25,00")
+    }
+    var due by remember(existing?.id) {
+        mutableStateOf(existing?.dueDateIso ?: LocalDate.now().toString())
+    }
     var issue by remember { mutableStateOf<String?>(null) }
     var choosing by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova cobrança") },
+        title = { Text(if (existing == null) "Nova cobrança" else "Editar cobrança pendente") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 TextButton(onClick = { choosing = true }) {
                     Text("Cliente: ${clients.firstOrNull { it.id == clientId }?.name ?: "Selecione"}")
                 }
@@ -206,7 +288,10 @@ private fun ChargeEditor(clients: List<Client>, onDismiss: () -> Unit, onSave: (
             Button(onClick = {
                 val cents = ChargeRules.parseReais(amount)
                 if (cents == null) { issue = "Informe um valor válido."; return@Button }
-                val charge = Charge.new(clientId, description, cents, due.trim())
+                val charge = if (existing == null)
+                    Charge.new(clientId, description, cents, due.trim())
+                else existing.copy(clientId = clientId, description = description.trim(),
+                    amountCents = cents, dueDateIso = due.trim())
                 val validation = ChargeRules.validate(charge, clients.map { it.id }.toSet())
                 if (validation != null) issue = validation else onSave(charge)
             }) { Text("Salvar") }

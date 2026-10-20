@@ -31,6 +31,10 @@ object ChargeRules {
         val cents = (parts.getOrNull(1) ?: "").padEnd(2, '0').toLongOrNull() ?: return null
         return (reais * 100L + cents).takeIf { it in 1..LIMIT_CENTS }
     }
+    fun formatInput(cents: Long): String {
+        require(cents >= 0)
+        return (cents / 100).toString() + "," + (cents % 100).toString().padStart(2, '0')
+    }
     fun validate(charge: Charge, clients: Set<String>): String? {
         if (charge.id.isBlank() || charge.clientId !in clients) return "Cliente inválido."
         if (charge.description.isBlank() || charge.description.length > 120)
@@ -51,6 +55,12 @@ object ChargeRules {
         month: java.time.YearMonth): Long =
         items.filter { it.isReceived == received }.filter { item ->
             val date = if (received) item.receivedDateIso else item.dueDateIso
+            date != null && java.time.YearMonth.from(LocalDate.parse(date)) == month
+        }.sumOf { it.amountCents }
+
+    fun monthlyTotal(items: List<Charge>, received: Boolean, month: java.time.YearMonth): Long =
+        items.filter { it.isReceived == received }.filter { entry ->
+            val date = if (received) entry.receivedDateIso else entry.dueDateIso
             date != null && java.time.YearMonth.from(LocalDate.parse(date)) == month
         }.sumOf { it.amountCents }
 

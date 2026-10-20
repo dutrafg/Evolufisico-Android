@@ -42,6 +42,16 @@ class ChargeRulesTest {
         assertEquals(0L, ChargeRules.monthlyTotal(listOf(pending,received),true,
             java.time.YearMonth.of(2026,9)))
     }
+    @Test fun monthlyAndEditingReversalAreExact() {
+        val month = java.time.YearMonth.of(2026,10)
+        val a = Charge("id-a","c","Avaliação",2500,"2026-10-25")
+        val b = Charge("id-b","c","Sessão",1900,"2026-09-30","2026-10-01")
+        assertEquals(2500L, ChargeRules.monthlyTotal(listOf(a,b),false,month))
+        assertEquals(1900L, ChargeRules.monthlyTotal(listOf(a,b),true,month))
+        assertEquals("25,00", ChargeRules.formatInput(a.amountCents))
+        assertEquals(a.id, a.copy(amountCents = 3000).id)
+        assertFalse(b.copy(receivedDateIso = null).isReceived)
+    }
     @Test fun totalsAreSeparated() {
         val a = Charge("1","a","A",2000,"2026-10-01")
         val b = Charge("2","a","B",1000,"2026-10-01", "2026-10-02")

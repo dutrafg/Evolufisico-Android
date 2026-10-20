@@ -61,6 +61,9 @@ class StorageIntegrationTest {
             assertEquals(form.answers, forms.load().first().answers)
             assertEquals(1, clients.load().size)
             val data = manager.export(password)
+            val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
+            assertEquals(4, inspected.recordCount)
+            assertEquals(1, clients.load().size) // Verificação não pode alterar o banco
             assertFalse(String(data, Charsets.ISO_8859_1).contains("Pessoa de Teste"))
             forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
