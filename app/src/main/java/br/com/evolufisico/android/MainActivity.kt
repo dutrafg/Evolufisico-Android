@@ -1,6 +1,7 @@
 package br.com.evolufisico.android
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -82,8 +83,11 @@ private enum class Section(val title: String, val icon: ImageVector) {
 }
 
 class MainActivity : ComponentActivity() {
+    private lateinit var session: DeviceSessionGate
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        session = DeviceSessionGate(this)
         val repository = EncryptedClientStore(applicationContext)
         val assessmentRepository = EncryptedAssessmentStore(applicationContext)
         val chargeRepository = EncryptedChargeStore(applicationContext)
@@ -92,19 +96,31 @@ class MainActivity : ComponentActivity() {
         setContent {
             var darkMode by remember { mutableStateOf(themePrefs.getBoolean("dark_mode", false)) }
             MaterialTheme(colorScheme = if (darkMode) darkScheme else lightScheme) {
+                if (!session.unlocked) {
+                    DeviceGateScreen(session.message,
+                        onUnlock = { session.requestUnlock() },
+                        onSettings = { session.openSecuritySettings() })
+                } else {
                 AppContent(
                     repository = repository,
                     assessmentRepository = assessmentRepository,
                     chargeRepository = chargeRepository,
                     backupManager = backupManager,
+                    onDocumentFlow = { session.externalDocumentFlow(it) },
+                    onLock = { session.lock() },
                     darkMode = darkMode,
                     onDarkModeChange = {
                         darkMode = it
                         themePrefs.edit().putBoolean("dark_mode", it).apply()
                     }
                 )
+                }
             }
         }
+    }
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) session.backgrounded()
     }
 }
 
@@ -115,6 +131,8 @@ private fun AppContent(
     assessmentRepository: EncryptedAssessmentStore,
     chargeRepository: EncryptedChargeStore,
     backupManager: SecureBackupManager,
+    onDocumentFlow: (Boolean) -> Unit,
+    onLock: () -> Unit,
     darkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit
 ) {
@@ -127,7 +145,7 @@ private fun AppContent(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(repository) {
-        val result = withContext(Dispatchers.IO) { runCatching { repository.load() } }
+        val result = withContext(Dispatchers.IO) { runCatching { backupManager.recoverInterruptedRestore(); repository.load() } }
         result.onSuccess { clients.addAll(it) }
             .onFailure { storageError = "Não foi possível abrir os dados protegidos: ${it.message}" }
         loading = false
@@ -146,7 +164,7 @@ private fun AppContent(
                             chargeRepository.load().any { it.clientId in removedIds }
                         )) {
                         throw IllegalArgumentException(
-                            "Este cliente possui avaliações. Exclua as avaliações antes de excluir o cliente."
+                            "Cliente possui avaliações ou cobranças. Exclua os registros vinculados antes de excluir o cliente."
                         )
                     }
                     repository.save(next)
@@ -204,9 +222,11 @@ private fun AppContent(
                     Section.HOME -> HomeScreen(clients.size, onNavigate = { current = it })
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
-                    Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository)
+                    Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository)
-                    Section.SETTINGS -> DataSettingsScreen(darkMode, onDarkModeChange, backupManager) { snapshot ->
+                    Section.SETTINGS -> DataSettingsScreen(
+                        darkMode, onDarkModeChange, backupManager, onDocumentFlow, onLock
+                    ) { snapshot ->
                         clients.clear()
                         clients.addAll(snapshot.clients)
                         current = Section.HOME
@@ -223,7 +243,7 @@ private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
         item {
             Text("Área de trabalho", style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold)
-            Text("Projeto Android nativo • etapa inicial", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Aplicativo nativo • privacidade e dados locais", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),

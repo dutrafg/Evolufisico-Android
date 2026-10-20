@@ -14,6 +14,8 @@ import br.com.evolufisico.android.data.EncryptedClientStore
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.time.Instant
 
@@ -30,12 +32,31 @@ data class BackupSnapshot(
  * sobrescrever dados existentes sem transação multi-arquivo.
  */
 class SecureBackupManager(context: Context) {
+    private val journal = File(context.applicationContext.filesDir, "restore_transaction.pending")
     private val clientStore = EncryptedClientStore(context.applicationContext)
     private val assessmentStore = EncryptedAssessmentStore(context.applicationContext)
     private val chargeStore = EncryptedChargeStore(context.applicationContext)
 
+    /**
+     * Se o processo morreu no meio da restauração, limpa os dados parciais.
+     * O diário só é criado após verificar que os três bancos estavam vazios.
+     * Uma falha de limpeza mantém o diário e impede abertura dos dados.
+     */
+    @Synchronized
+    fun recoverInterruptedRestore() {
+        if (!journal.exists()) return
+        require(journal.readText(Charsets.US_ASCII) == "EF_RESTORE_V1") {
+            "Estado de restauração inesperado. Dados protegidos."
+        }
+        chargeStore.save(emptyList(), emptySet())
+        assessmentStore.save(emptyList())
+        clientStore.save(emptyList())
+        check(journal.delete()) { "Falha ao finalizar recuperação da restauração." }
+    }
+
     @Synchronized
     fun export(password: CharArray): ByteArray {
+        check(!journal.exists()) { "Recuperação de restauração pendente." }
         val snapshot = BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load())
         validate(snapshot)
         val json = JSONObject()
@@ -90,10 +111,15 @@ class SecureBackupManager(context: Context) {
             && chargeStore.load().isEmpty()) {
             "Restauração permitida apenas numa base vazia. Nenhum dado foi sobrescrito."
         }
+        FileOutputStream(journal).use { out ->
+            out.write("EF_RESTORE_V1".toByteArray(Charsets.US_ASCII))
+            out.fd.sync()
+        }
         try {
             clientStore.save(snapshot.clients)
             assessmentStore.save(snapshot.assessments)
             chargeStore.save(snapshot.charges, snapshot.clients.map { it.id }.toSet())
+            check(journal.delete()) { "Falha ao concluir a transação de restauração." }
         } catch (error: Exception) {
             val failures = listOf(
                 runCatching { chargeStore.save(emptyList(), emptySet()) },
@@ -101,6 +127,13 @@ class SecureBackupManager(context: Context) {
                 runCatching { clientStore.save(emptyList()) }
             ).mapNotNull { it.exceptionOrNull() }
             failures.forEach { error.addSuppressed(it) }
+            if (failures.isEmpty()) {
+                if (!journal.delete()) {
+                    throw IllegalStateException(
+                        "Dados parciais removidos, mas o diário não pôde ser removido.", error
+                    )
+                }
+            }
             if (failures.isNotEmpty()) {
                 throw IllegalStateException(
                     "Falha ao restaurar e reverter os dados locais. Preserve o backup e procure suporte.",
@@ -114,6 +147,7 @@ class SecureBackupManager(context: Context) {
 
     @Synchronized
     fun summary(): BackupSnapshot {
+        check(!journal.exists()) { "Recuperação de restauração pendente." }
         return BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load())
             .also { validate(it) }
     }

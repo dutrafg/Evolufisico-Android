@@ -25,6 +25,14 @@ class ChargeRulesTest {
         assertFalse(c.isReceived)
         assertTrue(c.copy(receivedDateIso = "2026-10-21").isReceived)
     }
+    @Test fun overdueUsesDueDateAndReceivedStatus() {
+        val charge = Charge("1", "a", "A", 2500, "2026-01-05")
+        assertTrue(ChargeRules.isOverdue(charge, java.time.LocalDate.parse("2026-01-06")))
+        assertFalse(ChargeRules.isOverdue(charge, java.time.LocalDate.parse("2026-01-05")))
+        assertFalse(ChargeRules.isOverdue(charge.copy(receivedDateIso = "2026-01-04"),
+            java.time.LocalDate.parse("2026-01-06")))
+    }
+
     @Test fun totalsAreSeparated() {
         val a = Charge("1","a","A",2000,"2026-10-01")
         val b = Charge("2","a","B",1000,"2026-10-01", "2026-10-02")

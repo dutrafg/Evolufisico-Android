@@ -43,6 +43,10 @@ object ChargeRules {
             return "Data de recebimento inválida."
         return null
     }
+    fun isOverdue(charge: Charge, today: LocalDate = LocalDate.now()): Boolean =
+        !charge.isReceived &&
+            LocalDate.parse(charge.dueDateIso).isBefore(today)
+
     fun total(items: List<Charge>, received: Boolean): Long =
         items.filter { it.isReceived == received }.sumOf { it.amountCents }
 }

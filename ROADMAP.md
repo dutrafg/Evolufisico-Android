@@ -1,33 +1,37 @@
-# Roadmap — EvoluFísico Android
+# EvoluFísico Android · Roadmap
 
 ## Fase 1 — Fundação
-- [x] Kotlin, Compose, Material Design 3, Android 10+.
-- [x] Clientes, IDs estáveis e criptografia local Android Keystore.
-- [x] Builds e testes unitários via GitHub Actions.
-- [ ] PIN/biometria e banco transacional robusto.
+- [x] Projeto Android 10+, Compose/Material Design 3; clientes com IDs, AES-GCM local
+- [x] CI, testes unitários
 
 ## Fase 2 — Avaliações
-- [x] Anamnese básica, medições e histórico vinculados ao cliente.
-- [x] IMC/RCQ, validação e armazenamento cifrado.
-- [ ] Pollock, dobras cutâneas, bioimpedância, migração de dados Web.
+- [x] Anamnese básica, medidas, histórico e IMC/RCQ
+- [ ] Pollock, dobras, bioimpedância e migração Web
 
 ## Fase 3 — Evolução
-- [x] Gráficos, agrupamento mensal/trimestral e PDF nativo.
-- [x] Exportação PDF por seletor Android.
-- [ ] Testes instrumentados do PDF em Android real.
+- [x] Comparação individual, mensal/trimestral e relatórios PDF nativos
+- [ ] Validação de paginação PDF em aparelhos reais
 
-## Fase 4 — Cobranças e dados (0.4.0-alpha)
-- [x] Cadastro de cobranças em centavos inteiros por cliente.
-- [x] Pendentes/recebidas, resumo e botão Receber com confirmação.
-- [x] Arquivo financeiro AES-GCM, validação e proteção de vínculos.
-- [x] Backup portátil cifrado por senha, incluindo clientes, avaliações e cobranças.
-- [x] Pasta selecionável via SAF, exportação manual com arquivo novo por execução.
-- [x] Importação criptografada com validação prévia e bloqueio de sobrescrita de bases não vazias.
-- [x] Testes unitários de centavos e criptografia portátil.
-- [ ] **Backup automático e sincronização contínua** de pasta; criar estratégia segura de gerenciamento de chaves antes de ativar.
-- [ ] Mesclagem e substituição transacional após homologação; restauração atual aceita **somente base vazia**.
-- [ ] Parcelamentos, edição/estorno de recebimentos e cobrança recorrente.
+## Fase 4 — Cobranças e backup
+- [x] Pendências, Receber, armazenamento AES-GCM e backup portátil por senha via SAF
+- [x] Restauração após validação em banco vazio
+- [ ] Rotina de backup automático com estratégia de chaves aprovada
 
-## Fase 5 — Homologação
-- [ ] Testes instrumentados para DocumentProvider, restauração real e interrupção de energia.
-- [ ] Autenticação, segurança, acessibilidade, QA Android físico, assinatura de AAB.
+## Fase 5 — Segurança e QA (0.6.0-alpha)
+- [x] Tela de autenticação do Android antes dos módulos, Android 10+ (biometria forte ou credencial quando suportado)
+- [x] Bloqueio no background/manual, FLAG_SECURE, permissão USE_BIOMETRIC
+- [x] Compilação de testes instrumentados e workflow de execução em emulador via disparo manual
+- [ ] Testes instrumentados **executados**, testes físicos, pentest, threat model e LGPD
+- [ ] Autorização por usuário/perfil, validação criptográfica de autenticação por operação
+
+## Fase 6 — Robustez e distribuição (0.6.0-alpha)
+- [x] Busca por cliente/serviço e filtro de cobranças atrasadas
+- [x] Verificação de integridade dos dados nas Configurações
+- [x] Jornal de restauração: detectar importação interrompida e limpar registros parciais
+- [x] Confirmação antes de selecionar backup a restaurar
+- [x] CI com lint, testes unitários, APK debug, testes instrumentados compilados e AAB de release sem assinatura
+- [ ] Validar rollback de restauração sob quedas reais e SAF externo; transação multi-arquivo robusta
+- [ ] Assinatura de distribuição, pipeline de publicação, documento de privacidade
+- [ ] Acessibilidade com leitor de tela, layouts em tablets e testes de orientação de tela
+
+**Fases 5 e 6 ainda não representam liberação para produção.**

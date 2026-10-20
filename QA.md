@@ -1,28 +1,26 @@
-# QA — EvoluFísico Android 0.4.0-alpha
+# QA · EvoluFísico Android 0.6.0-alpha
 
-## Escopo da revisão de código
+## Checagens estruturais e testes adicionados
 
-- [x] Cobranças em centavos `Long`, sem valores financeiros em `Double` no armazenamento.
-- [x] Controle de recebimentos pendentes e recebidos; confirmação ao receber.
-- [x] Referência por ID e proteção contra excluir cliente com cobranças.
-- [x] AES-GCM com Android Keystore no armazenamento financeiro e AtomicFile.
-- [x] Exportação criptografada portátil via senha, salt e nonce aleatórios.
-- [x] Criptografia PBKDF2-HMAC-SHA256 + AES-256-GCM autenticado; senha não persistida.
-- [x] Backup inclui clientes, avaliações e cobranças; limites de tamanho e registros.
-- [x] Importação valida dados e relacionamentos **antes** de gravar, impede sobrescrever base preenchida.
-- [x] SAF: CreateDocument, OpenDocument e OpenDocumentTree; permissões persistentes para a pasta.
-- [x] Testes unitários para aritmética financeira, senha incorreta, integridade alterada e roundtrip criptográfico **adicionados**.
-- [x] **Build e testes da versão 0.4.0-alpha aprovados em 20/10/2026:** [GitHub Actions 39423939587](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39423939587), commit `88dc46986c51d131c3d601bc6882ddbe4af5a285`. Tarefas `:app:assembleDebug` e `:app:testDebugUnitTest` e envio do APK concluídos com sucesso.
-- [x] ZIP inspecionado, `testzip()` sem erros. APK debug extraído (57.720.709 bytes); SHA-256: `f6b56d3b383905c7b99bcfd1146fcd7069f66be56ee4629346e4a7c5724bc0a4`.
-- [x] Arquivos originais de Evolução e relatórios preservados da Fase 3 após correção da árvore de publicação.
-- [ ] Teste com Android físico: concessão/revogação de pastas, documentos em cartão SD, provedores remotos, pouco espaço disponível.
-- [ ] Testes instrumentados end-to-end de exportação/restauração com dados fictícios.
-- [ ] Testes de energia desligada durante importação; reversão e recuperação de arquivos.
-- [ ] PIN/biometria, proteção contra leitura com celular desbloqueado e pentest.
-- [ ] Revisão LGPD e políticas de retenção de dados e de exportação.
-- [ ] Backup automático e sincronização contínua: **não implementados**.
+- [x] Autenticação Android bloqueia a renderização dos módulos até confirmação do sistema
+- [x] Android 11+: diálogo com biometria forte e/ou credencial; Android 10: confirmação segura do dispositivo
+- [x] FLAG_SECURE configurado na Activity, relock ao background e bloqueio manual
+- [x] Permissão USE_BIOMETRIC; nenhuma permissão de Internet nem MANAGE_EXTERNAL_STORAGE
+- [x] Cobranças vencidas identificadas somente quando pendentes, cálculo em centavos
+- [x] Busca de cliente/serviço com limite de tamanho; filtros roláveis
+- [x] Diário de restauração escrito com fsync; limpeza de registros parciais em recuperação
+- [x] Verificação de integridade e diálogo de confirmação antes da seleção de backup
+- [x] Testes JUnit de atraso e testes anteriores de cripto, validação e evolução preservados
+- [x] Teste Android instrumentado criado para roundtrip Keystore/backup e janela FLAG_SECURE
+- [ ] Compilação, unit tests, Android lint e AAB de 0.6.0-alpha: **a conferir no CI**
+- [ ] Execução dos instrumentados no emulador: **workflow manual disponível; ainda não foi executado**
+- [ ] Testes em Android real, compatibilidade biométrica por fabricante, Android 10, SAF e cancelamento
+- [ ] Falhas forçadas no disco, queda de energia durante restauração e cópia SAF incompleta
+- [ ] Criptografia dos PDFs exportados, autenticação por operação e permissão por usuário não disponíveis
+- [ ] Revisão LGPD e modelo de ameaças, assinatura privada, QA de acessibilidade e publicação comercial
 
-## Registro anterior
-0.3.0-alpha: [GitHub Actions aprovado](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39417903230).
+## Resultado anterior
 
-**Status:** projeto alpha; não utilizar registros reais sensíveis de clientes.
+0.4.0-alpha: [build e testes unitários aprovados no GitHub](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39423939587).
+
+**Não usar dados pessoais sensíveis reais antes de homologação.**

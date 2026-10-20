@@ -59,7 +59,7 @@ import kotlin.math.abs
 private data class PendingExport(val clientName: String, val series: EvolutionSeries)
 
 @Composable
-fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
+fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore, onDocumentFlow: (Boolean) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var assessments by remember { mutableStateOf<List<Assessment>>(emptyList()) }
@@ -87,6 +87,7 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri: Uri? ->
+        onDocumentFlow(false)
         val snapshot = pending
         pending = null
         if (uri != null && snapshot != null && !exporting) {
@@ -206,6 +207,7 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
                 enabled = !exporting && series.points.isNotEmpty(),
                 onClick = {
                     pending = PendingExport(selectedName, series.copy(points = series.points.toList()))
+                    onDocumentFlow(true)
                     launcher.launch("EvoluFisico_Evolucao_${java.time.LocalDate.now()}.pdf")
                 },
                 modifier = Modifier.fillMaxWidth()

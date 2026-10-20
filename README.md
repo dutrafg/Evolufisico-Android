@@ -1,39 +1,45 @@
-# EvoluFísico Android — v0.4.0-alpha
+# EvoluFísico Android · v0.6.0-alpha
 
-Aplicativo **Kotlin + Jetpack Compose + Material Design 3**, Android 10+ (API 29), independente das versões Web, Windows e Linux.
+**Fases 5 e 6 combinadas — proteção local, QA e preparação de distribuição.** Projeto Kotlin + Jetpack Compose + Material Design 3 para Android 10+ (API 29), totalmente independente das versões Web, Windows e Linux.
 
-## Funcionalidades implementadas
+## Módulos existentes
 
-**Clientes:** cadastro, edição e exclusão com IDs estáveis; exclusão bloqueada se houver avaliações ou cobranças. Armazenamento local cifrado AES-256-GCM/Android Keystore.
+- **Clientes**: inclusão, edição e exclusão com IDs estáveis; impede remoção quando existem avaliações ou cobranças vinculadas.
+- **Avaliações**: anamnese inicial, peso, altura, circunferências, IMC e relação cintura/quadril; histórico por cliente e arquivo AES-GCM.
+- **Evolução**: gráficos por indicador e período (individual, mensal e trimestral), histórico e relatórios PDF nativos, salvos via seletor Android.
+- **Cobranças**: lançamentos por cliente em centavos, contas pendentes/recebidas, botão Receber, filtro de **atrasadas** e busca por cliente ou serviço.
+- **Configurações**: tema, verificação de integridade, backup protegido, restauração e botão para bloquear o app.
 
-**Avaliações:** histórico por cliente, anamnese inicial, dados antropométricos, cálculos de IMC e RCQ, validações e arquivo criptografado.
+## Fase 5 — Proteção e QA
 
-**Evolução:** gráficos de peso, IMC, cintura, quadril, braço, coxa e RCQ; agrupamento mensal/trimestral por último dado válido; relatório PDF gerado com Android PdfDocument; seletor de destino via SAF.
+- **Autenticação por credencial do Android** obrigatória antes de acessar dados. Android 11+ oferece o diálogo nativo para biometria forte ou PIN/padrão/senha do dispositivo; Android 10 utiliza a confirmação segura de credencial do sistema. Se o aparelho não tiver um bloqueio seguro configurado, o aplicativo não disponibiliza os módulos.
+- **Bloqueio ao sair do aplicativo** e botão manual de bloqueio. Durante a abertura legítima do seletor de arquivos SAF, o app preserva a sessão para concluir a operação; esse fluxo deve ser homologado em dispositivo real.
+- **FLAG_SECURE** em todas as telas para reduzir exposição por capturas de tela e miniaturas dos aplicativos recentes. Esta proteção não substitui controles do sistema operacional.
+- Permissão restrita `USE_BIOMETRIC` sem pedido de acesso amplo ao armazenamento ou Internet.
+- Testes unitários adicionais e **testes instrumentados Android compiláveis** para criptografia, restauração isolada e proteção de janela. O workflow `Android Emulator QA (manual)` permite executar os instrumentados em emulador descartável. Compilar testes instrumentados **não equivale a executá-los**.
 
-**Cobranças (Fase 4):** lançar cobranças associadas ao cliente (serviço, vencimento e valor em **centavos inteiros**), ver saldos pendentes/recebidos, filtrar lançamentos e **marcar como recebido com confirmação**. Persistência local separada `charges.enc`, criptografada com AES-256-GCM/Keystore e escrita atômica. Os lançamentos usam a moeda BRL. Não há integração bancária ou emissão fiscal.
+## Fase 6 — Confiabilidade e preparação de entrega
 
-**Backup e restauração (Fase 4):**
+- **Cobranças:** filtro de vencidas e pesquisa por nome do cliente ou serviço; filtros horizontalmente roláveis em celulares pequenos.
+- **Restauração recuperável:** marcador de transação interno criado antes de gravar os dados. Se houver interrupção durante a importação para uma base previamente vazia, o próximo acesso tentará remover dados parcialmente restaurados, sem modificar o backup original. A remoção do marcador e o rollback precisam de validação com falhas reais de energia; **não há garantia de transação multi-arquivo perfeita**.
+- **Confirmação de restauração**, verificação de integridade e registros válidos, bloqueio contra sobrescrita de bases preenchidas.
+- **GitHub Actions:** build de debug, testes unitários, compilação de testes instrumentados, Android Lint e geração de AAB de release **sem assinatura de distribuição**; somente APK de debug é adequado para testes.
+- **Versão:** atualização de código e tela para `0.6.0-alpha`, saltando `0.5.0-alpha` porque foram desenvolvidas duas fases juntas.
 
-- Exportar **backup portátil criptografado** (`.efbak`): clientes + avaliações + cobranças, protegidos com senha de no mínimo 10 caracteres, PBKDF2-HMAC-SHA256 (250.000 iterações, salt aleatório) e AES-256-GCM autenticado.
-- Exportação via seletor Android `CreateDocument`, sem permissão ampla de arquivos, ou seleção de pasta com `OpenDocumentTree` e permissão persistente, criando **um novo arquivo a cada exportação**.
-- Restaurar pelo seletor Android `OpenDocument` usando a senha informada. Validação prévia de formato, autenticação criptográfica, IDs únicos, dados e vínculos entre cliente/avaliação/cobrança.
-- **Regra de segurança:** restauração só é permitida em instalação com dados de clientes, avaliações **e** cobranças vazios. Dados existentes nunca são sobrescritos nem mesclados. Em falha durante a gravação, tenta reverter os conjuntos que estavam vazios; interrupção do aparelho pode requerer intervenção manual. Conserve o arquivo de backup original.
-- A senha nunca é salva em preferências ou no GitHub. Não existe recuperação de senha: sem ela o backup não pode ser aberto.
+## Backup, senha e privacidade
 
-**Importante:** backup na pasta escolhida é **manual**. O aplicativo ainda **não faz sincronização automática** de banco nem backup em segundo plano. A senha não é armazenada, por segurança. A pasta escolhida pode ser atendida por um provedor externo selecionado pelo usuário, mas não existe integração própria com Google Drive.
+Clientes, avaliações e cobranças ficam cifrados em arquivos separados pelo Android Keystore com AES-256-GCM. Backups portáteis `.efbak` utilizam senha de no mínimo 10 caracteres, derivação PBKDF2-HMAC-SHA256 (250 mil iterações) e AES-256-GCM com nonce aleatório. A exportação e a pasta de destino são escolhidas pelo usuário via SAF, **sem backup automático ou integração própria com Drive**; a senha não fica salva. A restauração aceita apenas banco local vazio e inclui validações anteriores à gravação.
 
-## Instalar e testar
+**Limites:** PDFs exportados continuam sem criptografia; liberar o aplicativo com bloqueio de tela não vincula criptograficamente as chaves do banco ao resultado biométrico; não existe trilha de auditoria fiscal, sincronização automática nem importação de bases da versão Web. Não usar com dados reais sensíveis antes da homologação em aparelho físico, de testes de recuperação de falhas e de revisão da LGPD.
 
-No [GitHub Actions](https://github.com/dutrafg/Evolufisico-Android/actions), abra o workflow mais recente com conclusão **success**, baixe o artefato `Evolufisico-Android-debug`, extraia `app-debug.apk` e instale no Android 10+ (depuração). **O resultado só deve ser tratado como compilado/testado após a execução de CI.**
+## Compilação e distribuição
 
-Android Studio: SDK API 36, Gradle 8.13, JDK 17. Com Gradle local execute `gradle :app:assembleDebug :app:testDebugUnitTest`. O wrapper possui as propriedades da distribuição, mas ainda requer gerar o `gradle-wrapper.jar` com `gradle wrapper --gradle-version 8.13`.
+Use JDK 17, Gradle 8.13, Android SDK API 36:
+```bash
+gradle :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug :app:bundleRelease
+```
+O projeto contém `gradle-wrapper.properties`, mas requer gerar `gradle-wrapper.jar` a partir de uma instalação legítima de Gradle executando `gradle wrapper --gradle-version 8.13`.
 
-## Limitações de segurança / dados pessoais
+No [GitHub Actions](https://github.com/dutrafg/Evolufisico-Android/actions), baixe `Evolufisico-Android-debug` somente de uma execução aprovada. O AAB `UNSIGNED` é exclusivamente artefato de build, não é versão pronta para Google Play. Para distribuição pública falta configuração de assinatura privada, políticas de dados, testes instrumentados reais e homologação.
 
-- **Não usar dados reais de pacientes ou clientes nesta versão alpha**, antes de proteção por PIN/biometria, backup de recuperação devidamente homologado e testes em aparelho real.
-- Arquivos de backup são cifrados, mas **PDFs exportados não possuem senha/criptografia**.
-- Não existe sistema financeiro completo de faturamento, parcelas, renegociação ou estorno; lançamentos recebidos não são reversíveis pela interface desta versão.
-- Ainda faltam protocolos avançados de avaliação (Pollock/BIA/dobras), migração da versão Web, sincronização automática, auditoria de segurança, testes instrumentados e homologação em aparelhos.
-- Desinstalar o aplicativo pode destruir dados locais vinculados ao Keystore. Crie e confirme um backup exportado antes de fazer alterações irreversíveis.
-
-Consultar `ROADMAP.md` e `QA.md` para entregas e pendências.
+Veja `ROADMAP.md` e `QA.md`.

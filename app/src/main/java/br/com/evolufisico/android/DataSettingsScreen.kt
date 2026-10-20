@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,6 +45,8 @@ fun DataSettingsScreen(
     darkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit,
     backupManager: SecureBackupManager,
+    onDocumentFlow: (Boolean) -> Unit,
+    onLock: () -> Unit,
     onRestored: (BackupSnapshot) -> Unit
 ) {
     val context = LocalContext.current
@@ -53,10 +57,12 @@ fun DataSettingsScreen(
     var pendingPassword by remember { mutableStateOf<CharArray?>(null) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var showRestoreConfirmation by remember { mutableStateOf(false) }
 
     val createDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
+        onDocumentFlow(false)
         val credential = pendingPassword
         pendingPassword = null
         password = ""
@@ -88,6 +94,7 @@ fun DataSettingsScreen(
     val openDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
+        onDocumentFlow(false)
         val credential = pendingPassword
         pendingPassword = null
         password = ""
@@ -116,6 +123,7 @@ fun DataSettingsScreen(
     }
 
     val openTree = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        onDocumentFlow(false)
         if (uri != null) {
             val outcome = runCatching {
                 context.contentResolver.takePersistableUriPermission(
@@ -201,13 +209,14 @@ fun DataSettingsScreen(
             enabled = !busy && password.length >= 10,
             onClick = {
                 pendingPassword = password.toCharArray()
+                onDocumentFlow(true)
                 createDocument.launch("EvoluFisico_${LocalDateTime.now().format(
                     DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.efbak")
             }, modifier = Modifier.fillMaxWidth()
         ) { Text("Exportar backup criptografado") }
         OutlinedButton(
             enabled = !busy,
-            onClick = { openTree.launch(null) },
+            onClick = { onDocumentFlow(true); openTree.launch(null) },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Escolher pasta para backups") }
         Text(
@@ -229,15 +238,28 @@ fun DataSettingsScreen(
         )
         OutlinedButton(
             enabled = !busy && password.isNotEmpty(),
-            onClick = {
-                pendingPassword = password.toCharArray()
-                openDocument.launch(arrayOf("*/*"))
-            }, modifier = Modifier.fillMaxWidth()
+            onClick = { showRestoreConfirmation = true },
+            modifier = Modifier.fillMaxWidth()
         ) { Text("Restaurar de arquivo (.efbak)") }
         if (busy) Text("Processando arquivo. Não feche o aplicativo.")
         message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         HorizontalDivider()
-        Text("Versão 0.4.0-alpha", style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(
+            enabled = !busy, onClick = {
+                busy = true
+                scope.launch {
+                    val state = withContext(Dispatchers.IO) { runCatching { backupManager.summary() } }
+                    message = state.fold(
+                        { "Integridade: ${it.clients.size} clientes, ${it.assessments.size} avaliações e ${it.charges.size} cobranças válidas." },
+                        { "Falha na verificação: ${it.message}" }
+                    )
+                    busy = false
+                }
+            }, modifier = Modifier.fillMaxWidth()
+        ) { Text("Verificar integridade dos dados") }
+        OutlinedButton(enabled = !busy, onClick = onLock,
+            modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
+        Text("Versão 0.6.0-alpha (Fases 5 e 6)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Sem backup automático: a senha nunca é guardada e os backups são iniciados manualmente. " +
             "O aplicativo não possui integração própria com nuvem.",
@@ -245,4 +267,27 @@ fun DataSettingsScreen(
             style = MaterialTheme.typography.bodySmall
         )
     }
+    if (showRestoreConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showRestoreConfirmation = false },
+            title = { Text("Restaurar backup protegido?") },
+            text = {
+                Text("A restauração só é permitida se não existirem clientes, avaliações ou cobranças " +
+                    "na base local. O aplicativo validará o arquivo e a senha antes de gravar. " +
+                    "Mantenha o arquivo original até verificar todos os registros.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showRestoreConfirmation = false
+                    pendingPassword = password.toCharArray()
+                    onDocumentFlow(true)
+                    openDocument.launch(arrayOf("*/*"))
+                }) { Text("Selecionar backup") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestoreConfirmation = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
 }
