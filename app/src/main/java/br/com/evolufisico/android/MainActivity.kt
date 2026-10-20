@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -92,6 +93,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     AGENDA("Agenda", Icons.Outlined.CalendarMonth),
     GOALS("Metas", Icons.Outlined.Flag),
     SERVICES("Serviços", Icons.Outlined.Storefront),
+    REPORTS("Relatórios", Icons.Outlined.Description),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -280,6 +282,7 @@ private fun AppContent(
                     Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.AGENDA)
                     Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)
                     Section.SERVICES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.SERVICES)
+                    Section.REPORTS -> ReportsScreen(clients.toList(), backupManager, onDocumentFlow)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
                     Section.SETTINGS -> DataSettingsScreen(
@@ -335,6 +338,8 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
         item { FeatureCard("Agenda", "Planeje e acompanhe atendimentos", { onNavigate(Section.AGENDA) }) }
         item { FeatureCard("Metas", "Objetivos e evolução por cliente", { onNavigate(Section.GOALS) }) }
         item { FeatureCard("Serviços", "Catálogo de valores e duração", { onNavigate(Section.SERVICES) }) }
+        item { FeatureCard("Relatórios", "Exportar planilhas CSV por cliente e período",
+            { onNavigate(Section.REPORTS) }) }
     }
 }
 
@@ -357,6 +362,12 @@ private fun ClientsScreen(
     var editing by remember { mutableStateOf<Client?>(null) }
     var deleting by remember { mutableStateOf<Client?>(null) }
     var overview by remember { mutableStateOf<Client?>(null) }
+    var query by remember { mutableStateOf("") }
+    var descending by remember { mutableStateOf(false) }
+    val visibleClients = clients.filter {
+        it.name.contains(query.trim(), ignoreCase = true)
+    }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+        .let { if (descending) it.reversed() else it }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween) {
@@ -364,12 +375,26 @@ private fun ClientsScreen(
             Button(enabled = !saving, onClick = { editing = null; editorOpen = true }) { Text("Novo cliente") }
         }
         Spacer(Modifier.height(12.dp))
+        OutlinedTextField(value = query, onValueChange = { query = it.take(100) },
+            label = { Text("Buscar cliente por nome") },
+            modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = !descending, onClick = { descending = false },
+                label = { Text("A–Z") })
+            FilterChip(selected = descending, onClick = { descending = true },
+                label = { Text("Z–A") })
+            Text("${visibleClients.size} encontrados",
+                modifier = Modifier.padding(top = 14.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (clients.isEmpty()) {
             Text("Nenhum cliente cadastrado. Use Novo cliente para começar.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (visibleClients.isEmpty()) {
+            Text("Nenhum cliente corresponde à busca.")
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(clients, key = { it.id }) { client ->
+                items(visibleClients, key = { it.id }) { client ->
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                         Column(Modifier.padding(16.dp)) {
                             Text(client.name, style = MaterialTheme.typography.titleMedium)

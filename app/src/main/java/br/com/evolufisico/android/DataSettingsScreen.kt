@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +63,7 @@ fun DataSettingsScreen(
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirmation by remember { mutableStateOf(false) }
+    var privacyOpen by remember { mutableStateOf(false) }
     val dailyScheduler = remember(context) { DailyBackupScheduler(context.applicationContext) }
     var daily by remember { mutableStateOf(dailyScheduler.state()) }
     var preferredHour by remember { mutableStateOf(daily.hour) }
@@ -248,16 +250,40 @@ fun DataSettingsScreen(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("Preferências", style = MaterialTheme.typography.titleLarge)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Modo escuro", style = MaterialTheme.typography.titleMedium)
-            Switch(checked = darkMode, onCheckedChange = onDarkModeChange)
-        }
-        HorizontalDivider()
-        Text("Dados e backups", style = MaterialTheme.typography.titleLarge)
+        if (!privacyOpen) {
+            Text("Configurações", style = MaterialTheme.typography.headlineSmall)
+            Text("Preferências", style = MaterialTheme.typography.titleLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Modo escuro", style = MaterialTheme.typography.titleMedium)
+                Switch(checked = darkMode, onCheckedChange = onDarkModeChange)
+            }
+            HorizontalDivider()
+            Card(onClick = { privacyOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Dados e Privacidade", style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary)
+                    Text("Dados locais, backup manual e diário, restauração, " +
+                        "diagnósticos e bloqueio do aplicativo.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Abrir Dados e Privacidade →",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            HorizontalDivider()
+            Text("Atualizações", style = MaterialTheme.typography.titleLarge)
+            InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
+            Text("Alpha 2 · ciclo de desenvolvimento",
+                style = MaterialTheme.typography.bodySmall)
+        } else {
+        TextButton(onClick = { privacyOpen = false }) { Text("← Voltar às configurações") }
+        Text("Dados e Privacidade", style = MaterialTheme.typography.headlineSmall)
+        Text("Armazenamento local", style = MaterialTheme.typography.titleLarge)
         Text("Versão alpha: clientes, avaliações, formulários e cobranças são salvos em " +
             "JSON local legível. Novos backups JSON não usam senha. Evite dados sensíveis reais.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        HorizontalDivider()
+        Text("Backup manual", style = MaterialTheme.typography.titleLarge)
         OutlinedTextField(
             value = password, onValueChange = { password = it.take(128) },
             label = { Text("Senha (apenas backups antigos .efbak)") },
@@ -362,7 +388,7 @@ fun DataSettingsScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         HorizontalDivider()
-        Text("Verificar backup antes de atualizar", style = MaterialTheme.typography.titleMedium)
+        Text("Verificar backup e dados", style = MaterialTheme.typography.titleLarge)
         Text("Verifica o arquivo e sua senha sem alterar o banco do dispositivo. " +
             "É recomendado antes de atualizar ou reinstalar o aplicativo.",
             style = MaterialTheme.typography.bodySmall)
@@ -419,16 +445,21 @@ fun DataSettingsScreen(
                 }
             }, modifier = Modifier.fillMaxWidth()
         ) { Text("Verificar integridade dos dados") }
+        HorizontalDivider()
+        Text("Segurança", style = MaterialTheme.typography.titleLarge)
+        Text("Bloqueio local da sessão. Durante o desenvolvimento, o JSON é legível.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
-        InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.100.0-alpha (Fases 41–100)", style = MaterialTheme.typography.bodySmall)
+        Text("Alpha 2 · Dados e Privacidade", style = MaterialTheme.typography.bodySmall)
         Text(
             "Backup automático usa WorkManager e JSON sem senha durante a fase alpha. " +
             "Não existe sincronização própria com nuvem ou garantia de execução no minuto exato.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
         )
+        }
     }
     if (showRestoreConfirmation) {
         AlertDialog(

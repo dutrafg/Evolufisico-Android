@@ -1,6 +1,6 @@
 > **Protótipo sem criptografia:** novos registros em `clients.json`, `assessments.json`, `forms.json` e `charges.json` ficam legíveis no armazenamento interno do aplicativo. Novos backups são arquivos `.json` sem senha. Dados pessoais reais não devem ser usados nesta fase. Antes de atualizar, mantenha cópia de seus backups antigos.
 
-# EvoluFísico Android — 0.100.0-alpha
+# EvoluFísico Android — Alpha 2 (2.0.0-alpha.2)
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -149,3 +149,15 @@ A versão **0.100.0-alpha** introduz três módulos funcionais, com dados guarda
 Os nomes das fases representam **incrementos funcionais de um mesmo módulo**, não 60 aplicativos independentes. Os três módulos ainda são protótipos e não oferecem pagamentos bancários, integração com calendário externo, notificações ou sincronização na nuvem.
 
 **Avisos de compatibilidade:** o formato JSON é legível; não utilize informações pessoais sensíveis reais. O APK continua sujeito à mesma assinatura digital exigida pelo Android para atualizar sem desinstalar; a migração por backup não contorna essa exigência.
+
+## Ciclo Alpha 2 — primeiro bloco funcional
+
+**Configurações** passam a ter duas áreas principais: Preferências (modo escuro) e **Dados e Privacidade**, onde ficam armazenamentos locais, backups manuais e automáticos, restauração, verificação de integridade e bloqueio da sessão. A busca de atualizações continua no nível principal. Não foram excluídas funções de backup.
+
+**Relatórios:** novo módulo acessível pela Área de trabalho no celular ou pelo menu lateral nas telas grandes. Exporta arquivos CSV de resumo, clientes, avaliações, formulários, agenda, metas, cobranças e serviços. Seleção de cliente e intervalo opcional de datas; exportação via seletor nativo Android (SAF), sem rede. Arquivos CSV UTF-8 com BOM, separador ponto-e-vírgula e aspas. O tratamento de células procura evitar execução acidental de fórmulas por aplicativos de planilha. Valores monetários de cobranças são exportados em centavos inteiros.
+
+**Clientes:** busca por nome e ordenação A–Z / Z–A sem alterar a ordem real no banco. Mensagem quando não há resultado.
+
+**Versão:** `2.0.0-alpha.2` (Android `versionCode=101`). Alpha 2 identifica um novo ciclo de desenvolvimento: não significa que 100 etapas já estejam homologadas. O ciclo anterior 41–100 permanece no repositório.
+
+**Observações:** ainda é um protótipo com JSON legível, sem criptografia de dados novos. A atualização do APK continua exigindo certificado compatível; não desinstale a instalação anterior sem validar backup.

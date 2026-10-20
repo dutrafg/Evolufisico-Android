@@ -92,3 +92,29 @@
 - [ ] Testar em dispositivos físicos Android 10+ toda a navegação, teclado, formulários, rolagens e geração de PDF
 - [ ] Testar restore sem perder dados, SAF em diferentes provedores e atualização com assinatura idêntica
 - [ ] Criar assinatura release permanente e auditar privacidade antes de usar dados reais
+
+## Ciclo Alpha 2 — etapas 1 a 100
+
+### Bloco A — Estrutura e dados (1–20)
+- [x] 1 Criar versão Alpha 2; 2 preservar funções anteriores; 3 Configurações com Preferências; 4 entrada Dados e Privacidade
+- [x] 5 armazenamentos sob Dados e Privacidade; 6 backup manual; 7 pasta SAF; 8 backup diário; 9 status e horário; 10 verificação do backup
+- [x] 11 restauração segura; 12 verificação da integridade; 13 bloqueio de sessão; 14 manter Atualizações fora de Dados e Privacidade
+- [x] 15 novo módulo Relatórios; 16 escolha do relatório; 17 filtro por cliente; 18 período; 19 CSV via SAF; 20 identificação de versão
+
+### Bloco B — Exportação e produtividade (21–40)
+- [x] 21 CSV de clientes; 22 avaliações; 23 formulários; 24 agenda; 25 metas; 26 cobranças; 27 serviços; 28 resumo geral
+- [x] 29 codificação UTF-8 com BOM; 30 separador compatível com Excel BR; 31 escape de aspas; 32 escape de quebras; 33 tratamento de células que se parecem com fórmulas
+- [x] 34 exportação somente leitura; 35 contagem monetária exata em centavos; 36 nome de arquivo padronizado; 37 estados de processamento; 38 mensagens de erro
+- [x] 39 busca por nome em Clientes; 40 ordenação A–Z/Z–A
+- [ ] Testes Android físicos de seleção de destino, compatibilidade com Excel/LibreOffice e comportamento de teclado
+
+### Bloco C — Fluxos avançados (41–60)
+- [ ] Melhorias futuras: busca global, edição contextual de clientes, filtros salvos e ações de múltiplos registros, histórico e indicadores operacionais
+
+### Bloco D — Relatórios e automações (61–80)
+- [ ] Melhorias futuras: relatórios gráficos, alertas opcionais, PDF consolidado, personalização de templates e planejamento de sessões
+
+### Bloco E — Qualidade e publicação (81–100)
+- [ ] Melhorias futuras: testes de interface/integração, acessibilidade, recuperação do armazenamento, homologação física, assinatura release e preparação da versão estável
+
+**Regra:** cada item só é marcado quando existir implementação verificável no código; compilação e testes da Alpha 2 têm resultado separado no QA.

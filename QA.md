@@ -138,3 +138,16 @@
 - [ ] QA manual em Android real, validação visual dos diálogos, edição e preenchimento automático de serviços e verificação de backup SAF externo.
 - [ ] Assinatura de distribuição fixa pendente; este APK debug pode ser incompatível com a assinatura das versões já instaladas.
 - [ ] Segurança/criptografia desativada temporariamente: só dados fictícios.
+
+## Ciclo Alpha 2 — reorganização de Configurações e relatórios
+
+- [x] Configurações abre com Preferências, Dados e Privacidade e Atualizações
+- [x] Segurança (bloquear sessão), dados, backup manual, diário, integridade, inspeção e restauração agrupados sob Dados e Privacidade
+- [x] Módulo Relatórios com oito formatos CSV, filtro por cliente/período e exportação via SAF
+- [x] CSV UTF-8 com BOM, tratamento de aspas/quebras e prevenção básica contra células de fórmula
+- [x] Busca e ordenação de clientes no módulo Clientes
+- [x] JUnit adicionado: filtros de período, isolamento por cliente, centavos inteiros e escape CSV
+- [ ] CI Alpha 2: executar build, testes unitários, Android Lint e AAB
+- [ ] Executar teste instrumentado Android 10 nesta versão
+- [ ] Teste visual de navegação Configurações e exportação para pasta real no smartphone
+- [ ] Preparação de release com assinatura permanente — ainda pendente
