@@ -96,7 +96,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     SERVICES("Serviços", Icons.Outlined.Storefront),
     REPORTS("Relatórios", Icons.Outlined.Description),
     INSIGHTS("Indicadores", Icons.Outlined.TrendingUp),
-    TRENDS("Comparativos", Icons.Outlined.BarChart),
+    TRENDS("Comparativos", Icons.Outlined.Assessment),
     SEARCH("Busca global", Icons.Outlined.Search),
     NOTES("Anotações", Icons.Outlined.Description),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
