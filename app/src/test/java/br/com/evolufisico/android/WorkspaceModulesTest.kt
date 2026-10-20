@@ -15,6 +15,12 @@ class WorkspaceModulesTest {
         assertTrue(WorkspaceModules.all.any { it.route=="FORMS" })
         assertTrue(WorkspaceModules.all.none { it.route in setOf("HOME","CLIENTS","AGENDA","BILLING") })
     }
+    @Test fun filterCategoryAndQueryTogether() {
+        val selection=WorkspaceModules.filter("avaliação","Atendimento")
+        assertEquals("ASSESSMENTS",selection.single().route)
+        assertTrue(WorkspaceModules.filter("avaliação","Gestão").isEmpty())
+        assertEquals(2,WorkspaceModules.filter("","Relatórios e análise").size)
+    }
     @Test fun normalizedSearchAndEmptyResults() {
         assertEquals("EVOLUTION",WorkspaceModules.filter("EVOLUCAO").single().route)
         assertEquals("CLIENT_SUMMARY",WorkspaceModules.filter("visao operacional").single().route)

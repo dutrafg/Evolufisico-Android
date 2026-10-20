@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -44,10 +48,12 @@ object WorkspaceModules {
     private fun normalize(value:String):String = Normalizer.normalize(
         value,Normalizer.Form.NFD).replace(Regex("\\p{M}+"),"")
         .lowercase(Locale.ROOT).trim()
-    fun filter(query:String):List<WorkspaceModule> {
+    fun filter(query:String,selectedCategory:String="Todos"):List<WorkspaceModule> {
         val key=normalize(query)
-        return if(key.isEmpty()) all else all.filter { module ->
-            listOf(module.title,module.subtitle,module.category).any { normalize(it).contains(key) }
+        return all.filter { module ->
+            (selectedCategory=="Todos" || module.category==selectedCategory) &&
+                (key.isEmpty() || listOf(module.title,module.subtitle,module.category)
+                    .any { normalize(it).contains(key) })
         }
     }
 }
@@ -55,7 +61,8 @@ object WorkspaceModules {
 @Composable
 fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
     var query by remember { mutableStateOf("") }
-    val modules=WorkspaceModules.filter(query)
+    var category by remember { mutableStateOf("Todos") }
+    val modules=WorkspaceModules.filter(query,category)
     LazyColumn(modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp)) {
         item {
@@ -64,11 +71,21 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(query,{query=it.take(80)},modifier=Modifier.fillMaxWidth(),
                 label={Text("Buscar módulo")},singleLine=true)
+            Row(modifier=Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                (listOf("Todos")+WorkspaceModules.categories).forEach { choice ->
+                    FilterChip(selected=category==choice,onClick={category=choice},
+                        label={Text(choice)})
+                }
+            }
+            Text(modules.size.toString()+" módulo(s) encontrado(s)",
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                style=MaterialTheme.typography.bodySmall)
         }
-        WorkspaceModules.categories.forEach { category ->
-            val entries=modules.filter { it.category==category }
+        WorkspaceModules.categories.forEach { group ->
+            val entries=modules.filter { it.category==group }
             if(entries.isNotEmpty()) {
-                item { Text(category,style=MaterialTheme.typography.titleMedium,
+                item { Text(group,style=MaterialTheme.typography.titleMedium,
                     color=MaterialTheme.colorScheme.primary) }
                 items(entries.size) { index ->
                     val entry=entries[index]
