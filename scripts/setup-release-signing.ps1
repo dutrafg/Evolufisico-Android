@@ -9,9 +9,13 @@ if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI não autenticado.' }
 $Dir = Read-Host 'Pasta PRIVADA (fora de seu repositório) para guardar o keystore'
 New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 $Key = Join-Path (Resolve-Path $Dir).Path 'evolufisico-release.p12'
-if (Test-Path $Key) { throw 'Arquivo já existe. NÃO sobrescreva a chave permanente.' }
-& keytool -genkeypair -storetype PKCS12 -keystore $Key -alias evolufisico -keyalg RSA -keysize 3072 -validity 10000 -dname 'CN=EvoluFisico,OU=Android,O=EvoluFisico,C=BR'
-if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar keystore.' }
+if (Test-Path $Key) {
+  $Confirm = Read-Host 'Chave já existe. Reutilizar SEM gerar outra? Digite SIM'
+  if ($Confirm -cne 'SIM') { throw 'Operação cancelada. A chave antiga permanece.' }
+} else {
+  & keytool -genkeypair -storetype PKCS12 -keystore $Key -alias evolufisico -keyalg RSA -keysize 3072 -validity 10000 -dname 'CN=EvoluFisico,OU=Android,O=EvoluFisico,C=BR'
+  if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar keystore.' }
+}
 $SecurePassword = Read-Host 'Digite a mesma senha do keystore (será ocultada)' -AsSecureString
 $Password = [System.Net.NetworkCredential]::new('', $SecurePassword).Password
 try {
@@ -23,7 +27,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar alias' }
   [Convert]::ToBase64String([IO.File]::ReadAllBytes($Key)) | gh secret set EF_KEYSTORE_BASE64 -R $Repo
   if ($LASTEXITCODE -ne 0) { throw 'Falha ao enviar chave criptográfica' }
-  $KeyInfo = & keytool -list -v -storetype PKCS12 -keystore $Key -storepass $Password -alias evolufisico
+  $KeyInfo = & keytool -list -v -storetype PKCS12 -keystore $Key -alias evolufisico
   if ($LASTEXITCODE -ne 0) { throw 'Não foi possível consultar o keystore.' }
   $Fingerprint = ($KeyInfo | Select-String 'SHA256:\s*([0-9A-Fa-f:]{95})' | Select-Object -First 1).Matches.Groups[1].Value.Replace(':','').ToUpperInvariant()
   if ($Fingerprint -notmatch '^[0-9A-F]{64}$') { throw 'Impressão digital inválida.' }

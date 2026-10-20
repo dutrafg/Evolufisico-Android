@@ -9,12 +9,14 @@ read -r -p "Diretório PRIVADO para guardar o keystore: " TARGET
 mkdir -p "$TARGET"
 KEYSTORE="$TARGET/evolufisico-release.p12"
 if [ -e "$KEYSTORE" ]; then
-  echo "Keystore existente: não gerar novo nem substituir!"; exit 1
+  read -r -p "Keystore existente. Reutilizar SEM gerar outra chave? (digite SIM): " CONFIRM
+  [ "$CONFIRM" = "SIM" ] || { echo "Operação cancelada."; exit 1; }
+else
+  umask 077
+  keytool -genkeypair -storetype PKCS12 -keystore "$KEYSTORE" \
+    -alias evolufisico -keyalg RSA -keysize 3072 -validity 10000 \
+    -dname 'CN=EvoluFisico,OU=Android,O=EvoluFisico,C=BR'
 fi
-umask 077
-keytool -genkeypair -storetype PKCS12 -keystore "$KEYSTORE" \
-  -alias evolufisico -keyalg RSA -keysize 3072 -validity 10000 \
-  -dname 'CN=EvoluFisico,OU=Android,O=EvoluFisico,C=BR'
 echo "A senha solicitada a seguir é a do keystore que você acabou de criar."
 read -r -s -p "Senha do keystore (não aparecerá na tela): " PASSWORD
 printf '\n'
@@ -23,7 +25,7 @@ printf '%s' "$PASSWORD" | gh secret set EF_KEY_PASSWORD -R "$REPO"
 printf '%s' 'evolufisico' | gh secret set EF_KEY_ALIAS -R "$REPO"
 base64 < "$KEYSTORE" | tr -d '\n' | gh secret set EF_KEYSTORE_BASE64 -R "$REPO"
 FINGERPRINT="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE" \
-  -storepass "$PASSWORD" -alias evolufisico |
+  -alias evolufisico |
   sed -n 's/^[[:space:]]*SHA256: //p' | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
 [[ "$FINGERPRINT" =~ ^[A-F0-9]{64}$ ]] || { echo "Impressão digital não reconhecida."; exit 1; }
 printf '%s' "$FINGERPRINT" | gh variable set EF_SIGNING_CERT_SHA256 -R "$REPO"
