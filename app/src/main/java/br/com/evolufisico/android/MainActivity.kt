@@ -356,6 +356,6 @@ private fun SettingsScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Uni
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Sem conexão com Google Drive. Sem backup/restauração nesta etapa.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Versão 0.1.0-alpha", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.2.0-alpha", style = MaterialTheme.typography.bodySmall)
     }
 }
