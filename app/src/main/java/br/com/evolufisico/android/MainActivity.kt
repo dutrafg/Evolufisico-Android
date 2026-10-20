@@ -193,7 +193,7 @@ private fun AppContent(
                     Section.HOME -> HomeScreen(clients.size, onNavigate = { current = it })
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
-                    Section.EVOLUTION -> PlaceholderScreen("Evolução", "Gráficos e relatórios por período")
+                    Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository)
                     Section.BILLING -> PlaceholderScreen("Cobranças", "Recebimentos, pendências e histórico financeiro")
                     Section.SETTINGS -> SettingsScreen(darkMode, onDarkModeChange)
                 }
@@ -221,8 +221,8 @@ private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
                 }
             }
         }
-        item { FeatureCard("Avaliações", "Módulo em desenvolvimento", { onNavigate(Section.ASSESSMENTS) }) }
-        item { FeatureCard("Evolução", "Módulo em desenvolvimento", { onNavigate(Section.EVOLUTION) }) }
+        item { FeatureCard("Avaliações", "Histórico e medidas por cliente", { onNavigate(Section.ASSESSMENTS) }) }
+        item { FeatureCard("Evolução", "Gráficos por período e relatórios PDF", { onNavigate(Section.EVOLUTION) }) }
         item { FeatureCard("Cobranças", "Módulo em desenvolvimento", { onNavigate(Section.BILLING) }) }
     }
 }
@@ -356,6 +356,6 @@ private fun SettingsScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Uni
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Sem conexão com Google Drive. Sem backup/restauração nesta etapa.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Versão 0.2.0-alpha", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.3.0-alpha", style = MaterialTheme.typography.bodySmall)
     }
 }

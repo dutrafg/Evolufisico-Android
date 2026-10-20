@@ -1,26 +1,24 @@
-# QA — EvoluFísico Android 0.2.0-alpha
+# QA — EvoluFísico Android 0.3.0-alpha
 
-## Cobertura implementada / revisão estática
+## Revisão de implementação e cobertura dos testes
 
-- [x] Avaliações ligadas a IDs de clientes; histórico não depende do nome.
-- [x] Anamnese: objetivo, nível de atividade, frequência semanal e limitações.
-- [x] Antropometria com campos numéricos, vírgula e ponto decimal, faixa validada.
-- [x] IMC = peso / (altura em m)^2; RCQ = cintura / quadril.
-- [x] Entradas NaN/Infinity, datas futuras e cliente inexistente são rejeitados.
-- [x] Gravação cifrada AES-GCM/Keystore e AtomicFile; arquivos não incluídos no backup do sistema.
-- [x] Bloqueio de exclusão de cliente que tenha avaliações.
-- [x] Testes JUnit 4 adicionados para validações e fórmulas.
-- [x] Workflow preparado para rodar assembleDebug/testDebugUnitTest e publicar artifact em caso de sucesso.
+- [x] Série de evolução usa **ID do cliente**; registros de outros clientes excluídos.
+- [x] Ordenação por data ISO com desempate determinístico por ID.
+- [x] Agrupamento mensal e trimestral escolhe o **último registro com medida presente**, evitando preencher lacunas fictícias.
+- [x] Variação absoluta/percentual de duas ou mais medições; uma medição não produz falso progresso.
+- [x] NaN/datas inválidas e medidas ausentes são ignoradas para o indicador selecionado.
+- [x] Gráfico nativo, histórico textual e seleção de indicador/período.
+- [x] PDF gerado via PdfDocument, com quebra de páginas e sem captura da interface principal.
+- [x] PDF salvo por Android SAF (CreateDocument), sem permissões genéricas de armazenamento.
+- [x] JUnit adicionado para isolamento de clientes, agrupamentos, valores ausentes e variações.
+- [ ] **Build e testes da 0.3.0-alpha ainda precisam ser confirmados no GitHub Actions**.
+- [ ] Teste instrumentado/visual do PDF, inclusive caracteres e relatórios com múltiplas páginas.
+- [ ] Teste com aparelho Android 10+ físico, orientação, acessibilidade, modo escuro e seletor de arquivos.
+- [ ] Auditoria de proteção ao exportar informações sensíveis e proteção por PIN/biometria.
+- [ ] Backups seguros e migração da Web não implementados.
 
-## Verificações ainda necessárias
+## Histórico de QA anterior
 
-- [x] **Compilação GitHub Actions verificada em 20/10/2026:** execução [39416578439](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39416578439), commit `4b88368fce6ae559ae9a4171837404f0d1b2703e`, resultado **success**.
-- [x] `:app:assembleDebug` e `:app:testDebugUnitTest` passaram no GitHub Actions; artefato `Evolufisico-Android-debug` publicado.
-- [x] ZIP do artifact inspecionado (contém `app-debug.apk`, integridade do ZIP conferida).
-- [ ] Testes em emulador/telefone Android 10+ e versão recente.
-- [ ] Avaliação de segurança de chaves, corrupção de arquivos, exclusão e recuperação.
-- [ ] Acessibilidade e layout em telas pequenas/teclado físico.
-- [ ] Teste de comportamento com clientes antigos da v0.1 e registros quebrados.
-- [ ] Migração/importação Web, backup e restauração não implementados.
+0.2.0-alpha: [build e testes aprovados](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39416578439).
 
-**Não inserir dados reais sensíveis antes de autenticação, backup cifrado e QA de segurança.**
+**Atenção:** PDFs exportados não são criptografados; o projeto ainda é um protótipo com funções de segurança pendentes.
