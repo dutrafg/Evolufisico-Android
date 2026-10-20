@@ -33,3 +33,12 @@
 - [ ] Assinatura permanente dos APKs de distribuição e política de recuperação
 
 **Status:** versão alpha. Não utilizar dados reais de clientes antes da homologação final.
+
+## Fases 21 a 25 — Backups e confiabilidade
+- [x] **21:** agendamento diário via WorkManager com horário configurável e seleção persistente de pasta SAF
+- [x] **22:** senha portátil armazenada apenas como credencial AES-GCM cifrada no Android Keystore e removida ao desligar o agendamento
+- [x] **23:** criar arquivo novo sem sobrescrita, reler/verificar backup criptograficamente, informar falhas sem apagar dados
+- [x] **24:** restaurar apenas em banco vazio, explicar botão desabilitado, deixar inspeção não destrutiva disponível
+- [x] **25:** painel com estado, última execução, último erro; testes de calendário e credencial do Keystore
+- [ ] Homologar execução diária durante Doze, reinicialização e provedor SAF externo no aparelho real
+- [ ] Auditoria de privacidade e segurança, retenção configurável com confirmação, recuperação ante interrupções físicas

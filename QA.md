@@ -1,4 +1,4 @@
-# QA — EvoluFísico Android 0.20.0-alpha
+# QA — EvoluFísico Android 0.25.0-alpha
 
 ## Alterações e verificações adicionadas
 - [x] Formulários: busca e filtros sem gravar ou transmitir respostas
@@ -37,3 +37,21 @@
 - [ ] Workflow de release **não pode executar ainda** sem uma chave permanente configurada pelo proprietário como segredo do GitHub.
 - [ ] Testar com dois APKs release assinados usando exatamente o mesmo keystore, com versionCode crescente, em Android real e com backup externo.
 - [ ] CI de `0.20.1-alpha` a conferir antes de marcar a compilação aprovada.
+
+## Backup automático e tela de restauração — fases 21 a 25
+
+- [x] Scheduler WorkManager periódico 24 h com atraso inicial calculado para o horário escolhido
+- [x] Seleção da pasta SAF, exigindo permissão persistente de leitura e escrita
+- [x] Credencial cifrada com IV gerado por Android Keystore AES-GCM, nunca senha em texto simples em SharedPreferences
+- [x] Desativar o agendamento cancela o WorkManager e remove credencial cifrada, sem excluir backups
+- [x] Validação não destrutiva do backup gerado por releitura/autenticação/contagem; tentativa de excluir arquivo incompleto
+- [x] Registro de último sucesso/erro e status consultável em Configurações
+- [x] Restauração bloqueada para base com registros e exige senha de no mínimo 10 caracteres; mensagem explicativa
+- [x] JUnit para horário diário e verificação de argumentos inválidos
+- [x] Teste Android instrumentado de selagem, leitura e eliminação da credencial Keystore
+- [ ] CI 0.25.0-alpha — aguardando execução e validação de compilação, unit tests, Android Lint e AAB
+- [ ] QA WorkManager em dispositivo físico e provedor SAF real, inclusive reinício/Doze
+- [ ] Teste de recuperação com arquivo incompleto e perda de permissões
+- [ ] Android não garante disparo exato no minuto, mesmo que horário desejado esteja salvo
+
+**Aviso:** APK debug CI usa assinatura efêmera; não desinstale 0.15.0-alpha ou outro app com dados sem verificar um backup externo. Nenhuma versão alpha dispensa homologação com dados fictícios.

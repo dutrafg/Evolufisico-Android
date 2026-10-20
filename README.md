@@ -1,4 +1,4 @@
-# EvoluFísico Android — 0.20.1-alpha
+# EvoluFísico Android — 0.25.0-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -60,3 +60,28 @@ Captura de tela continua permitida nas versões alpha/beta/RC, com bloqueio `FLA
 **Migrar com dados existentes:** na versão ainda instalada, exportar .efbak para fora do app, verificar integridade/senha com uma ferramenta confiável independente (ver arquivo HTML de verificação local fornecido no chat), conservar cópia redundante, e somente então instalar uma release oficialmente assinada em uma instalação limpa. Restaurar o .efbak em banco vazio. A desinstalação remove normalmente os dados internos e as chaves Keystore. Não desinstale antes de confirmar a integridade do backup!
 
 O repositório atualmente **não tem nenhuma versão com APK publicada no GitHub Releases**, portanto "Procurar atualizações" não pode oferecer uma versão assinada até a configuração do workflow. Para ativar releases, é necessário criar e guardar um keystore privado duradouro **no computador do proprietário** e adicionar os quatro GitHub Actions Secrets: `EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS`, `EF_KEY_PASSWORD`. Nunca envie chaves privadas ou senhas no chat nem as inclua em commits.
+
+## Fases 21–25 — Backup diário e recuperação (0.25.0-alpha)
+
+### Fase 21 — Agendamento diário
+Em **Configurações > Dados e backups > Backup automático diário**, selecione a pasta de backups pelo seletor Android, digite sua senha portátil `.efbak` (mínimo 10 caracteres), escolha um horário em relógio 24 h e toque em **Ativar backup diário**. Para alterar horário/pasta/senha, reconfigure o agendamento. Desativar preserva os arquivos existentes.
+
+A execução usa **AndroidX WorkManager**, agendado uma vez por dia com período de 24 h e atraso inicial calculado para o próximo horário escolhido. O Android pode adiar trabalhos por Doze, modo economia de bateria, bateria fraca, restrições do sistema ou indisponibilidade do provedor da pasta. Portanto o horário é **preferencial/aproximado, não exato**. O WorkManager persiste o agendamento normalmente mesmo com aplicativo fechado e reinícios, desde que o Android mantenha as permissões e os dados do aplicativo.
+
+### Fase 22 — Credencial protegida
+Para poder gravar backup quando o app estiver fechado, a senha precisa ficar disponível localmente para o processo de trabalho. O aplicativo **cifra a senha com uma chave AES-256-GCM não exportável do Android Keystore** e grava apenas o texto cifrado em preferências internas. Ela é decifrada apenas durante a execução do backup e nunca enviada para serviços externos. **Quem possui acesso desbloqueado ao aparelho pode potencialmente acionar o backup**, portanto mantenha o sistema bloqueado. O aplicativo não recupera a senha portátil após desinstalação — o Keystore é perdido. Guarde-a também num gerenciador de senhas ou local seguro separado.
+
+### Fase 23 — Verificação de cada arquivo
+A rotina cria um **novo arquivo `EvoluFisico_AUTO_...efbak`**, incluindo clientes, avaliações, formulários e cobranças, na pasta escolhida. Depois **reabre o arquivo, valida autenticação criptográfica e os vínculos** e compara a contagem de registros. Se a verificação falhar, tenta excluir o arquivo incompleto, grava o motivo do erro e não marca a execução como sucesso. Ela não sobrescreve backups manuais nem arquivos de dias anteriores. Esta versão não apaga backups antigos automaticamente.
+
+### Fase 24 — Restauração sem confusão
+O botão de restaurar é habilitado somente quando **a base local está vazia** e uma senha com no mínimo 10 caracteres foi digitada. Se há registros, uma mensagem explica por que a restauração não está disponível. Use **Verificar arquivo .efbak** para conferir um backup sem alterar os registros existentes. Não tente desinstalar o app atual sem arquivo externo já verificado e senha guardada. Com APK de assinatura diferente, primeiro é necessário preparar uma migração por backup.
+
+### Fase 25 — Qualidade, estado e testes
+Configurações apresenta horário configurado, estado ligado/desligado, último backup validado e última falha. Testes unitários cobrem o cálculo do horário preferido; testes instrumentados exercitam a cifragem e leitura de credenciais no Keystore. Build de APK e testes instrumentados no Android devem ser aprovados pelo CI da versão antes de homologar esta entrega.
+
+**Importante:** o agendamento funciona de forma aproximada e não equivale a um alarme exato. A exportação não é sincronização própria com Google Drive. Se a pasta selecionada for atendida por um provedor em nuvem, a sincronização dos arquivos é responsabilidade desse provedor.
+
+### Atenção ao problema anterior de assinatura
+
+Esta versão continua sendo um APK **DEBUG não atualizável sobre builds DEBUG anteriores gerados com certificados diferentes**. Nenhum código pode contornar a verificação de assinatura do Android. Para proteger seus registros na 0.15.0-alpha, não desinstale sem backup criptografado externo conferido. A distribuição de releases com assinatura fixa ainda precisa da chave privada estável no GitHub.

@@ -6,6 +6,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import br.com.evolufisico.android.backup.SecureBackupManager
+import br.com.evolufisico.android.backup.SealedBackupCredential
 import br.com.evolufisico.android.billing.Charge
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.data.Assessment
@@ -81,6 +82,25 @@ class StorageIntegrationTest {
             assessments.save(emptyList())
             clients.save(emptyList())
             password.fill('\u0000')
+        }
+    }
+
+    @Test
+    fun dailyCredentialIsEncryptedAndCanBeReopened() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SealedBackupCredential(context)
+        val secret = "SenhaForteDeTeste123!".toCharArray()
+        try {
+            store.save(secret)
+            val prefs = context.getSharedPreferences("daily_backup",Context.MODE_PRIVATE)
+            val ciphertext = prefs.getString("sealed_password","")!!
+            assertFalse(ciphertext.contains("SenhaForteDeTeste123!"))
+            val restored = store.read()
+            assertEquals(String(secret),String(restored))
+            restored.fill('\u0000')
+        } finally {
+            secret.fill('\u0000')
+            store.clear()
         }
     }
 
