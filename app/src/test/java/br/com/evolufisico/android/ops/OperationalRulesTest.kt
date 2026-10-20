@@ -24,6 +24,15 @@ class OperationalRulesTest {
         assertEquals(0,OperationalRules.progress(g.copy(current=100.0)))
         assertNotNull(OperationalRules.goal(g.copy(target=90.0),clients))
     }
+    @Test fun clientNotesValidateCategoriesAndDates() {
+        val note=ClientNote("n1","c1","2026-10-20","Treino",
+            "Acompanhamento","Registro fictício.",true)
+        assertNull(OperationalRules.note(note,clients))
+        assertNotNull(OperationalRules.note(note.copy(clientId="inexistente"),clients))
+        assertNotNull(OperationalRules.note(note.copy(category="Inexistente"),clients))
+        assertNotNull(OperationalRules.note(note.copy(dateIso="20/10/2026"),clients))
+        assertNotNull(OperationalRules.note(note.copy(body=""),clients))
+    }
     @Test fun servicesUseIntegralCents() {
         assertNull(OperationalRules.service(ServiceItem("s","Avaliação",2500,60)))
         assertNotNull(OperationalRules.service(ServiceItem("s","Avaliação",-1,60)))

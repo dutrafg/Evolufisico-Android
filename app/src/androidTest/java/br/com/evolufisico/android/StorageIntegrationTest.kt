@@ -19,6 +19,7 @@ import br.com.evolufisico.android.forms.FormResponse
 import br.com.evolufisico.android.ops.Appointment
 import br.com.evolufisico.android.ops.ClientGoal
 import br.com.evolufisico.android.ops.ServiceItem
+import br.com.evolufisico.android.ops.ClientNote
 import br.com.evolufisico.android.ops.OperationsData
 import br.com.evolufisico.android.ops.OperationalStore
 import org.junit.Assert.assertEquals
@@ -70,7 +71,9 @@ class StorageIntegrationTest {
                     LocalDate.now().atTime(14,0).toString(),60,"Avaliação")),
                 goals=listOf(ClientGoal("g1",client.id,"Peso","kg",80.0,75.0,
                     78.0,LocalDate.now().plusMonths(3).toString())),
-                services=listOf(ServiceItem("s1","Avaliação",2500,60))
+                services=listOf(ServiceItem("s1","Avaliação",2500,60)),
+                notes=listOf(ClientNote("n1",client.id,LocalDate.now().toString(),
+                    "Geral","Teste de registro","Observação fictícia.",true))
             )
             operations.save(op,setOf(client.id))
             assertEquals(1,operations.load().appointments.size)
@@ -78,7 +81,7 @@ class StorageIntegrationTest {
             assertEquals(1, clients.load().size)
             val data = manager.export(password)
             val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
-            assertEquals(7, inspected.recordCount)
+            assertEquals(8, inspected.recordCount)
             val damaged = data.clone()
             damaged[damaged.lastIndex] = (damaged.last().toInt() xor 1).toByte()
             assertTrue("Backup corrompido deve falhar validação AES-GCM",
@@ -87,7 +90,7 @@ class StorageIntegrationTest {
             val incorrect = "SenhaPortatilIncorreta123".toCharArray()
             try {
                 // JSON do protótipo não precisa de senha.
-                assertEquals(7,
+                assertEquals(8,
                     manager.inspectBackup(ByteArrayInputStream(data), incorrect).recordCount)
             } finally { incorrect.fill('\u0000') }
             assertEquals("Inspeção nunca deve modificar dados", 1, clients.load().size)
@@ -96,7 +99,7 @@ class StorageIntegrationTest {
             val oldEncrypted = br.com.evolufisico.android.backup.PortableBackupCrypto.encrypt(
                 data, password)
             val restoredOld = manager.inspectBackup(ByteArrayInputStream(oldEncrypted), password)
-            assertEquals(7, restoredOld.recordCount)
+            assertEquals(8, restoredOld.recordCount)
             val wrongPassword = "SenhaPortatilIncorreta123".toCharArray()
             try {
                 assertTrue("Backup .efbak antigo exige senha correta",
@@ -110,9 +113,10 @@ class StorageIntegrationTest {
             assessments.save(emptyList())
             clients.save(emptyList())
             val result = manager.restore(ByteArrayInputStream(data), password)
-            assertEquals(7, result.recordCount)
+            assertEquals(8, result.recordCount)
             assertEquals("Avaliação",operations.load().services.first().name)
             assertEquals(1,operations.load().goals.size)
+            assertEquals("Teste de registro",operations.load().notes.first().title)
             assertEquals(form.templateId, forms.load().first().templateId)
             assertEquals(client.name, clients.load().first().name)
             assertEquals(charge.amountCents, charges.load().first().amountCents)

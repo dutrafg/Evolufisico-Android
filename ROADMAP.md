@@ -161,3 +161,12 @@
 - [ ] 181–200: acessibilidade, estabilidade e homologação da distribuição
 
 Etapas pendentes não são marcadas como prontas sem implementação e testes.
+
+## Alpha 2 — ampliação 101–120 (2.0.3-alpha.2)
+
+- [x] 101 Criar motor de busca local; 102 normalizar acentos; 103 não distinguir maiúsculas; 104 limitar resultados; 105 ordenar relevância
+- [x] 106 pesquisar clientes; 107 avaliações; 108 formulários; 109 agenda; 110 metas
+- [x] 111 pesquisar serviços; 112 cobranças; 113 pesquisar anotações; 114 filtrar resultados por módulo; 115 abrir módulo correspondente
+- [x] 116 modelo de anotação por cliente; 117 validar data, categoria, título e texto; 118 CRUD, fixação e filtros; 119 integrar backup, CSV, ficha, PDF e proteção na exclusão de clientes
+- [x] 120 testes unitários de busca, anotações e teste instrumentado de restauração estendidos
+- [ ] Testes visuais e de navegação em smartphone Android real, assinatura release fixa e homologação de dados

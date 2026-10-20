@@ -41,7 +41,28 @@ data class ServiceItem(
     }
 }
 
+data class ClientNote(
+    val id: String, val clientId: String, val dateIso: String,
+    val category: String, val title: String, val body: String,
+    val pinned: Boolean = false
+) {
+    companion object {
+        fun create(clientId: String, category: String, title: String, body: String) =
+            ClientNote(UUID.randomUUID().toString(),clientId,LocalDate.now().toString(),
+                category,title.trim(),body.trim())
+    }
+}
+
 object OperationalRules {
+    val noteCategories = listOf("Geral","Treino","Avaliação","Acompanhamento")
+    fun note(n: ClientNote, clients: Set<String>): String? {
+        if (n.id.isBlank() || n.clientId !in clients) return "Cliente inválido."
+        if (runCatching { LocalDate.parse(n.dateIso) }.isFailure) return "Data inválida."
+        if (n.category !in noteCategories) return "Categoria inválida."
+        if (n.title.isBlank() || n.title.length > 120) return "Título inválido."
+        if (n.body.isBlank() || n.body.length > 3000) return "Anotação deve ter até 3000 caracteres."
+        return null
+    }
     val appointmentStatuses = setOf("Agendado","Concluído","Cancelado")
     fun appointment(a: Appointment, clients: Set<String>): String? {
         if (a.id.isBlank() || a.clientId !in clients) return "Cliente inválido."

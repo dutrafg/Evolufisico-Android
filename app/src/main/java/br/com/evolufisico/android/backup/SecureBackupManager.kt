@@ -33,7 +33,8 @@ data class BackupSnapshot(
     val operations: OperationsData = OperationsData()
 ) {
     val recordCount: Int get() = clients.size + assessments.size + charges.size + forms.size +
-        operations.appointments.size + operations.goals.size + operations.services.size
+        operations.appointments.size + operations.goals.size +
+        operations.services.size + operations.notes.size
 }
 
 /**

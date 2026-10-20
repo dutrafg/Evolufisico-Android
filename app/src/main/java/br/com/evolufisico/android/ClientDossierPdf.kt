@@ -105,6 +105,12 @@ object ClientDossierPdf {
                     if(g.completed) " | Concluída" else " | Em andamento")
             }
             y += 17f
+            y += 12f
+            val notes=data.operations.notes.filter { it.clientId == client.id }
+            line("Anotações (" + notes.size + ")", true)
+            notes.sortedByDescending { it.dateIso }.forEach {
+                line(it.dateIso+" | "+it.category+" | "+it.title)
+            }
             line("Documento informativo. Não substitui laudo ou diagnóstico.")
             doc.finishPage(page!!)
             page = null

@@ -18,7 +18,9 @@ class CsvReportsTest {
             appointments=listOf(Appointment("a1","c1","2026-10-20T10:00",60,"Treino"),
                 Appointment("a2","c2","2026-10-20T11:00",60,"Avaliação")),
             goals=listOf(ClientGoal("g1","c1","Peso","kg",90.0,80.0,85.0,"2026-12-01")),
-            services=listOf(ServiceItem("s1","Treino",2500,60))
+            services=listOf(ServiceItem("s1","Treino",2500,60)),
+            notes=listOf(ClientNote("n1","c1","2026-10-20","Treino",
+                "Anotação teste","Corpo fictício.",true))
         )
     )
     @Test fun csvEscapingProtectsStructureAndFormulas() {
@@ -37,6 +39,12 @@ class CsvReportsTest {
         assertTrue(runCatching {
             ReportFilter("c1",LocalDate.parse("2027-01-01"),LocalDate.parse("2026-01-01"))
         }.isFailure)
+    }
+    @Test fun exportedNotesCanBeFilteredByClient() {
+        val result=CsvReports.generate(snapshot,ReportKind.NOTES,
+            ReportFilter("c1")).toString(Charsets.UTF_8)
+        assertTrue(result.contains("Anotação teste"))
+        assertTrue(result.contains("Corpo fictício."))
     }
     @Test fun summaryUsesIntegerCents() {
         val csv=CsvReports.generate(snapshot,ReportKind.OVERVIEW).toString(Charsets.UTF_8)

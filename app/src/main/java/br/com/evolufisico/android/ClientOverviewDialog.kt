@@ -120,6 +120,13 @@ fun ClientOverviewDialog(
                         goals.filterNot { it.completed }.take(3).forEach {
                             Text(it.title+" · "+br.com.evolufisico.android.ops.OperationalRules.progress(it)+"%")
                         }
+                        val notes = data.operations.notes.filter { it.clientId == client.id }
+                        Text("Anotações: " + notes.size, style = MaterialTheme.typography.titleMedium)
+                        notes.sortedWith(compareByDescending<br.com.evolufisico.android.ops.ClientNote> {
+                            it.pinned
+                        }.thenByDescending { it.dateIso }).take(3).forEach {
+                            Text(it.dateIso+" · "+it.category+" · "+it.title)
+                        }
                         Text("Cobranças: " + charges.size, style = MaterialTheme.typography.titleMedium)
                         Text("Pendentes: " + charges.count { !it.isReceived } +
                             " · Recebidas: " + charges.count { it.isReceived })

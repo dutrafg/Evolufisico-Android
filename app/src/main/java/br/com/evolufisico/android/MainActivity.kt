@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -96,6 +97,8 @@ private enum class Section(val title: String, val icon: ImageVector) {
     REPORTS("Relatórios", Icons.Outlined.Description),
     INSIGHTS("Indicadores", Icons.Outlined.TrendingUp),
     TRENDS("Comparativos", Icons.Outlined.BarChart),
+    SEARCH("Busca global", Icons.Outlined.Search),
+    NOTES("Anotações", Icons.Outlined.Description),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -200,7 +203,8 @@ private fun AppContent(
                             chargeRepository.load().any { it.clientId in removedIds } ||
                             formRepository.load().any { it.clientId in removedIds } ||
                             operationalRepository.load().appointments.any { it.clientId in removedIds } ||
-                            operationalRepository.load().goals.any { it.clientId in removedIds }
+                            operationalRepository.load().goals.any { it.clientId in removedIds } ||
+                            operationalRepository.load().notes.any { it.clientId in removedIds }
                         )) {
                         throw IllegalArgumentException(
                             "Cliente possui registros vinculados em avaliações, formulários, agenda, metas ou cobranças. Exclua-os antes de remover o cadastro."
@@ -290,6 +294,10 @@ private fun AppContent(
                         onBilling = { current = Section.BILLING },
                         onGoals = { current = Section.GOALS })
                     Section.TRENDS -> TrendsScreen(clients.toList(), backupManager)
+                    Section.SEARCH -> GlobalSearchScreen(backupManager, onOpen = { key ->
+                        Section.entries.firstOrNull { it.name == key }?.let { current = it }
+                    })
+                    Section.NOTES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.NOTES)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
                     Section.SETTINGS -> DataSettingsScreen(
@@ -351,6 +359,10 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
             { onNavigate(Section.INSIGHTS) }) }
         item { FeatureCard("Comparativos", "Atendimentos e valores mensais por cliente",
             { onNavigate(Section.TRENDS) }) }
+        item { FeatureCard("Busca global", "Localizar clientes e registros em todos os módulos",
+            { onNavigate(Section.SEARCH) }) }
+        item { FeatureCard("Anotações", "Registros e observações organizados por cliente",
+            { onNavigate(Section.NOTES) }) }
     }
 }
 

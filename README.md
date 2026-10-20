@@ -173,3 +173,15 @@ Novo módulo **Indicadores** na Área de trabalho e menu lateral. Exibe totais d
 **Linha do tempo por cliente:** ficha individual agora mostra até oito acontecimentos recentes com avaliações, formulários, atendimentos, cobranças (e recebimentos) e prazos de metas. Os eventos são classificados por data e limitados ao ID do cliente.
 
 Versão de desenvolvimento `2.0.2-alpha.2`, `versionCode=103`, sem alterar o identificador de pacote Android nem o formato dos arquivos JSON. Atualização no mesmo aparelho continua exigindo **certificado de assinatura compatível**.
+
+## Alpha 2 — Busca global e Anotações por cliente (2.0.3-alpha.2)
+
+Depois de Indicadores e Comparativos, adicionamos **Busca global** sem rede e **Anotações** vinculadas a cada cliente.
+
+- Busca global ignora diferenças de maiúsculas e acentos, permite selecionar um módulo, oferece até 100 resultados ordenados e abre a seção correspondente. Inclui clientes, avaliações, formulários, agenda, metas, serviços, cobranças e anotações.
+- Anotações possuem data, categoria, título, conteúdo, fixação, criação, edição, exclusão confirmada, filtros por cliente/categoria e busca textual.
+- `operations.json` inclui `notes` de forma compatível com bancos anteriores. O conteúdo integra backups JSON, restauração de base vazia, relatórios CSV, ficha e PDF do cliente e busca global.
+- O bloqueio da exclusão de clientes agora também protege os registros de Anotações associados.
+- A versão passa a ser `2.0.3-alpha.2` (`versionCode=104`). Mantidos Indicadores, Comparativos e linha do tempo da versão anterior.
+
+O armazenamento continua sem criptografia nesta fase de protótipo. Use apenas dados fictícios.

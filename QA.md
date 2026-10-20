@@ -166,3 +166,14 @@
 - [x] Interfaces de comparativos e linha do tempo implementadas.
 - [ ] CI Android 2.0.2-alpha.2 ainda não verificado.
 - [ ] Testes instrumentados e QA visual desta versão pendentes.
+
+### Alpha 2 — etapa seguinte 2.0.3-alpha.2
+
+- [x] Busca global por oito categorias com normalização de acentos, filtro e limite de resultados
+- [x] Anotações por cliente, CRUD, categorias, busca, fixação e exclusão confirmada
+- [x] Compatibilidade JSON de `operations.notes`, backups, restauração, CSV, ficha, PDF e bloqueio de exclusão
+- [x] Testes JUnit de busca global, regras de anotações e exportação CSV
+- [x] Teste instrumentado atualizado para conferir anotação após backup/restauração
+- [ ] CI e QA em emulador pendentes da nova versão
+- [ ] Teste funcional de filtros, teclado e relatórios em smartphone físico
+- [ ] App ainda usa JSON sem criptografia e assinatura debug não garante atualização da instalação anterior

@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-enum class OperationsTab { AGENDA, GOALS, SERVICES }
+enum class OperationsTab { AGENDA, GOALS, SERVICES, NOTES }
 
 @Composable
 fun OperationsScreen(clients: List<Client>, store: OperationalStore, tab: OperationsTab) {
@@ -60,6 +60,9 @@ fun OperationsScreen(clients: List<Client>, store: OperationalStore, tab: Operat
         }
         OperationsTab.SERVICES -> ServicesModule(data.services,busy,message) {
             persist(data.copy(services=it))
+        }
+        OperationsTab.NOTES -> ClientNotesModule(clients,data.notes,busy,message) {
+            persist(data.copy(notes=it))
         }
     }
 }

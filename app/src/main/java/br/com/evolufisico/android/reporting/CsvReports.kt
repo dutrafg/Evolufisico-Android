@@ -12,7 +12,8 @@ enum class ReportKind(val title: String, val filename: String) {
     APPOINTMENTS("Agenda", "agenda"),
     GOALS("Metas", "metas"),
     CHARGES("Cobranças", "cobrancas"),
-    SERVICES("Serviços", "servicos")
+    SERVICES("Serviços", "servicos"),
+    NOTES("Anotações", "anotacoes")
 }
 
 data class ReportFilter(
@@ -85,6 +86,13 @@ object CsvReports {
                     listOf(it.name,it.priceCents.toString(),it.durationMinutes.toString(),
                         if(it.enabled)"Sim" else "Não")
                 }
+            ReportKind.NOTES -> listOf(listOf("Cliente","Data","Categoria",
+                "Título","Conteúdo","Fixada")) +
+                snapshot.operations.notes.filter { f.matches(it.clientId,it.dateIso) }
+                    .sortedByDescending{it.dateIso}.map {
+                        listOf(name(it.clientId),it.dateIso,it.category,
+                            it.title,it.body,if(it.pinned)"Sim" else "Não")
+                    }
             ReportKind.OVERVIEW -> {
                 val appointments=snapshot.operations.appointments.filter { f.matches(it.clientId,it.startIso) }
                 val goals=snapshot.operations.goals.filter { f.matches(it.clientId,it.deadlineIso) }
@@ -101,7 +109,10 @@ object CsvReports {
                     listOf("Cobranças",charges.size.toString()),
                     listOf("Recebido (centavos)",charges.filter { it.isReceived }.sumOf { it.amountCents }.toString()),
                     listOf("Pendente (centavos)",charges.filterNot { it.isReceived }.sumOf { it.amountCents }.toString()),
-                    listOf("Serviços ativos",snapshot.operations.services.count { it.enabled }.toString()))
+                    listOf("Serviços ativos",snapshot.operations.services.count { it.enabled }.toString()),
+                    listOf("Anotações",snapshot.operations.notes.count {
+                        f.matches(it.clientId,it.dateIso)
+                    }.toString()))
             }
         }
         require(records.size <= 100_000) { "Relatório excede limite de registros." }
