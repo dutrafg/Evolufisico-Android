@@ -22,7 +22,9 @@ class EncryptedAssessmentStore(context: Context) {
     private val file = AtomicFile(File(context.filesDir, "assessments.enc"))
 
     fun load(): List<Assessment> {
-        if (!file.exists()) return emptyList()
+        val base = file.baseFile
+        if (!base.exists() && !File(base.path + ".bak").exists() &&
+            !File(base.path + ".new").exists()) return emptyList()
         val blob = file.openRead().use { it.readBytes() }
         require(blob.size >= 29 && blob[0] == 1.toByte()) { "Arquivo de avaliações inválido." }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
