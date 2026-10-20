@@ -151,3 +151,10 @@
 - [ ] Executar teste instrumentado Android 10 nesta versão
 - [ ] Teste visual de navegação Configurações e exportação para pasta real no smartphone
 - [ ] Preparação de release com assinatura permanente — ainda pendente
+
+### Alpha 2 · bloco 41–60 (2.0.1-alpha.2)
+- [x] Motor de indicadores adicionado para cobranças a vencer/atrasadas, compromissos da semana e metas com prazo próximo/vencido.
+- [x] Filtros locais e acesso aos módulos de origem, sem edição ou notificação em segundo plano.
+- [x] Testes unitários adicionais com data fixa, verificação de centavos e ausência de falsos positivos quando não há registros.
+- [ ] CI da 2.0.1-alpha.2 — ainda não verificado.
+- [ ] Execução em emulador e QA visual desta revisão — ainda não verificados.

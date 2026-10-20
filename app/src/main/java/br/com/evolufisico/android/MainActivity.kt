@@ -94,6 +94,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     GOALS("Metas", Icons.Outlined.Flag),
     SERVICES("Serviços", Icons.Outlined.Storefront),
     REPORTS("Relatórios", Icons.Outlined.Description),
+    INSIGHTS("Indicadores", Icons.Outlined.TrendingUp),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -283,6 +284,10 @@ private fun AppContent(
                     Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)
                     Section.SERVICES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.SERVICES)
                     Section.REPORTS -> ReportsScreen(clients.toList(), backupManager, onDocumentFlow)
+                    Section.INSIGHTS -> InsightsScreen(backupManager,
+                        onAgenda = { current = Section.AGENDA },
+                        onBilling = { current = Section.BILLING },
+                        onGoals = { current = Section.GOALS })
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
                     Section.SETTINGS -> DataSettingsScreen(
@@ -340,6 +345,8 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
         item { FeatureCard("Serviços", "Catálogo de valores e duração", { onNavigate(Section.SERVICES) }) }
         item { FeatureCard("Relatórios", "Exportar planilhas CSV por cliente e período",
             { onNavigate(Section.REPORTS) }) }
+        item { FeatureCard("Indicadores", "Cobranças, atendimentos e prazos de metas",
+            { onNavigate(Section.INSIGHTS) }) }
     }
 }
 

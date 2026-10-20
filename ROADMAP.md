@@ -118,3 +118,13 @@
 - [ ] Melhorias futuras: testes de interface/integração, acessibilidade, recuperação do armazenamento, homologação física, assinatura release e preparação da versão estável
 
 **Regra:** cada item só é marcado quando existir implementação verificável no código; compilação e testes da Alpha 2 têm resultado separado no QA.
+
+### Bloco C — 41 a 60 (implementado)
+- [x] 41–44 indicadores operacionais calculados com datas injetáveis, sem mutar registros
+- [x] 45–47 identificar cobranças vencidas, próximas em 7 dias e totais em centavos
+- [x] 48–50 identificar atendimentos futuros (7 dias) e agendamentos com datas passadas
+- [x] 51–53 identificar metas vencidas ou próximas em 14 dias, sem inferências clínicas
+- [x] 54–56 filtrar por Cobranças/Agenda/Metas, ordenar por data e identificar cliente
+- [x] 57–59 navegação dos alertas aos módulos e botão de atualizar indicadores
+- [x] 60 testes unitários para prazos, status e totais sem dependência da data real
+- [ ] Teste de interface no smartphone após compilação da versão `2.0.1-alpha.2`.

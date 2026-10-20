@@ -161,3 +161,7 @@ Os nomes das fases representam **incrementos funcionais de um mesmo módulo**, n
 **Versão:** `2.0.0-alpha.2` (Android `versionCode=101`). Alpha 2 identifica um novo ciclo de desenvolvimento: não significa que 100 etapas já estejam homologadas. O ciclo anterior 41–100 permanece no repositório.
 
 **Observações:** ainda é um protótipo com JSON legível, sem criptografia de dados novos. A atualização do APK continua exigindo certificado compatível; não desinstale a instalação anterior sem validar backup.
+
+## Alpha 2 — bloco 41–60 · Indicadores
+
+Novo módulo **Indicadores** na Área de trabalho e menu lateral. Exibe totais de cobranças atrasadas e a vencer em até 7 dias, atendimentos agendados para a próxima semana, atendimentos com datas passadas e metas próximas do prazo ou vencidas. Filtros por área e abertura direta dos módulos originais. Resumo local informativo, sem envios externos. Versão de desenvolvimento `2.0.1-alpha.2` (`versionCode=102`).
