@@ -14,8 +14,9 @@
 
 ## Verificações ainda necessárias
 
-- [ ] **Compilação GitHub Actions:** verificar a execução mais recente. A CI da versão 0.1 falhou; na primeira tentativa faltava Android SDK, na segunda havia incompatibilidade Compose/API 37. A versão 0.2 fixa BOM anterior.
-- [ ] Confirmar resultados dos testes em Actions (não marcar como aprovados antes de executar).
+- [x] **Compilação GitHub Actions verificada em 20/10/2026:** execução [39416578439](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39416578439), commit `4b88368fce6ae559ae9a4171837404f0d1b2703e`, resultado **success**.
+- [x] `:app:assembleDebug` e `:app:testDebugUnitTest` passaram no GitHub Actions; artefato `Evolufisico-Android-debug` publicado.
+- [x] ZIP do artifact inspecionado (contém `app-debug.apk`, integridade do ZIP conferida).
 - [ ] Testes em emulador/telefone Android 10+ e versão recente.
 - [ ] Avaliação de segurança de chaves, corrupção de arquivos, exclusão e recuperação.
 - [ ] Acessibilidade e layout em telas pequenas/teclado físico.
