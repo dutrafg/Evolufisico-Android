@@ -49,6 +49,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -87,10 +88,31 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
-private val brandBlue = Color(0xFF235C91)
-private val lightScheme = lightColorScheme(primary = brandBlue, secondary = Color(0xFF44749A),
-    surface = Color(0xFFFAFCFF), surfaceVariant = Color(0xFFE7F0F8))
-private val darkScheme = darkColorScheme(primary = Color(0xFF9CCBFF), secondary = Color(0xFFA9C8E6))
+private val brandBlue = Color(0xFF195AA2)
+private val lightScheme = lightColorScheme(
+    primary=brandBlue,onPrimary=Color.White,
+    secondary=Color(0xFF43688F),onSecondary=Color.White,
+    background=Color(0xFFF7F9FC),onBackground=Color(0xFF162238),
+    surface=Color.White,onSurface=Color(0xFF162238),
+    surfaceVariant=Color(0xFFE9EFF7),onSurfaceVariant=Color(0xFF50617A),
+    outline=Color(0xFFBBCADA),outlineVariant=Color(0xFFE0E7F0),
+    primaryContainer=Color(0xFFE4F0FC),onPrimaryContainer=Color(0xFF183D6E)
+)
+private val darkScheme = darkColorScheme(
+    primary=Color(0xFFAACDFF),onPrimary=Color(0xFF063665),
+    background=Color(0xFF101825),onBackground=Color(0xFFE7ECF5),
+    surface=Color(0xFF172335),onSurface=Color(0xFFE7ECF5),
+    surfaceVariant=Color(0xFF253449),onSurfaceVariant=Color(0xFFBBC9DC),
+    outline=Color(0xFF708298),outlineVariant=Color(0xFF3D4A5E),
+    primaryContainer=Color(0xFF17406D),onPrimaryContainer=Color(0xFFD2E4FF)
+)
+private val corporateShapes=Shapes(
+    extraSmall=RoundedCornerShape(6.dp),
+    small=RoundedCornerShape(10.dp),
+    medium=RoundedCornerShape(12.dp),
+    large=RoundedCornerShape(16.dp),
+    extraLarge=RoundedCornerShape(20.dp)
+)
 
 private enum class Section(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Outlined.Home),
@@ -133,7 +155,10 @@ class MainActivity : ComponentActivity() {
         val themePrefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
         setContent {
             var darkMode by remember { mutableStateOf(themePrefs.getBoolean("dark_mode", false)) }
-            MaterialTheme(colorScheme = if (darkMode) darkScheme else lightScheme) {
+            MaterialTheme(
+                colorScheme=if(darkMode) darkScheme else lightScheme,
+                shapes=corporateShapes
+            ) {
                 if (!session.unlocked) {
                     DeviceGateScreen(session.message,
                         onUnlock = { session.requestUnlock() },
@@ -245,7 +270,8 @@ private fun AppContent(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(if (current == Section.HOME) "EvoluFísico" else current.title,
-                    fontWeight = FontWeight.SemiBold) },
+                    fontWeight = FontWeight.Bold,
+                    color=MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     if(current!=Section.HOME) IconButton(onClick=::goBack) {
                         Icon(Icons.Outlined.ArrowBack,contentDescription="Voltar")
@@ -259,7 +285,9 @@ private fun AppContent(
             )
         },
         bottomBar = {
-            if (!useRail) NavigationBar {
+            if (!useRail) NavigationBar(
+                containerColor=MaterialTheme.colorScheme.surface
+            ) {
                 Section.entries.filter {
                     it in listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
                         Section.BILLING, Section.MODULES)
@@ -277,7 +305,7 @@ private fun AppContent(
     ) { insets ->
         Row(modifier = Modifier.fillMaxSize().padding(insets)) {
             if (useRail) {
-                NavigationRail {
+                NavigationRail(containerColor=MaterialTheme.colorScheme.surface) {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                     Section.entries.filter { it in listOf(
                         Section.HOME, Section.CLIENTS, Section.AGENDA, Section.BILLING,
