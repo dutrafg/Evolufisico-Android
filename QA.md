@@ -89,8 +89,17 @@
 - [x] Preflight de backup .efbak criptograficamente verificado e comparado ao banco atual
 - [x] JUnit novo para versão semântica, checksum e impressão digital
 - [x] Teste efêmero de assinatura APK RELEASE no CI (sem chave privada de produção)
-- [ ] CI v0.40.0-alpha aguardando execução e validação
-- [ ] Emulador Android 10 v0.40.0-alpha aguardando execução
+- [x] **CI 0.40.0-alpha aprovada**: [run 39475453138](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39475453138) compilou APK, JUnit, Lint, AAB e fez teste de assinatura RELEASE com chave descartável sem distribuição
+- [x] **Android 10 emulador aprovado: 3/3 testes instrumentados**, [run 39475453131](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39475453131)
 - [ ] Primeira release oficial depende de executar script privado no PC e cadastrar secrets
 - [ ] Teste de atualização sobre release de MESMO certificado em smartphone
 - [ ] Migração DEBUG legado para RELEASE exige backup externo verificado e plano de restauração
+
+## Artefato de testes 0.40.0-alpha
+
+- [x] Arquivo ZIP de debug extraído e validado sem erros.
+- [x] APK debug SHA-256 `1872d80fe3344532e9fd5c71f03fe4a5cf8710d26c8a6231574c316ca7e9b1de`, tamanho **59.386.687 bytes**.
+- [x] Certificado de laboratório exclusivo do CI foi usado apenas para teste do fluxo de assinatura, nunca como identidade permanente de distribuição.
+- [ ] **Assinatura privada de produção NÃO cadastrada**: depende de execução local de script de setup com GitHub CLI e arquivamento seguro da chave pelo proprietário.
+- [ ] **APK RELEASE oficial NÃO publicado**: requer os 4 GitHub Secrets e PIN SHA-256 de certificado para acionar o workflow.
+- [ ] Verificar atualização de dois APKs RELEASE sucessivos assinados com a mesma chave no dispositivo real.
