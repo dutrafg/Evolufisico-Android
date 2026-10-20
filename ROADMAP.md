@@ -186,8 +186,13 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [x] 10–13: calendário Compose responsivo, botões mês anterior/próximo e hoje, seleção e limpeza
 - [x] 14–16: calendário ligado à Agenda, criação de atendimento com data selecionada e filtros existentes preservados
 - [x] 17–20: testes de fevereiro bissexto, outubro, horários, seleção e regressões
-- [ ] 21–40: produtividade da agenda (agendamento recorrente com validação e cancelamento)
-- [ ] 41–60: organização financeira e indicadores por mês/cliente
+- [x] 21–25: geração de séries semanais de 1 a 12 atendimentos sem alterar o modelo JSON
+- [x] 26–30: datas ISO, incremento semanal e identificadores exclusivos
+- [x] 31–35: pré-validação de todos os conflitos sem gravar parcialmente a série
+- [x] 36–40: opção de repetição na interface e testes de conflitos e parâmetros
+- [x] 41–45: situação Faltou incluída nas validações e no histórico de atendimentos
+- [x] 46–50: filtros e indicadores de faltas, sem afetar atendimentos cancelados
+- [ ] 51–60: melhorar relatórios de presença e comparativos mensais
 - [ ] 61–80: integração de formulários, histórico e relatórios operacionais
 - [ ] 81–100: acessibilidade, responsividade e QA automatizado de todos os fluxos
 - [ ] Validação manual em smartphone real, restauração a partir de backup externo e atualização assinada de forma permanente

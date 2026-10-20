@@ -193,3 +193,11 @@ O armazenamento continua sem criptografia nesta fase de protótipo. Use apenas d
 O primeiro incremento acrescenta ao módulo **Agenda** uma visualização mensal iniciada na segunda-feira, com navegação para o mês anterior e seguinte, contagens por estado, indicador de atendimentos ativos por dia, seleção de dia e botão **Ir para hoje**. Ao escolher um dia, os atendimentos são filtrados para aquela data; um novo atendimento começa com o dia pré-preenchido. Os testes unitários cobrem o calendário de outubro, fevereiro de ano bissexto, horários e a separação de atendimentos concluídos e cancelados.
 
 O aplicativo ainda usa JSON local sem criptografia conforme a decisão de desenvolvimento, não devendo receber registros reais sensíveis. O APK de teste permanece sujeito à compatibilidade de assinatura exigida pelo Android.
+
+### Alpha 3 — agendamento semanal e registro de faltas (3.0.1-alpha.3)
+
+Na Agenda, ao criar um atendimento é possível escolher de **1 a 12 repetições semanais**. O aplicativo verifica conflitos com horários já registrados e só salva o conjunto completo se todas as datas estiverem disponíveis. A escolha do dia no calendário preenche a data inicial da série. Os registros continuam individuais em `operations.json`.
+
+Adicionada a situação **Faltou**, com ação *Registrar falta*, filtro Faltas e contador na Agenda. As situações anteriores permanecem válidas. A visualização mensal distingue os totais por estado.
+
+É criação em lote, não sincronização com calendário externo nem cobrança automática. As etapas 51–100 de Alpha 3 permanecem planejadas.

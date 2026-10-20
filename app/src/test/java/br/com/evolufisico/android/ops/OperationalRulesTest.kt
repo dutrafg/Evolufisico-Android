@@ -16,6 +16,13 @@ class OperationalRulesTest {
         assertNotNull(OperationalRules.appointment(a.copy(durationMinutes=2),clients))
         assertNotNull(OperationalRules.appointment(a.copy(clientId="unknown"),clients))
     }
+    @Test fun absenceStatusIsValidAndCancelStillFreesSlot() {
+        val a=Appointment("a","c1","2026-10-20T13:00",60,"Avaliação","Faltou")
+        assertNull(OperationalRules.appointment(a,clients))
+        assertTrue(OperationalRules.conflict(a.copy(id="b"),listOf(a)))
+        assertFalse(OperationalRules.conflict(a.copy(id="b"),
+            listOf(a.copy(status="Cancelado"))))
+    }
     @Test fun goalsSupportBothDirectionsAndLimits() {
         val g=ClientGoal("g","c1","Peso","kg",90.0,80.0,85.0,"2026-12-31")
         assertNull(OperationalRules.goal(g,clients))

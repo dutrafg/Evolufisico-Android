@@ -198,3 +198,13 @@
 - [ ] Testes instrumentados Android 10 da versão 3.0.0-alpha.3
 - [ ] Teste visual do calendário no smartphone, diferentes tamanhos de tela e contraste
 - [ ] Homologação de backup externo, atualização com assinatura e segurança de dados
+
+## Alpha 3 — agendamentos semanais e faltas (3.0.1-alpha.3)
+
+- [x] Séries semanais de 1–12 atendimentos com IDs distintos e datas ISO.
+- [x] Conflitos na série invalidam toda a operação antes de gravar.
+- [x] Agenda mantém edição individual, conclusão e cancelamento.
+- [x] Novo estado e filtro "Faltou"; resumo da Agenda e calendário.
+- [x] JUnit para calendário, série semanal, colisão e estado Faltou.
+- [ ] CI e testes instrumentados da versão 3.0.1-alpha.3.
+- [ ] Teste real de navegação, calendários e diálogos em smartphone.

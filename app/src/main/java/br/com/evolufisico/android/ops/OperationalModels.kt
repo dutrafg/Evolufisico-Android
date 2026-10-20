@@ -63,7 +63,7 @@ object OperationalRules {
         if (n.body.isBlank() || n.body.length > 3000) return "Anotação deve ter até 3000 caracteres."
         return null
     }
-    val appointmentStatuses = setOf("Agendado","Concluído","Cancelado")
+    val appointmentStatuses = setOf("Agendado","Concluído","Cancelado","Faltou")
     fun appointment(a: Appointment, clients: Set<String>): String? {
         if (a.id.isBlank() || a.clientId !in clients) return "Cliente inválido."
         if (runCatching { LocalDateTime.parse(a.startIso) }.isFailure)

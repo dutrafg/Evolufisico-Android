@@ -24,6 +24,7 @@ class AgendaCalendarTest {
         assertEquals(1,day.scheduled)
         assertEquals(1,day.completed)
         assertEquals(1,day.cancelled)
+        assertEquals(0,day.missed)
     }
     @Test fun dayAndMonthFiltersDoNotIncludeOutsideDates() {
         assertEquals(3,AgendaCalendar.filter(list,LocalDate.of(2026,10,20)).size)

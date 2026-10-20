@@ -8,9 +8,10 @@ data class AgendaDay(
     val date: LocalDate,
     val scheduled: Int,
     val completed: Int,
-    val cancelled: Int
+    val cancelled: Int,
+    val missed: Int
 ) {
-    val total: Int get() = scheduled + completed + cancelled
+    val total: Int get() = scheduled + completed + cancelled + missed
 }
 
 object AgendaCalendar {
@@ -28,7 +29,8 @@ object AgendaCalendar {
                 val daily = byDate[date.toString()].orEmpty()
                 AgendaDay(date, daily.count { it.status == "Agendado" },
                     daily.count { it.status == "Concluído" },
-                    daily.count { it.status == "Cancelado" })
+                    daily.count { it.status == "Cancelado" },
+                    daily.count { it.status == "Faltou" })
             }
         }.chunked(7)
     }

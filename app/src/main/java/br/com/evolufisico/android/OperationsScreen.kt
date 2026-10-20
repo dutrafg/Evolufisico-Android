@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.*
+import br.com.evolufisico.android.agenda.WeeklyAppointments
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -94,6 +95,7 @@ private fun AppointmentsModule(
             "Futuras" -> a.startIso.substringBefore('T')>=today && a.status=="Agendado"
             "Concluídas" -> a.status=="Concluído"
             "Canceladas" -> a.status=="Cancelado"
+            "Faltas" -> a.status=="Faltou"
             else -> true
         }
         matchPeriod && (search.isBlank() || a.service.contains(search,true) ||
@@ -106,7 +108,8 @@ private fun AppointmentsModule(
             Text("Agendamentos locais vinculados ao cliente.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Hoje: "+all.count{it.startIso.startsWith(today)&&it.status=="Agendado"}+
-                " · Concluídos: "+all.count{it.status=="Concluído"})
+                " · Concluídos: "+all.count{it.status=="Concluído"}+
+                " · Faltas: "+all.count{it.status=="Faltou"})
         }
         item {
             AgendaCalendarPanel(all,selectedDay,onSelect={ day ->
@@ -121,7 +124,7 @@ private fun AppointmentsModule(
             OutlinedTextField(search,{search=it.take(80)},modifier=Modifier.fillMaxWidth(),
                 label={Text("Buscar cliente, serviço ou data")},singleLine=true)
             Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                listOf("Todas","Hoje","Dia","Futuras","Concluídas","Canceladas").forEach { c ->
+                listOf("Todas","Hoje","Dia","Futuras","Concluídas","Canceladas","Faltas").forEach { c ->
                     FilterChip(selected=period==c,onClick={period=c},label={Text(c)})
                 }
             }
@@ -146,6 +149,9 @@ private fun AppointmentsModule(
                             TextButton(enabled=!busy,onClick={
                                 save(all.map{if(it.id==a.id)it.copy(status="Cancelado") else it})
                             }) {Text("Cancelar")}
+                            TextButton(enabled=!busy,onClick={
+                                save(all.map{if(it.id==a.id)it.copy(status="Faltou") else it})
+                            }) {Text("Registrar falta")}
                         }
                         TextButton(enabled=!busy,onClick={remove=a}) {Text("Excluir")}
                     }
@@ -154,8 +160,9 @@ private fun AppointmentsModule(
         }
     }
     if(editingOpen) AppointmentEditor(clients,services,editing,all,selectedDay,
-        onDismiss={editingOpen=false},onSave={
-            save(if(editing==null) all+it else all.map{old->if(old.id==it.id)it else old})
+        onDismiss={editingOpen=false},onSave={ generated ->
+            save(if(editing==null) all+generated else
+                all.map { old -> if(old.id==generated.first().id)generated.first() else old })
             editingOpen=false
         })
     remove?.let { a ->
@@ -172,7 +179,7 @@ private fun AppointmentsModule(
 private fun AppointmentEditor(
     clients:List<Client>,services:List<ServiceItem>,current:Appointment?,existing:List<Appointment>,
     preferredDay:LocalDate?,
-    onDismiss:()->Unit,onSave:(Appointment)->Unit
+    onDismiss:()->Unit,onSave:(List<Appointment>)->Unit
 ) {
     var clientId by remember(current?.id){mutableStateOf(current?.clientId?:clients.first().id)}
     var date by remember(current?.id){mutableStateOf(current?.startIso?.substringBefore('T')?:
@@ -181,6 +188,7 @@ private fun AppointmentEditor(
     var mins by remember(current?.id){mutableStateOf((current?.durationMinutes?:60).toString())}
     var service by remember(current?.id){mutableStateOf(current?.service?:"Avaliação física")}
     var note by remember(current?.id){mutableStateOf(current?.notes?:"")}
+    var repeats by remember(current?.id) {mutableStateOf("1")}
     var clientMenu by remember {mutableStateOf(false)}
     var issue by remember {mutableStateOf<String?>(null)}
     AlertDialog(onDismissRequest=onDismiss,
@@ -211,6 +219,13 @@ private fun AppointmentEditor(
                 }
                 OutlinedTextField(service,{service=it.take(120)},label={Text("Serviço")},singleLine=true)
                 OutlinedTextField(note,{note=it.take(500)},label={Text("Observações")},minLines=2)
+                if(current==null) {
+                    OutlinedTextField(repeats,{repeats=it.take(2)},
+                        label={Text("Repetir semanalmente (1 a 12 atendimentos)")},
+                        singleLine=true)
+                    Text("A série inteira será recusada se algum horário estiver ocupado.",
+                        style=MaterialTheme.typography.bodySmall)
+                }
                 issue?.let{Text(it,color=MaterialTheme.colorScheme.error)}
             }
         },
@@ -219,9 +234,23 @@ private fun AppointmentEditor(
                 clientId,"${date}T${time}",mins.toIntOrNull()?:0,service,
                 current?.status?:"Agendado",note)
             val error=OperationalRules.appointment(new,clients.map{it.id}.toSet())
-            issue=error?:if(OperationalRules.conflict(new,existing))
-                "Há outro atendimento nesse intervalo." else null
-            if(issue==null)onSave(new)
+            issue=error
+            if(issue==null) {
+                val quantity=if(current==null)repeats.toIntOrNull() else 1
+                if(quantity==null) issue="Informe de 1 a 12 atendimentos."
+                else {
+                    val result=runCatching {
+                        if(current!=null) {
+                            require(!OperationalRules.conflict(new,existing)) {
+                                "Há outro atendimento nesse intervalo."
+                            }
+                            listOf(new)
+                        } else WeeklyAppointments.plan(new,existing,quantity)
+                    }
+                    result.onSuccess { onSave(it) }
+                        .onFailure { issue=it.localizedMessage ?: "Série inválida." }
+                }
+            }
         }){Text("Salvar")}},
         dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}}
     )
