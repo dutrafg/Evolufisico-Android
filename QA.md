@@ -12,7 +12,10 @@
 - [x] Verificação de integridade e diálogo de confirmação antes da seleção de backup
 - [x] Testes JUnit de atraso e testes anteriores de cripto, validação e evolução preservados
 - [x] Teste Android instrumentado criado para roundtrip Keystore/backup e janela FLAG_SECURE
-- [ ] Compilação, unit tests, Android lint e AAB de 0.6.0-alpha: **a conferir no CI**
+- [x] **CI aprovada em 20/10/2026**: [GitHub Actions #39427100179](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39427100179), commit `ca5ee156243bf040af77c5d1996a1ad7746b75a2`. `assembleDebug`, `testDebugUnitTest`, `assembleDebugAndroidTest`, `lintDebug` e `bundleRelease` concluídos com sucesso.
+- [x] APK debug disponibilizado no artifact `Evolufisico-Android-debug`; 57.753.521 bytes; SHA-256 `6c7ef27a31ac7583d4c1209f50464a1dc6fbbae317cce1da7e5bc91b5f917e0b`. ZIP verificado sem erros.
+- [x] AAB compilado e arquivado como `Evolufisico-Android-UNSIGNED-release-aab`, **sem assinatura de distribuição**; ZIP verificado sem erros.
+- [ ] Testes instrumentados estão **compilados**, mas não **executados**. Use o workflow `Android Emulator QA (manual)` para homologação em emulador Android 10.
 - [ ] Execução dos instrumentados no emulador: **workflow manual disponível; ainda não foi executado**
 - [ ] Testes em Android real, compatibilidade biométrica por fabricante, Android 10, SAF e cancelamento
 - [ ] Falhas forçadas no disco, queda de energia durante restauração e cópia SAF incompleta
