@@ -49,7 +49,9 @@
 - [x] Restauração bloqueada para base com registros e exige senha de no mínimo 10 caracteres; mensagem explicativa
 - [x] JUnit para horário diário e verificação de argumentos inválidos
 - [x] Teste Android instrumentado de selagem, leitura e eliminação da credencial Keystore
-- [ ] CI 0.25.0-alpha — aguardando execução e validação de compilação, unit tests, Android Lint e AAB
+- [x] **CI da 0.25.0-alpha aprovada**: [GitHub Actions 39443816780](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39443816780): APK, testes unitários, Android Lint, compilação instrumentada, AAB de release não assinado e artifact debug publicados.
+- [x] **3/3 testes instrumentados Android 10 aprovados**: [emulador 39443816033](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39443816033). Exercitam gravação de dados, backup, restauração, política de screenshots e a credencial cifrada no Keystore.
+- [x] ZIP APK extraído e verificado sem erros; `app-debug.apk` de **59.353.919 bytes**, SHA-256 `0227720bb10a585950159e6a02d2228752e02ab34caedf45b426ccd9e901da7d`.
 - [ ] QA WorkManager em dispositivo físico e provedor SAF real, inclusive reinício/Doze
 - [ ] Teste de recuperação com arquivo incompleto e perda de permissões
 - [ ] Android não garante disparo exato no minuto, mesmo que horário desejado esteja salvo
