@@ -95,6 +95,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     SERVICES("Serviços", Icons.Outlined.Storefront),
     REPORTS("Relatórios", Icons.Outlined.Description),
     INSIGHTS("Indicadores", Icons.Outlined.TrendingUp),
+    TRENDS("Comparativos", Icons.Outlined.BarChart),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -288,6 +289,7 @@ private fun AppContent(
                         onAgenda = { current = Section.AGENDA },
                         onBilling = { current = Section.BILLING },
                         onGoals = { current = Section.GOALS })
+                    Section.TRENDS -> TrendsScreen(clients.toList(), backupManager)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository)
                     Section.SETTINGS -> DataSettingsScreen(
@@ -347,6 +349,8 @@ private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onN
             { onNavigate(Section.REPORTS) }) }
         item { FeatureCard("Indicadores", "Cobranças, atendimentos e prazos de metas",
             { onNavigate(Section.INSIGHTS) }) }
+        item { FeatureCard("Comparativos", "Atendimentos e valores mensais por cliente",
+            { onNavigate(Section.TRENDS) }) }
     }
 }
 

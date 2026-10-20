@@ -128,3 +128,36 @@
 - [x] 57–59 navegação dos alertas aos módulos e botão de atualizar indicadores
 - [x] 60 testes unitários para prazos, status e totais sem dependência da data real
 - [ ] Teste de interface no smartphone após compilação da versão `2.0.1-alpha.2`.
+
+### Bloco D — Alpha 2 etapas 61–80 (implementado)
+- [x] 61–63: métricas mensais com intervalo de 1 a 24 meses
+- [x] 64–66: valores de vencimentos, recebimentos por data efetiva e pendências em centavos
+- [x] 67–69: atendimentos agendados, concluídos e cancelados
+- [x] 70–72: isolamento por cliente e ordenação cronológica
+- [x] 73–75: comparativos com barras e valores detalhados
+- [x] 76–78: escolher 6 ou 12 meses, avançar e retroceder período
+- [x] 79–80: testes de competências financeiras e filtros
+
+### Bloco E — Alpha 2 etapas 81–90 (implementado)
+- [x] 81–83: modelo de evento da linha do tempo por cliente e datas
+- [x] 84–86: eventos de avaliações, formulários e atendimentos
+- [x] 87–88: cobranças e recebimentos por data
+- [x] 89: prazos de metas incluídos
+- [x] 90: oito eventos mais recentes na Ficha, com teste de isolamento
+
+### Alpha 2 etapas 91–100 (homologação em andamento)
+- [x] 91–93: testes unitários de indicadores, comparativos e linha do tempo
+- [ ] 94–96: compilação, Lint e testes Android do commit 2.0.2-alpha.2
+- [ ] 97: validação visual de Dados e Privacidade no Android físico
+- [ ] 98: exportação CSV para pasta SAF e leitura em planilhas
+- [ ] 99: atualização APK com assinatura fixa e migração verificada
+- [ ] 100: QA funcional completo em aparelho físico
+
+## Próximo ciclo autorizado: etapas 101–200
+- [ ] 101–120: produtividade e navegação contextual
+- [ ] 121–140: relatórios financeiros e avaliações avançadas
+- [ ] 141–160: automação de atendimentos e formulários
+- [ ] 161–180: importação, exportação e recuperação offline
+- [ ] 181–200: acessibilidade, estabilidade e homologação da distribuição
+
+Etapas pendentes não são marcadas como prontas sem implementação e testes.

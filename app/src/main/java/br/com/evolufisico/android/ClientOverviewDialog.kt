@@ -126,6 +126,14 @@ fun ClientOverviewDialog(
                         Text("Valor a receber: " + java.text.NumberFormat
                             .getCurrencyInstance(java.util.Locale.forLanguageTag("pt-BR"))
                             .format(charges.filterNot { it.isReceived }.sumOf { it.amountCents } / 100.0))
+                        Text("Linha do tempo recente", style = MaterialTheme.typography.titleMedium)
+                        val timeline = br.com.evolufisico.android.timeline.ClientTimeline
+                            .build(data, client.id)
+                        if (timeline.isEmpty()) Text("Sem atividades registradas.")
+                        timeline.take(8).forEach { entry ->
+                            Text(entry.dateIso + " · " + entry.kind.label + " · " + entry.title,
+                                style = MaterialTheme.typography.bodySmall)
+                        }
                         Text("Resumo descritivo, sem inferências clínicas.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)

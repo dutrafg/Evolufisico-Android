@@ -165,3 +165,11 @@ Os nomes das fases representam **incrementos funcionais de um mesmo módulo**, n
 ## Alpha 2 — bloco 41–60 · Indicadores
 
 Novo módulo **Indicadores** na Área de trabalho e menu lateral. Exibe totais de cobranças atrasadas e a vencer em até 7 dias, atendimentos agendados para a próxima semana, atendimentos com datas passadas e metas próximas do prazo ou vencidas. Filtros por área e abertura direta dos módulos originais. Resumo local informativo, sem envios externos. Versão de desenvolvimento `2.0.1-alpha.2` (`versionCode=102`).
+
+## Alpha 2 — blocos 61–90 (2.0.2-alpha.2)
+
+**Comparativos mensais:** gráfico de barras simples com recebimentos por data efetiva, vencimentos por mês, saldo ainda pendente e atendimentos agendados/concluídos/cancelados. Filtro por cliente, alternância de 6 ou 12 meses e navegação entre períodos, mantendo valores em centavos inteiros. O painel é apenas de leitura e não executa cobranças.
+
+**Linha do tempo por cliente:** ficha individual agora mostra até oito acontecimentos recentes com avaliações, formulários, atendimentos, cobranças (e recebimentos) e prazos de metas. Os eventos são classificados por data e limitados ao ID do cliente.
+
+Versão de desenvolvimento `2.0.2-alpha.2`, `versionCode=103`, sem alterar o identificador de pacote Android nem o formato dos arquivos JSON. Atualização no mesmo aparelho continua exigindo **certificado de assinatura compatível**.

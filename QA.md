@@ -158,3 +158,11 @@
 - [x] Testes unitários adicionais com data fixa, verificação de centavos e ausência de falsos positivos quando não há registros.
 - [ ] CI da 2.0.1-alpha.2 — ainda não verificado.
 - [ ] Execução em emulador e QA visual desta revisão — ainda não verificados.
+
+### Alpha 2 — comparativos e linha do tempo (2.0.2-alpha.2)
+- [x] Cálculos mensais por competência e recebimento, com filtro por cliente.
+- [x] Testes para valores em centavos e meses diferentes.
+- [x] Linha do tempo com cinco tipos de eventos e teste de isolamento.
+- [x] Interfaces de comparativos e linha do tempo implementadas.
+- [ ] CI Android 2.0.2-alpha.2 ainda não verificado.
+- [ ] Testes instrumentados e QA visual desta versão pendentes.
