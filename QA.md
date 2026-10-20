@@ -110,6 +110,9 @@
 - [x] Novos backups são JSON sem senha; leitura do formato `.efbak` protegido anterior permanece.
 - [x] Agendamento automático sem credencial criptográfica, validação de backup ainda realizada.
 - [x] Teste instrumentado ajustado para JSON e importação de backup antigo.
-- [ ] Build da 0.40.1-alpha e testes no emulador ainda precisam ser concluídos.
+- [x] Build 0.40.1-alpha aprovado: [CI 39479954849](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39479954849), APK, unit tests, Lint, testes instrumentados compilados, AAB não assinado e teste de assinatura CI.
+- [x] Emulador Android 10 aprovado: [3 de 3 testes instrumentados — 39479954763](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39479954763), JSON novo e backup .efbak antigo.
+- [x] APK debug exportado do CI e ZIP íntegro: SHA-256 `8723db1182ed6e47963b39cdc0a32063c6009a60c940681e814f417789b82b2f`.
+- [ ] Migração do banco legada em smartphone com dados antigos: ainda não homologada.
 - [ ] Testar migração dos bancos AES-GCM em dispositivo contendo dados anteriores.
 - [ ] Uso de dados reais sensíveis **não permitido neste protótipo sem criptografia**.
