@@ -235,3 +235,14 @@
 - [ ] Compilação e testes unitários CI da Alpha 4 aguardando execução.
 - [ ] QA em emulador Android 10 e testes visuais pendentes.
 - [ ] APK debug pode não atualizar assinatura anterior; mantenha backup externo verificado.
+
+## Alpha 5 — pacote de homologação paralelo (5.0.0-alpha.5)
+
+- [x] Resumo por cliente exportável em CSV sem modificar registros.
+- [x] Proteção contra fórmulas e caracteres separadores no CSV.
+- [x] Mensagem de compartilhamento de atendimento gerada localmente e conferida por JUnit.
+- [x] APK debug isolado por applicationId, sem substituir o app original.
+- [ ] Compilação CI/Android Lint e testes unitários da Alpha 5.
+- [ ] Testes instrumentados em Android 10 da Alpha 5.
+- [ ] Instalação paralela e restauração de backup em smartphone real — pendente.
+- [ ] Validação visual dos novos botões e conteúdo compartilhado — pendente.

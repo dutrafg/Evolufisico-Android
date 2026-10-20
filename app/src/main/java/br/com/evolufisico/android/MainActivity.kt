@@ -297,6 +297,7 @@ private fun AppContent(
                         onGoals = { current = Section.GOALS })
                     Section.CLIENT_SUMMARY -> ClientOperationsScreen(backupManager,
                         onClients = { current = Section.CLIENTS },
+                        onDocumentFlow = onDocumentFlow,
                         onAgenda = { current = Section.AGENDA },
                         onBilling = { current = Section.BILLING },
                         onGoals = { current = Section.GOALS })

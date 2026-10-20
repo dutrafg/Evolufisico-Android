@@ -1,5 +1,6 @@
 package br.com.evolufisico.android
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,7 @@ import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.*
 import br.com.evolufisico.android.agenda.WeeklyAppointments
 import br.com.evolufisico.android.agenda.AgendaIcs
+import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -188,6 +190,18 @@ private fun AppointmentsModule(
                     Row(Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                         TextButton(enabled=!busy,onClick={editing=a;editingOpen=true}) {Text("Editar")}
+                        TextButton(onClick={
+                            val text=AppointmentShareText.format(
+                                a,name[a.clientId]?:"Cliente")
+                            val share=Intent(Intent.ACTION_SEND).apply {
+                                type="text/plain"
+                                putExtra(Intent.EXTRA_TEXT,text)
+                            }
+                            runCatching {
+                                context.startActivity(Intent.createChooser(
+                                    share,"Compartilhar atendimento"))
+                            }.onFailure { exportResult="Não foi possível abrir o compartilhamento." }
+                        }) { Text("Compartilhar") }
                         if(a.status=="Agendado") {
                             TextButton(enabled=!busy,onClick={
                                 save(all.map{if(it.id==a.id)it.copy(status="Concluído") else it})

@@ -1,5 +1,9 @@
 package br.com.evolufisico.android
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.SecureBackupManager
 import br.com.evolufisico.android.operations.ClientOperations
 import br.com.evolufisico.android.operations.ClientOperationsCalculator
+import br.com.evolufisico.android.operations.ClientOperationsCsv
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.NumberFormat
@@ -20,10 +26,36 @@ import java.util.Locale
 fun ClientOperationsScreen(
     backupManager:SecureBackupManager,
     onClients:()->Unit,
+    onDocumentFlow:(Boolean)->Unit,
     onAgenda:()->Unit,
     onBilling:()->Unit,
     onGoals:()->Unit
 ) {
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var toExport by remember {mutableStateOf<List<ClientOperations>>(emptyList())}
+    val exportCsv=rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri:Uri? ->
+        onDocumentFlow(false)
+        if(uri!=null) {
+            scope.launch {
+                val result=withContext(Dispatchers.IO) {
+                    runCatching {
+                        val csv=ClientOperationsCsv.generate(toExport)
+                        context.contentResolver.openOutputStream(uri,"w")?.use { stream ->
+                            stream.write(csv);stream.flush()
+                        } ?: error("Falha ao criar CSV.")
+                        csv.size
+                    }
+                }
+                message=result.fold(
+                    onSuccess={"Resumo CSV exportado ("+it+" bytes)."},
+                    onFailure={"Falha ao exportar CSV: "+(it.localizedMessage?:"Erro.")}
+                )
+            }
+        }
+    }
     var query by remember {mutableStateOf("")}
     var filter by remember {mutableStateOf("Todos")}
     var rows by remember {mutableStateOf<List<ClientOperations>>(emptyList())}
@@ -77,6 +109,14 @@ fun ClientOperationsScreen(
                     }
                 }
             }
+            Button(
+                modifier=Modifier.fillMaxWidth(),enabled=!busy&&filtered.isNotEmpty(),
+                onClick={
+                    toExport=filtered.toList()
+                    onDocumentFlow(true)
+                    exportCsv.launch("EvoluFisico_Resumo_Clientes.csv")
+                }
+            ) { Text("Exportar clientes filtrados (.csv)") }
             Text("Clientes nesta seleção: "+filtered.size,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             message?.let{Text(it,color=MaterialTheme.colorScheme.error)}

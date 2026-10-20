@@ -221,3 +221,18 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] 61–80: produtividade, acessibilidade e fluxos de operação
 - [ ] 81–100: QA em Android real, exportações SAF, backup e atualização com certificado válido
 - [ ] Homologação manual e assinatura estável permanecem pendentes
+
+## Alpha 5 — ciclo 0–100 (iniciado)
+
+- [x] 0–10: versionamento `5.0.0-alpha.5`, código 109 e manutenção integral dos módulos
+- [x] 11–20: exportador CSV por cliente, com filtros existentes e campos em centavos
+- [x] 21–30: seletor SAF, escape de planilha e testes unitários de formatação
+- [x] 31–35: compartilhar agendamentos pela folha de compartilhamento Android
+- [x] 36–40: testes de mensagem e inclusão de informações pertinentes
+- [x] 41–45: APK debug paralelo com `applicationIdSuffix=.alpha5` para preservar instalação antiga
+- [x] 46–50: nome separado no lançador de homologação e base de dados isolada
+- [ ] 51–70: testes funcionais adicionais e fluxos de exportação/importação
+- [ ] 71–90: correções de UX, acessibilidade e responsividade em smartphones
+- [ ] 91–100: homologação final da Alpha 5 e avaliação dos critérios da Beta
+- [ ] Instalação do APK debug em smartphone Android 10+ e teste de migração por backup
+- [ ] Assinatura release definitiva necessária para atualizações na mesma instalação
