@@ -285,7 +285,8 @@ private fun AppContent(
                         onDocumentFlow, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
                     Section.FORMS -> FormsScreen(clients.toList(), formRepository, onDocumentFlow)
-                    Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.AGENDA)
+                    Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository,
+                        OperationsTab.AGENDA, onDocumentFlow)
                     Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)
                     Section.SERVICES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.SERVICES)
                     Section.REPORTS -> ReportsScreen(clients.toList(), backupManager, onDocumentFlow)

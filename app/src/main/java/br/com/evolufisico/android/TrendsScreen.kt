@@ -100,8 +100,13 @@ fun TrendsScreen(clients:List<Client>,manager:SecureBackupManager) {
                         modifier=Modifier.fillMaxWidth())
                     Text("Ainda pendente neste mês: "+money.format(value.pendingCents/100.0))
                     Text("Atendimentos: "+value.completed+" concluídos · "+
-                        value.scheduled+" agendados · "+value.cancelled+" cancelados",
+                        value.scheduled+" agendados · "+value.cancelled+" cancelados · "+
+                        value.missed+" faltas",
                         color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    value.attendancePercent?.let { rate ->
+                        Text("Comparecimento entre realizados e faltas: "+rate+"%",
+                            color=MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }

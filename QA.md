@@ -208,3 +208,11 @@
 - [x] JUnit para calendário, série semanal, colisão e estado Faltou.
 - [ ] CI e testes instrumentados da versão 3.0.1-alpha.3.
 - [ ] Teste real de navegação, calendários e diálogos em smartphone.
+
+## Alpha 3 — comparecimento mensal e exportação ICS (3.0.2-alpha.3)
+
+- [x] Comparativos mensais mostram faltas; taxa de comparecimento calculada sobre concluídos + faltas
+- [x] Exportação SAF de agenda em iCalendar, somente registros agendados e filtrados
+- [x] Testes de UTF-8, folding de linhas, escape de descrição, datas e exclusão de cancelamentos
+- [ ] CI e testes instrumentados da versão 3.0.2-alpha.3
+- [ ] Verificar leitura dos arquivos ICS em calendário externo no smartphone

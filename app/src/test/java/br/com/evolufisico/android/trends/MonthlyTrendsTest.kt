@@ -21,7 +21,8 @@ class MonthlyTrendsTest {
             appointments=listOf(
                 Appointment("p1","a","2026-10-19T10:00",60,"Treino","Concluído"),
                 Appointment("p2","a","2026-10-21T10:00",60,"Treino","Agendado"),
-                Appointment("p3","b","2026-10-22T10:00",60,"Treino","Cancelado")
+                Appointment("p3","b","2026-10-22T10:00",60,"Treino","Cancelado"),
+                Appointment("p4","a","2026-10-23T10:00",60,"Treino","Faltou")
             ))
     )
     @Test fun separatesBillingMonthFromReceiptMonth() {
@@ -32,6 +33,8 @@ class MonthlyTrendsTest {
         assertEquals(1,oct.completed)
         assertEquals(1,oct.scheduled)
         assertEquals(1,oct.cancelled)
+        assertEquals(1,oct.missed)
+        assertEquals(50,oct.attendancePercent)
     }
     @Test fun clientFilterAndChronologicalOrder() {
         val rows=MonthlyTrends.collect(snapshot,YearMonth.of(2026,10),2,"a")
@@ -40,6 +43,8 @@ class MonthlyTrendsTest {
         assertEquals(10000L,rows[0].billedCents)
         assertEquals(3000L,rows[1].billedCents)
         assertEquals(0,rows[1].cancelled)
+        assertEquals(1,rows[1].missed)
+        assertEquals(50,rows[1].attendancePercent)
         assertTrue(runCatching{MonthlyTrends.collect(snapshot,months=0)}.isFailure)
     }
 }

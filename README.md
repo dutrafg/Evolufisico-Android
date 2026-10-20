@@ -201,3 +201,11 @@ Na Agenda, ao criar um atendimento é possível escolher de **1 a 12 repetiçõe
 Adicionada a situação **Faltou**, com ação *Registrar falta*, filtro Faltas e contador na Agenda. As situações anteriores permanecem válidas. A visualização mensal distingue os totais por estado.
 
 É criação em lote, não sincronização com calendário externo nem cobrança automática. As etapas 51–100 de Alpha 3 permanecem planejadas.
+
+### Alpha 3 — comparecimento e calendário ICS (3.0.2-alpha.3)
+
+O módulo **Comparativos** diferencia *Faltou* de *Cancelado*. Apresenta faltas por mês e uma taxa de comparecimento calculada somente sobre **atendimentos concluídos + faltas**; compromissos futuros e cancelamentos são excluídos do denominador. O cálculo é informativo e baseado nos registros locais.
+
+A **Agenda** permite exportar os atendimentos filtrados e ainda agendados como arquivo `.ics` pela pasta escolhida no Android (SAF). O arquivo usa horários locais flutuantes, identificador único por atendimento, escape de descrição e quebra de linhas UTF-8. Pode ser importado manualmente por aplicativos de calendário, sem autenticação na nuvem. Atendimentos com status Concluído, Cancelado ou Faltou não são exportados para novos compromissos.
+
+Testes JUnit verificam competências financeiras, comparecimento, seleção de estados e a sintaxe do calendário.

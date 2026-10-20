@@ -1,5 +1,9 @@
 package br.com.evolufisico.android
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.*
 import br.com.evolufisico.android.agenda.WeeklyAppointments
+import br.com.evolufisico.android.agenda.AgendaIcs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,7 +28,10 @@ import java.time.LocalDateTime
 enum class OperationsTab { AGENDA, GOALS, SERVICES, NOTES }
 
 @Composable
-fun OperationsScreen(clients: List<Client>, store: OperationalStore, tab: OperationsTab) {
+fun OperationsScreen(
+    clients: List<Client>, store: OperationalStore, tab: OperationsTab,
+    onDocumentFlow: (Boolean) -> Unit = {}
+) {
     var data by remember(store) { mutableStateOf(OperationsData()) }
     var loading by remember(store) { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
@@ -53,7 +61,7 @@ fun OperationsScreen(clients: List<Client>, store: OperationalStore, tab: Operat
     if (loading) { OperationNotice("Carregando dados locais...");return }
     if (fatal!=null) { OperationNotice(fatal!!);return }
     when(tab) {
-        OperationsTab.AGENDA -> AppointmentsModule(clients,data.appointments,data.services,busy,message) {
+        OperationsTab.AGENDA -> AppointmentsModule(clients,data.appointments,data.services,busy,message,onDocumentFlow) {
             persist(data.copy(appointments=it))
         }
         OperationsTab.GOALS -> GoalsModule(clients,data.goals,busy,message) {
@@ -77,7 +85,7 @@ fun OperationNotice(msg:String) {
 @Composable
 private fun AppointmentsModule(
     clients:List<Client>, all:List<Appointment>, services:List<ServiceItem>,
-    busy:Boolean,message:String?,
+    busy:Boolean,message:String?,onDocumentFlow:(Boolean)->Unit,
     save:(List<Appointment>)->Unit
 ) {
     var search by remember { mutableStateOf("") }
@@ -87,6 +95,9 @@ private fun AppointmentsModule(
     var editingOpen by remember { mutableStateOf(false) }
     var remove by remember { mutableStateOf<Appointment?>(null) }
     val name=clients.associate{it.id to it.name}
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var exportResult by remember { mutableStateOf<String?>(null) }
     val today=LocalDate.now().toString()
     val visible=all.filter { a ->
         val matchPeriod=when(period) {
@@ -101,6 +112,29 @@ private fun AppointmentsModule(
         matchPeriod && (search.isBlank() || a.service.contains(search,true) ||
             (name[a.clientId]?:"").contains(search,true) || a.startIso.contains(search))
     }.sortedBy { it.startIso }
+    val icsLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/calendar")
+    ) { uri:Uri? ->
+        onDocumentFlow(false)
+        if(uri!=null) {
+            scope.launch {
+                val result=withContext(Dispatchers.IO) {
+                    runCatching {
+                        val bytes=AgendaIcs.generate(
+                            visible.filter { it.status=="Agendado" },name)
+                        context.contentResolver.openOutputStream(uri,"w")?.use {
+                            it.write(bytes);it.flush()
+                        } ?: error("Não foi possível escrever arquivo ICS.")
+                        bytes.size
+                    }
+                }
+                exportResult=result.fold(
+                    onSuccess={ "Agenda exportada em ICS ("+it+" bytes)." },
+                    onFailure={ "Falha ao exportar ICS: "+(it.localizedMessage?:"Erro.") }
+                )
+            }
+        }
+    }
     LazyColumn(contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp),modifier=Modifier.fillMaxSize()) {
         item {
@@ -128,6 +162,18 @@ private fun AppointmentsModule(
                     FilterChip(selected=period==c,onClick={period=c},label={Text(c)})
                 }
             }
+            OutlinedButton(
+                enabled=!busy&&visible.any{it.status=="Agendado"},
+                modifier=Modifier.fillMaxWidth(),
+                onClick={
+                    onDocumentFlow(true)
+                    icsLauncher.launch("EvoluFisico_Agenda_"+today+".ics")
+                }
+            ) { Text("Exportar atendimentos filtrados (.ics)") }
+            Text("Exporta somente atendimentos agendados para calendários externos.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
+            exportResult?.let { Text(it,color=MaterialTheme.colorScheme.primary) }
             message?.let { Text(it,color=MaterialTheme.colorScheme.primary) }
         }
         if(visible.isEmpty()) item { Text("Não há agendamentos nesta seleção.") }

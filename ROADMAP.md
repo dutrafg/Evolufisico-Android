@@ -192,8 +192,13 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [x] 36–40: opção de repetição na interface e testes de conflitos e parâmetros
 - [x] 41–45: situação Faltou incluída nas validações e no histórico de atendimentos
 - [x] 46–50: filtros e indicadores de faltas, sem afetar atendimentos cancelados
-- [ ] 51–60: melhorar relatórios de presença e comparativos mensais
-- [ ] 61–80: integração de formulários, histórico e relatórios operacionais
+- [x] 51–55: contabilização de faltas mensal e isolamento por cliente
+- [x] 56–60: taxa de comparecimento sem incluir cancelamentos ou atendimentos futuros
+- [x] 61–65: exportação iCalendar de atendimentos agendados
+- [x] 66–70: escrita pelo seletor de arquivos Android (SAF) respeitando filtros
+- [x] 71–75: horários locais, identificadores, caracteres especiais e UTF-8
+- [x] 76–80: testes de ICS, exclusão de cancelados/faltas e saída portátil
+- [ ] Integração com calendário de terceiros por API permanece fora do escopo
 - [ ] 81–100: acessibilidade, responsividade e QA automatizado de todos os fluxos
 - [ ] Validação manual em smartphone real, restauração a partir de backup externo e atualização assinada de forma permanente
 

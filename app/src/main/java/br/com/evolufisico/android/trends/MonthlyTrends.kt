@@ -12,8 +12,14 @@ data class MonthlyTrend(
     val pendingCents:Long,
     val scheduled:Int,
     val completed:Int,
-    val cancelled:Int
-)
+    val cancelled:Int,
+    val missed:Int=0
+) {
+    val attendancePercent:Int? get() {
+        val attended=completed+missed
+        return if(attended==0) null else completed*100/attended
+    }
+}
 
 /** Recebimentos por data efetiva; valores faturados por vencimento. */
 object MonthlyTrends {
@@ -44,7 +50,8 @@ object MonthlyTrends {
                 billed.filterNot{it.isReceived}.sumOf{it.amountCents},
                 appointments.count{it.status=="Agendado"},
                 appointments.count{it.status=="Concluído"},
-                appointments.count{it.status=="Cancelado"}
+                appointments.count{it.status=="Cancelado"},
+                appointments.count{it.status=="Faltou"}
             )
         }
     }
