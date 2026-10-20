@@ -16,12 +16,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.text.Normalizer
 import java.util.Locale
@@ -62,7 +64,20 @@ object WorkspaceModules {
 fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
     var query by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Todos") }
+    val context=LocalContext.current
+    val preferences=remember(context) { context.getSharedPreferences(
+        "module_shortcuts",android.content.Context.MODE_PRIVATE) }
+    var favorites by remember(preferences) {
+        mutableStateOf(WorkspaceFavorites.parse(preferences.getString("routes","").orEmpty()))
+    }
+    fun toggleFavorite(route:String) {
+        val next=WorkspaceFavorites.toggle(favorites,route)
+        favorites=next
+        preferences.edit().putString("routes",WorkspaceFavorites.serialize(next)).apply()
+    }
     val modules=WorkspaceModules.filter(query,category)
+    val pinned=if(query.isBlank() && category=="Todos")
+        modules.filter { it.route in favorites } else emptyList()
     LazyColumn(modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp)) {
         item {
@@ -82,26 +97,46 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
                 color=MaterialTheme.colorScheme.onSurfaceVariant,
                 style=MaterialTheme.typography.bodySmall)
         }
+        if(pinned.isNotEmpty()) {
+            item { Text("Favoritos",style=MaterialTheme.typography.titleMedium,
+                color=MaterialTheme.colorScheme.primary) }
+            items(pinned.size) { index ->
+                val entry=pinned[index]
+                ModuleRow(entry,true,onNavigate) { toggleFavorite(entry.route) }
+            }
+        }
         WorkspaceModules.categories.forEach { group ->
-            val entries=modules.filter { it.category==group }
+            val entries=modules.filter { it.category==group && it !in pinned }
             if(entries.isNotEmpty()) {
                 item { Text(group,style=MaterialTheme.typography.titleMedium,
                     color=MaterialTheme.colorScheme.primary) }
                 items(entries.size) { index ->
                     val entry=entries[index]
-                    Card(modifier=Modifier.fillMaxWidth(),
-                        shape=RoundedCornerShape(12.dp),
-                        onClick={onNavigate(entry.route)}) {
-                        Column(Modifier.padding(16.dp),
-                            verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                            Text(entry.title,style=MaterialTheme.typography.titleSmall)
-                            Text(entry.subtitle,style=MaterialTheme.typography.bodySmall,
-                                color=MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    ModuleRow(entry,entry.route in favorites,onNavigate) {
+                        toggleFavorite(entry.route)
                     }
                 }
             }
         }
         if(modules.isEmpty()) item { Text("Nenhum módulo encontrado.") }
+    }
+}
+
+
+@Composable
+private fun ModuleRow(
+    entry:WorkspaceModule, favorite:Boolean, onNavigate:(String)->Unit,
+    onToggle:()->Unit
+) {
+    Card(modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),
+        onClick={onNavigate(entry.route)}) {
+        Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+            Text(entry.title,style=MaterialTheme.typography.titleSmall)
+            Text(entry.subtitle,style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick=onToggle) {
+                Text(if(favorite) "Remover favorito" else "Adicionar aos favoritos")
+            }
+        }
     }
 }
