@@ -1,33 +1,34 @@
-# Roadmap EvoluFísico Android — v0.10.0-alpha
+# Roadmap — EvoluFísico Android
 
-## Fases 1 a 6
-- [x] Base Android10+ Compose, clientes, avaliações básicas, evolução e PDF, cobranças, backup portátil cifrado
-- [x] Autenticação do Android, bloqueio de sessão, GitHub Actions, Lint e compilação dos testes instrumentados
-- [ ] Testes físicos e instrumentados executados; LGPD; proteção de autenticação por operação
+## Fases 1 a 10
+- [x] Clientes, avaliações, evolução e PDF, cobranças, backup portátil
+- [x] Autenticação Android, tema, política de capturas por versão, atualizador APK via GitHub Releases/SAF
+- [x] Checagens de vínculos, anamnese básica, resumos financeiros e layout responsivo
+- [ ] Distribuição assinada com chave estável, homologação Android físico e ensaios de recuperação
 
-## Fase 7 — Integridade e segurança
-- [x] Auditoria referencial cruzada entre módulos, incluindo testes unitários de registros órfãos
-- [x] Limite de sessão de 90 segundos para seletor de arquivos
-- [x] Recuperação de restauração incompleta
-- [ ] Homologação de falhas reais, pentest e revisão de criptografia
+## Fase 11 — Formulários
+- [x] Módulo próprio no menu, cadastro de registros por ID do cliente e histórico
+- [x] Edição e exclusão com confirmação
+- [x] Campos de dados estruturados, validação e arquivo separado
 
-## Fase 8 — Anamnese avançada por nível
-- [x] Exemplos separados por iniciante, intermediário e avançado
-- [x] Novos campos: saúde, hábitos e experiência; AES-GCM e backup compatíveis
-- [ ] Protocolos clínicos avançados (Pollock/BIA/dobras), migração da Web
+## Fase 12 — Templates
+- [x] Anamnese para iniciantes, intermediários e avançados, cada uma com exemplos
+- [x] Modelos de prontidão e hábitos, perguntas obrigatórias e seleções Sim/Não
+- [ ] Editor de templates personalizados e assinatura digital de consentimento juridicamente validada
 
-## Fase 9 — Financeiro
-- [x] Editar/excluir pendentes, estornar recebimentos com confirmação
-- [x] Resumo mensal por vencimento e pagamento, centavos inteiros
-- [ ] Pagamentos parciais, trilhas de auditoria e integração bancária/fiscal
+## Fase 13 — Relatórios de formulários
+- [x] Geração de PDF independente do painel, paginação e exportação pelo SAF
+- [ ] Testes instrumentados visuais de renderização, integração de logotipo e PDF com senha
 
-## Fase 10 — Interface e atualizações
-- [x] NavigationRail em telas largas, menus móveis, rolagem corrigida
-- [x] Atualizador em Configurações: GitHub Releases ou APK local por SAF
-- [x] Valida pacote, assinatura e versionCode; confirmação de backup e instalador Android
-- [x] Workflow de APK de release assinado **somente quando** segredos de assinatura configurados
-- [ ] Cadastrar segredos de assinatura e publicar primeira release; ainda não existem assets APK em Releases
-- [ ] Testar atualização preservando dados e Android Keystore em aparelhos físicos
-- [ ] Acessibilidade, testes em tablet e compatibilidade com políticas de distribuição
+## Fase 14 — Backup
+- [x] AES-GCM com Keystore para `forms.enc`, escrita atômica
+- [x] Incluir formulários em backup `.efbak`, restauração em base vazia e proteção contra exclusão de cliente
+- [x] Retrocompatibilidade com backups sem formulários
+- [ ] Testar falha abrupta/restauração em Android real, backup agendado seguro
 
-**Desinstalar apaga dados locais.** A única recuperação confiável prevista é backup portátil cifrado em pasta externa + restauração com senha.
+## Fase 15 — Segurança e testes
+- [x] Consertar o uso de IV fornecido pelo app nos três bancos antigos, agora IV do Android Keystore
+- [x] Manter formato de arquivo/nonce para leitura de registros já gravados
+- [x] Estender teste instrumentado para gravar/ler formulários e restaurar backup com todos os módulos
+- [ ] Executar teste instrumentado no emulador e validar o erro original no aparelho do usuário
+- [ ] Auditoria externa de segurança e homologação LGPD

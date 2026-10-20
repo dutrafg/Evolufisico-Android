@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -66,6 +67,7 @@ import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.billing.EncryptedChargeStore
+import br.com.evolufisico.android.forms.EncryptedFormStore
 import br.com.evolufisico.android.backup.SecureBackupManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,6 +82,7 @@ private enum class Section(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Outlined.Home),
     CLIENTS("Clientes", Icons.Outlined.People),
     ASSESSMENTS("Avaliações", Icons.Outlined.Assessment),
+    FORMS("Formulários", Icons.Outlined.Description),
     EVOLUTION("Evolução", Icons.Outlined.TrendingUp),
     BILLING("Cobranças", Icons.Outlined.ReceiptLong),
     SETTINGS("Configurações", Icons.Outlined.Settings)
@@ -100,6 +103,7 @@ class MainActivity : ComponentActivity() {
         val repository = EncryptedClientStore(applicationContext)
         val assessmentRepository = EncryptedAssessmentStore(applicationContext)
         val chargeRepository = EncryptedChargeStore(applicationContext)
+        val formRepository = EncryptedFormStore(applicationContext)
         val backupManager = SecureBackupManager(applicationContext)
         val themePrefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
         setContent {
@@ -114,6 +118,7 @@ class MainActivity : ComponentActivity() {
                     repository = repository,
                     assessmentRepository = assessmentRepository,
                     chargeRepository = chargeRepository,
+                    formRepository = formRepository,
                     backupManager = backupManager,
                     onDocumentFlow = { session.externalDocumentFlow(it) },
                     onLock = { session.lock() },
@@ -139,6 +144,7 @@ private fun AppContent(
     repository: EncryptedClientStore,
     assessmentRepository: EncryptedAssessmentStore,
     chargeRepository: EncryptedChargeStore,
+    formRepository: EncryptedFormStore,
     backupManager: SecureBackupManager,
     onDocumentFlow: (Boolean) -> Unit,
     onLock: () -> Unit,
@@ -155,7 +161,11 @@ private fun AppContent(
     val useRail = LocalConfiguration.current.screenWidthDp >= 840
 
     LaunchedEffect(repository) {
-        val result = withContext(Dispatchers.IO) { runCatching { backupManager.recoverInterruptedRestore(); repository.load() } }
+        val result = withContext(Dispatchers.IO) { runCatching {
+            backupManager.recoverInterruptedRestore()
+            backupManager.summary()
+            repository.load()
+        } }
         result.onSuccess { clients.addAll(it) }
             .onFailure { storageError = "Não foi possível abrir os dados protegidos: ${it.message}" }
         loading = false
@@ -171,10 +181,11 @@ private fun AppContent(
                     if (removedIds.isNotEmpty() &&
                         (
                             assessmentRepository.load().any { it.clientId in removedIds } ||
-                            chargeRepository.load().any { it.clientId in removedIds }
+                            chargeRepository.load().any { it.clientId in removedIds } ||
+                            formRepository.load().any { it.clientId in removedIds }
                         )) {
                         throw IllegalArgumentException(
-                            "Cliente possui avaliações ou cobranças. Exclua os registros vinculados antes de excluir o cliente."
+                            "Cliente possui avaliações, formulários ou cobranças. Exclua os registros vinculados antes de excluir o cliente."
                         )
                     }
                     repository.save(next)
@@ -210,7 +221,10 @@ private fun AppContent(
         },
         bottomBar = {
             if (!useRail) NavigationBar {
-                Section.entries.filter { it != Section.SETTINGS }.forEach { section ->
+                Section.entries.filter {
+                    it in listOf(Section.HOME, Section.CLIENTS, Section.ASSESSMENTS,
+                        Section.FORMS, Section.BILLING)
+                }.forEach { section ->
                     NavigationBarItem(
                         selected = current == section,
                         onClick = { current = section },
@@ -245,6 +259,7 @@ private fun AppContent(
                     Section.HOME -> HomeScreen(clients.size, onNavigate = { current = it })
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
+                    Section.FORMS -> FormsScreen(clients.toList(), formRepository, onDocumentFlow)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository)
                     Section.SETTINGS -> DataSettingsScreen(
@@ -281,6 +296,7 @@ private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
             }
         }
         item { FeatureCard("Avaliações", "Histórico e medidas por cliente", { onNavigate(Section.ASSESSMENTS) }) }
+        item { FeatureCard("Formulários", "Anamnese por nível, prontidão e hábitos", { onNavigate(Section.FORMS) }) }
         item { FeatureCard("Evolução", "Gráficos por período e relatórios PDF", { onNavigate(Section.EVOLUTION) }) }
         item { FeatureCard("Cobranças", "Recebimentos e pendências por cliente", { onNavigate(Section.BILLING) }) }
     }

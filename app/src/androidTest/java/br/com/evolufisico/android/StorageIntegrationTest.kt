@@ -12,6 +12,9 @@ import br.com.evolufisico.android.data.Assessment
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.data.EncryptedClientStore
+import br.com.evolufisico.android.forms.EncryptedFormStore
+import br.com.evolufisico.android.forms.FormCatalog
+import br.com.evolufisico.android.forms.FormResponse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -29,6 +32,7 @@ class StorageIntegrationTest {
         val clients = EncryptedClientStore(app)
         val assessments = EncryptedAssessmentStore(app)
         val charges = EncryptedChargeStore(app)
+        val forms = EncryptedFormStore(app)
         val manager = SecureBackupManager(app)
         val initial = manager.summary()
         // Nunca apagar dados de uma instalação que já tenha registros.
@@ -38,23 +42,32 @@ class StorageIntegrationTest {
             "Iniciante", "Saúde", "", 3, 72.5, 170.0, 80.0, 95.0, null, null)
         val charge = Charge("test-charge-1", client.id, "Avaliação", 2500,
             LocalDate.now().toString())
+        val template = FormCatalog.templates.first()
+        val form = FormResponse("test-form-1", client.id, template.id,
+            LocalDate.now().toString(),
+            template.questions.associate { it.id to "Relato fictício." })
         val password = "TesteBackupSenhaForte123!".toCharArray()
         try {
             clients.save(listOf(client))
             assessments.save(listOf(assessment))
             charges.save(listOf(charge), setOf(client.id))
+            forms.save(listOf(form), setOf(client.id))
+            assertEquals(form.answers, forms.load().first().answers)
             assertEquals(1, clients.load().size)
             val data = manager.export(password)
             assertFalse(String(data, Charsets.ISO_8859_1).contains("Pessoa de Teste"))
+            forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())
             clients.save(emptyList())
             val result = manager.restore(ByteArrayInputStream(data), password)
-            assertEquals(3, result.recordCount)
+            assertEquals(4, result.recordCount)
+            assertEquals(form.templateId, forms.load().first().templateId)
             assertEquals(client.name, clients.load().first().name)
             assertEquals(charge.amountCents, charges.load().first().amountCents)
             assertEquals(assessment.weightKg, assessments.load().first().weightKg, 0.01)
         } finally {
+            forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())
             clients.save(emptyList())

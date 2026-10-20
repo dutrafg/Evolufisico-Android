@@ -1,32 +1,28 @@
-# QA — EvoluFísico Android v0.10.0-alpha
+# QA — EvoluFísico Android 0.15.0-alpha
 
-## Cobertura adicionada (implementação)
-- [x] Validação referencial entre clientes, avaliações e cobranças, integridade ao carregar
-- [x] Perguntas por nível, validação de campos, compatibilidade de leitura com JSON cifrado anterior
-- [x] Edição e estorno de cobranças, resumo mensal por pagamento/vencimento, testes com centavos
-- [x] NavigationRail de desktop/tablet, rolagens em formulários
-- [x] Checagem e download de GitHub Releases e APK local via SAF em Configurações
-- [x] Antes de iniciar instalação: packageName, versionCode crescente e assinatura digital
-- [x] HTTPS, lista de hosts de redirect permitidos, SHA-256 quando publicado, limite 250MB e FileProvider
-- [x] Confirmação de backup criptografado externo e instalação sujeita ao consentimento do Android
-- [x] Workflow de release assinado com segredos privados, bloqueado se não configurados
-- [x] Testes JUnit novos de política de atualização, integridade e cálculos
+## Incidente de gravação relatado em aparelho real
 
-## Capturas de tela
+**Evidência:** tela do Android exibia `Falha ao salvar: Caller-provided IV not permitted`.
 
-- [x] Captura de tela **permitida em versões alpha/beta/RC**, incluindo 0.10.0-alpha, para facilitar QA e reporte de bugs.
-- [x] Política automatizada: versão estável numerada sem sufixos ativa `FLAG_SECURE`; versões de teste removem esse bloqueio.
-- [x] Testes unitários da política e teste Android instrumentado adaptado para conferir o status conforme a versão.
-- [ ] Verificar manualmente capturas de tela e prévias recentes em aparelho real antes de marcar uma versão estável.
+**Causa identificada no código:** as três classes `EncryptedClientStore`, `EncryptedAssessmentStore` e `EncryptedChargeStore` tentavam inicializar `AES/GCM/NoPadding` em modo `ENCRYPT_MODE` com IV fornecido pelo aplicativo, comportamento recusado por chaves do Android Keystore com `randomizedEncryptionRequired=true`.
 
-## Não homologado
-- [ ] CI da 0.10.0-alpha: APK, JUnit, Lint, testes instrumentados compilados, AAB — verificar Actions
-- [ ] Execução dos testes instrumentados em emulador Android
-- [ ] Atualização de APK em aparelho real preservando dados locais/Keystore
-- [ ] Recusa de APK com outra assinatura em aparelho real
-- [ ] Restauração de .efbak em instalação vazia após desinstalação
-- [ ] Publicação da primeira release APK estável assinada: inexistente até configurar secrets
-- [ ] Segurança LGPD, UX leitor de tela, testes Android 10 a versões recentes
+**Alteração:** iniciar `Cipher.ENCRYPT_MODE` somente com a chave; recuperar `cipher.iv` (12 bytes) gerado pelo Android Keystore e salvá-lo no cabeçalho anterior de cada arquivo. A leitura via `DECRYPT_MODE` continua usando o IV do arquivo. Não houve exclusão de dados nem mudança de alias de chave.
 
-Build da 0.6.0-alpha: [GitHub Actions aprovado](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39427100179).
-**Continua protótipo: não utilizar dados reais sensíveis.**
+## Cobertura das fases 11–15
+- [x] Módulo Formulários, histórico por cliente e proteção ao excluir cliente
+- [x] Cinco templates e validação de tipos/campos, JUnit adicionado
+- [x] PDF nativo do formulário sem captura da UI
+- [x] `forms.enc` AES-GCM com IV gerado por Keystore, `AtomicFile`
+- [x] Backup portátil inclui formulários; importa backups antigos sem campo `forms`
+- [x] Restaurar em base vazia e recuperar importação incompleta em quatro arquivos
+- [x] Teste instrumentado ampliado: dados fictícios, quatro bancos, exportação e restauração
+- [ ] Android CI v0.15.0-alpha (build, JUnit, lint, AAB) — **aguarda execução**
+- [ ] Teste instrumentado executado em emulador Android 10+ — **não confirmado**
+- [ ] Teste físico do erro original ao salvar novo cliente — **não realizado**
+- [ ] Inspeção visual dos PDFs, acessibilidade, segurança/privacidade e testes LGPD
+
+## Observação
+
+Capturas permitidas em versões alpha/beta/RC; estáveis com `FLAG_SECURE`. Para problemas em aparelho real, preservar dados existentes e **não desinstalar sem backup externo confirmado**, pois as chaves do Keystore normalmente serão apagadas.
+
+Versão anterior v0.10.0-alpha: [CI aprovada](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39432533524).

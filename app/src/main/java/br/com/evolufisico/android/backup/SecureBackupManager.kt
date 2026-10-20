@@ -11,6 +11,10 @@ import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.data.EncryptedClientStore
+import br.com.evolufisico.android.forms.EncryptedFormStore
+import br.com.evolufisico.android.forms.FormResponse
+import br.com.evolufisico.android.forms.FormsJson
+import br.com.evolufisico.android.forms.FormRules
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -22,9 +26,10 @@ import java.time.Instant
 data class BackupSnapshot(
     val clients: List<Client>,
     val assessments: List<Assessment>,
-    val charges: List<Charge>
+    val charges: List<Charge>,
+    val forms: List<FormResponse> = emptyList()
 ) {
-    val recordCount: Int get() = clients.size + assessments.size + charges.size
+    val recordCount: Int get() = clients.size + assessments.size + charges.size + forms.size
 }
 
 /**
@@ -36,6 +41,7 @@ class SecureBackupManager(context: Context) {
     private val clientStore = EncryptedClientStore(context.applicationContext)
     private val assessmentStore = EncryptedAssessmentStore(context.applicationContext)
     private val chargeStore = EncryptedChargeStore(context.applicationContext)
+    private val formStore = EncryptedFormStore(context.applicationContext)
 
     /**
      * Se o processo morreu no meio da restauração, limpa os dados parciais.
@@ -48,6 +54,7 @@ class SecureBackupManager(context: Context) {
         require(journal.readText(Charsets.US_ASCII) == "EF_RESTORE_V1") {
             "Estado de restauração inesperado. Dados protegidos."
         }
+        formStore.save(emptyList(), emptySet())
         chargeStore.save(emptyList(), emptySet())
         assessmentStore.save(emptyList())
         clientStore.save(emptyList())
@@ -57,7 +64,9 @@ class SecureBackupManager(context: Context) {
     @Synchronized
     fun export(password: CharArray): ByteArray {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
-        val snapshot = BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load())
+        val snapshot = BackupSnapshot(
+            clientStore.load(), assessmentStore.load(), chargeStore.load(), formStore.load()
+        )
         validate(snapshot)
         val json = JSONObject()
             .put("schema", 1).put("app", "EvoluFisico-Android")
@@ -75,10 +84,14 @@ class SecureBackupManager(context: Context) {
                         .put("waistCm", a.waistCm ?: JSONObject.NULL)
                         .put("hipCm", a.hipCm ?: JSONObject.NULL)
                         .put("armCm", a.armCm ?: JSONObject.NULL)
-                        .put("thighCm", a.thighCm ?: JSONObject.NULL))
+                        .put("thighCm", a.thighCm ?: JSONObject.NULL)
+                        .put("healthHistory", a.healthHistory)
+                        .put("dailyHabits", a.dailyHabits)
+                        .put("trainingExperience", a.trainingExperience))
                 }
             })
             .put("charges", ChargeJson.toArray(snapshot.charges))
+            .put("forms", FormsJson.toArray(snapshot.forms))
         return PortableBackupCrypto.encrypt(
             json.toString().toByteArray(Charsets.UTF_8), password
         )
@@ -109,7 +122,7 @@ class SecureBackupManager(context: Context) {
             finally { plain.fill(0) }
         validate(snapshot)
         require(clientStore.load().isEmpty() && assessmentStore.load().isEmpty()
-            && chargeStore.load().isEmpty()) {
+            && chargeStore.load().isEmpty() && formStore.load().isEmpty()) {
             "Restauração permitida apenas numa base vazia. Nenhum dado foi sobrescrito."
         }
         FileOutputStream(journal).use { out ->
@@ -120,9 +133,11 @@ class SecureBackupManager(context: Context) {
             clientStore.save(snapshot.clients)
             assessmentStore.save(snapshot.assessments)
             chargeStore.save(snapshot.charges, snapshot.clients.map { it.id }.toSet())
+            formStore.save(snapshot.forms, snapshot.clients.map { it.id }.toSet())
             check(journal.delete()) { "Falha ao concluir a transação de restauração." }
         } catch (error: Exception) {
             val failures = listOf(
+                runCatching { formStore.save(emptyList(), emptySet()) },
                 runCatching { chargeStore.save(emptyList(), emptySet()) },
                 runCatching { assessmentStore.save(emptyList()) },
                 runCatching { clientStore.save(emptyList()) }
@@ -149,8 +164,8 @@ class SecureBackupManager(context: Context) {
     @Synchronized
     fun summary(): BackupSnapshot {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
-        return BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load())
-            .also { validate(it) }
+        return BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load(),
+            formStore.load()).also { validate(it) }
     }
 
     private fun parse(plaintext: String): BackupSnapshot {
@@ -174,10 +189,14 @@ class SecureBackupManager(context: Context) {
                 j.getString("goal"), j.getString("limitations"),
                 j.getInt("weeklyFrequency"), j.getDouble("weightKg"),
                 j.getDouble("heightCm"), opt("waistCm"), opt("hipCm"),
-                opt("armCm"), opt("thighCm"))
+                opt("armCm"), opt("thighCm"),
+                j.optString("healthHistory", ""), j.optString("dailyHabits", ""),
+                j.optString("trainingExperience", ""))
         }
+        val forms = if (root.has("forms") && !root.isNull("forms"))
+            FormsJson.fromArray(root.getJSONArray("forms")) else emptyList()
         return BackupSnapshot(clients, assessments,
-            ChargeJson.fromArray(root.getJSONArray("charges")))
+            ChargeJson.fromArray(root.getJSONArray("charges")), forms)
     }
 
     private fun validate(snapshot: BackupSnapshot) {
@@ -186,7 +205,7 @@ class SecureBackupManager(context: Context) {
         )
         require(structureError == null) { structureError ?: "Dados inconsistentes." }
         require(snapshot.clients.size <= 20000 && snapshot.assessments.size <= 20000
-            && snapshot.charges.size <= 20000)
+            && snapshot.charges.size <= 20000 && snapshot.forms.size <= 20000)
         val ids = snapshot.clients.map { it.id }.toSet()
         require(ids.size == snapshot.clients.size)
         require(snapshot.clients.all { it.id.isNotBlank() &&
@@ -197,6 +216,10 @@ class SecureBackupManager(context: Context) {
         require(snapshot.charges.distinctBy { it.id }.size == snapshot.charges.size)
         require(snapshot.charges.all { ChargeRules.validate(it, ids) == null }) {
             "Cobranças inválidas no backup."
+        }
+        require(snapshot.forms.distinctBy { it.id }.size == snapshot.forms.size)
+        require(snapshot.forms.all { FormRules.validate(it, ids) == null }) {
+            "Formulários inválidos no backup."
         }
     }
 }

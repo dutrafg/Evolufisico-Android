@@ -113,7 +113,8 @@ fun DataSettingsScreen(
                 }
                 outcome.onSuccess {
                     message = "Restauração concluída: ${it.clients.size} clientes, " +
-                        "${it.assessments.size} avaliações, ${it.charges.size} cobranças."
+                        "${it.assessments.size} avaliações, ${it.forms.size} formulários, " +
+                        "${it.charges.size} cobranças."
                     onRestored(it)
                 }.onFailure {
                     message = "Falha na restauração: ${it.message ?: "Arquivo inválido, senha incorreta ou erro de armazenamento."}"
@@ -196,7 +197,7 @@ fun DataSettingsScreen(
         }
         HorizontalDivider()
         Text("Dados e backups", style = MaterialTheme.typography.titleLarge)
-        Text("Clientes, avaliações e cobranças são criptografados no dispositivo. " +
+        Text("Clientes, avaliações, formulários e cobranças são criptografados no dispositivo. " +
             "O backup portátil usa senha própria, necessária para restaurar em outro aparelho.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(
@@ -232,7 +233,7 @@ fun DataSettingsScreen(
         HorizontalDivider()
         Text("Restaurar arquivo de backup", style = MaterialTheme.typography.titleMedium)
         Text(
-            "Por segurança, a restauração só é permitida se clientes, avaliações e cobranças locais " +
+            "Por segurança, a restauração só é permitida se clientes, avaliações, formulários e cobranças locais " +
                 "estiverem vazios. Ela nunca sobrescreve uma base existente. " +
                 "Guarde o arquivo e a senha; sem a senha, não é possível recuperar o conteúdo.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -251,7 +252,7 @@ fun DataSettingsScreen(
                 scope.launch {
                     val state = withContext(Dispatchers.IO) { runCatching { backupManager.summary() } }
                     message = state.fold(
-                        { "Integridade: ${it.clients.size} clientes, ${it.assessments.size} avaliações e ${it.charges.size} cobranças válidas." },
+                        { "Integridade: ${it.clients.size} clientes, ${it.assessments.size} avaliações, ${it.forms.size} formulários e ${it.charges.size} cobranças válidas." },
                         { "Falha na verificação: ${it.message}" }
                     )
                     busy = false
@@ -261,7 +262,7 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.10.0-alpha (Fases 7 a 10)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.15.0-alpha (Fases 11 a 15)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Sem backup automático: a senha nunca é guardada e os backups são iniciados manualmente. " +
             "O aplicativo não possui integração própria com nuvem.",
@@ -274,7 +275,7 @@ fun DataSettingsScreen(
             onDismissRequest = { showRestoreConfirmation = false },
             title = { Text("Restaurar backup protegido?") },
             text = {
-                Text("A restauração só é permitida se não existirem clientes, avaliações ou cobranças " +
+                Text("A restauração só é permitida se não existirem clientes, avaliações, formulários ou cobranças " +
                     "na base local. O aplicativo validará o arquivo e a senha antes de gravar. " +
                     "Mantenha o arquivo original até verificar todos os registros.")
             },

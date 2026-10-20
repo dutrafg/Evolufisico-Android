@@ -1,35 +1,41 @@
-# EvoluFísico Android — v0.10.0-alpha
+# EvoluFísico Android — 0.15.0-alpha
 
-App Android nativo (Kotlin / Compose / Material 3), Android 10+. Continuação independente das versões Web, Windows e Linux.
+Aplicativo nativo Kotlin + Jetpack Compose, Android 10+, destinado a testes com dados **fictícios**. O repositório Android é separado dos projetos Web, Windows e Linux.
 
-## Fases 7 a 10
-- **Fase 7 — Segurança:** conferência dos vínculos entre clientes, avaliações e cobranças; checagem antes de abrir os dados; recuperação de restauração interrompida; limite de 90 s para exceção de sessão em seletor de arquivos; bloqueio Android. **Capturas de tela liberadas nas versões alpha/beta/RC para testes**, com `FLAG_SECURE` ativado automaticamente na versão estável (número sem sufixo).
-- **Fase 8 — Anamnese:** campos opcionais para histórico de saúde, sono/hábitos e experiência de treinamento com perguntas-exemplo diferentes para Iniciante, Intermediário e Avançado. Não preencher automaticamente respostas pessoais. Dados antigos legíveis e campos novos incluídos no banco AES-GCM e backup portátil.
-- **Fase 9 — Cobranças:** editar ou excluir lançamentos pendentes, estornar recebimentos com confirmação, resumos mensais, pendências e filtros. Valores em centavos `Long`. Estorno aqui altera status local, **não é operação bancária**.
-- **Fase 10 — Responsividade:** menu lateral em telas >=840dp, menu inferior no celular, melhores rolagens em avaliações e cobranças.
-- **Configurações > Atualizações:** consultar APKs oficiais publicados em [GitHub Releases](https://github.com/dutrafg/Evolufisico-Android/releases) ou selecionar APK local. Verificar `applicationId`, `versionCode` superior e assinatura digital idêntica antes de abrir o instalador oficial do Android. Requer autorização para instalação por esta fonte; não instala silenciosamente. HTTPS, hosts restritos, SHA-256 se anunciado na release, limite 250MB, cache privado e FileProvider.
-- **Backup:** exportar `.efbak` para pasta externa via seletor Android e senha (AES-256-GCM e PBKDF2). Restaurar somente em base vazia.
+## Fases 11 a 15
 
-## Atualização x desinstalação: proteção de dados
+**Fase 11 — Módulo Formulários:** novo item na navegação e na Área de trabalho, com cadastro de respostas ligadas ao ID do cliente, histórico por data, edição, exclusão com confirmação e armazenamento local próprio.
 
-Uma **atualização por cima** com o mesmo identificador de pacote e assinatura compatível normalmente preserva arquivos internos e chaves Android Keystore. O sistema Android decide e pede consentimento.
+**Fase 12 — Modelos e anamnese:** cinco modelos com exemplos por questão: Anamnese Iniciante, Intermediário, Avançado, Prontidão para Atividade Física e Hábitos e Rotina. Perguntas obrigatórias, textos e respostas Sim/Não possuem validação; exemplos não são respostas preenchidas automaticamente. O módulo é independente da anamnese simplificada do módulo Avaliações.
 
-Já uma **desinstalação normal remove os dados privados e as chaves Android Keystore**: não é tecnicamente possível assegurar sua permanência após uma desinstalação comum. **Antes de desinstalar**, exporte o backup protegido `.efbak` para um local fora dos dados do app, guarde a senha e confirme o arquivo. Após instalar a versão nova, restaure na base vazia. O PDF não é backup restaurável.
+**Fase 13 — Relatórios:** exportação de formulário preenchido em PDF nativo, paginado, pelo seletor SAF. Não incorpora o painel do aplicativo. PDF exportado não é criptografado.
 
-**Os APKs de depuração anteriores** foram criados por execuções diferentes de CI e podem ter assinaturas temporárias diferentes. Portanto, a atualização por cima pode ser recusada; o atualizador identifica essa situação. NUNCA desinstale sem backup externo conferido.
+**Fase 14 — Backup e consistência:** respostas ficam em `forms.enc` com criptografia AES-256-GCM no Android Keystore e escrita `AtomicFile`. Backups portáteis `.efbak` protegidos por senha incluem formulários, clientes, avaliações e cobranças. A restauração aceita backups antigos sem o campo `forms` e mantém a regra de importar somente em banco vazio. O mecanismo de recuperação de importações interrompidas contempla os quatro conjuntos de dados; a exclusão de cliente é bloqueada quando houver formulários associados.
 
-## Assinatura estável para próximas versões
+**Fase 15 — Segurança e QA:** correção crítica da gravação AES-GCM em `clients.enc`, `assessments.enc` e `charges.enc`. Agora o **Android Keystore gera o IV** na operação de cifragem, e o aplicativo grava esse IV no mesmo formato de arquivo existente para poder descriptografar normalmente. IV escolhido pelo aplicativo em operação de cifragem com chave Keystore padrão gerava `Caller-provided IV not permitted`. Foram adicionados testes unitários dos modelos e teste instrumentado de gravação, leitura e backup com dados simulados. A execução do CI e de testes físicos deve ser comprovada separadamente.
 
-O workflow manual `.github/workflows/android-publish-signed-release.yml` exige quatro GitHub Actions Secrets:
-`EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS` e `EF_KEY_PASSWORD`.
-Prepare e guarde uma **única chave privada de distribuição permanente** fora do repositório; configure os segredos pelo GitHub Settings > Secrets and variables > Actions. Execute o workflow na branch main com tag como `v0.10.0-alpha`. O workflow executa testes e Lint, valida com `apksigner` e publica APK assinado no GitHub Releases. Sem segredos, ele para sem publicar. Não existe release com APK no GitHub neste momento; o botão de consulta exibirá ausência até a primeira publicação assinada.
+## Navegação e compatibilidade
 
-## Compilar e homologar
+No celular, a barra inferior dá acesso a **Início, Clientes, Avaliações, Formulários e Cobranças**. Evolução continua disponível na Área de trabalho, e todas as áreas estão no menu lateral de tablets/telas largas. Configurações permanece acessível pelo ícone no topo.
 
-JDK17, Gradle8.13, SDK Android API36:
-```sh
+A versão é `0.15.0-alpha` (`versionCode=15`), que avança cinco fases a partir da `0.10.0-alpha`. Atualizações instaladas **sobre** a mesma assinatura e identificador mantêm normalmente o banco; a desinstalação comum apaga arquivos internos e chaves Keystore. Antes de desinstalar, salve um backup criptografado em pasta externa ao aplicativo e guarde a senha.
+
+**Atenção:** APKs `debug` de execuções distintas do GitHub Actions podem usar assinaturas incompatíveis. O mecanismo Configurações > Atualizações valida identificador, assinatura e versão e não força desinstalação. A publicação de APKs assinados permanentemente requer configurar segredos do keystore no workflow `android-publish-signed-release.yml`.
+
+## Como compilar
+
+JDK 17, Android SDK API36, Gradle8.13:
+
+```bash
 gradle :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug :app:bundleRelease
 ```
-O projeto precisa de `gradle wrapper --gradle-version 8.13` em ambiente local com Gradle para obter os arquivos do wrapper não presentes no repositório.
 
-**Limitações:** v0.10 continua alpha. Atualizações dentro do app são por APK fora da Play Store, requerem interação humana e não garantem dados caso seja necessário desinstalar. Testes instrumentados/visuais de atualização e recuperação ainda precisam de homologação Android física. Relatórios PDF exportados não são criptografados. Proteções LGPD, assinatura de produção e testes de segurança independentes não estão concluídos.
+O workflow [Android CI](https://github.com/dutrafg/Evolufisico-Android/actions) executa compilação, testes unitários, lint, compilação dos instrumentados e AAB não assinado. Compilar testes instrumentados não significa executá-los num dispositivo. Utilize o workflow manual `Android Emulator QA` para execução em um emulador descartável, nunca em dispositivo com dados reais.
+
+## Limites importantes
+
+- O teste instrumentado ainda depende da execução real em emulador para certificar a correção do Android Keystore. O sucesso dos unit tests Kotlin, por si só, não reproduz o erro do seu smartphone.
+- Relatórios PDF são exportados sem criptografia; o conteúdo pode revelar dados pessoais. A liberação de capturas de tela para alpha/beta/RC continua ativa; a versão estável numerada bloqueará capturas.
+- A triagem de prontidão é apenas informativa e não substitui diagnóstico médico ou avaliação física profissional.
+- Não há migração automática de dados da versão Web, backup automático nem integração própria com Google Drive.
+- Ainda faltam testes físicos, auditoria de segurança, políticas LGPD, assinatura estável e homologação antes de utilizar dados sensíveis reais.
