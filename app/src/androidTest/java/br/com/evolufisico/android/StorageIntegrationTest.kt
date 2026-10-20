@@ -49,6 +49,12 @@ class StorageIntegrationTest {
         val password = "TesteBackupSenhaForte123!".toCharArray()
         try {
             clients.save(listOf(client))
+            val firstCiphertext = java.io.File(app.filesDir, "clients.enc").readBytes()
+            clients.save(listOf(client))
+            val secondCiphertext = java.io.File(app.filesDir, "clients.enc").readBytes()
+            // Criptografar duas vezes deve produzir IVs distintos, sem IV fornecido pelo app.
+            assertFalse(firstCiphertext.contentEquals(secondCiphertext))
+            assertEquals(client.name, clients.load().first().name)
             assessments.save(listOf(assessment))
             charges.save(listOf(charge), setOf(client.id))
             forms.save(listOf(form), setOf(client.id))
