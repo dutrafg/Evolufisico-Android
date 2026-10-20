@@ -2,6 +2,7 @@ package br.com.evolufisico.android
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +60,8 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
     var message by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("Pendentes") }
     var search by remember { mutableStateOf("") }
+    var selectedClientId by remember { mutableStateOf<String?>(null) }
+    var clientPickerOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Charge?>(null) }
     var deleting by remember { mutableStateOf<Charge?>(null) }
     var reversing by remember { mutableStateOf<Charge?>(null) }
@@ -90,7 +95,7 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
     if (error != null) { BillingNotice(error!!); return }
 
     val clientNames = clients.associate { it.id to it.name }
-    val visible = BillingFilters.filter(charges,clientNames,status,search,LocalDate.now())
+    val visible = BillingFilters.filter(charges,clientNames,status,search,LocalDate.now(),selectedClientId)
     LazyColumn(modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -127,6 +132,22 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
                 modifier = Modifier.fillMaxWidth(), singleLine = true,
                 label = { Text("Buscar cliente ou serviço") }
             )
+            Box {
+                OutlinedButton(onClick={clientPickerOpen=true}) {
+                    Text("Cliente: "+(selectedClientId?.let { clientNames[it] }?:"Todos"))
+                }
+                DropdownMenu(expanded=clientPickerOpen,
+                    onDismissRequest={clientPickerOpen=false}) {
+                    DropdownMenuItem(text={Text("Todos os clientes")},onClick={
+                        selectedClientId=null;clientPickerOpen=false
+                    })
+                    clients.sortedBy { it.name }.forEach { client ->
+                        DropdownMenuItem(text={Text(client.name)},onClick={
+                            selectedClientId=client.id;clientPickerOpen=false
+                        })
+                    }
+                }
+            }
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)

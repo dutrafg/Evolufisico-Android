@@ -34,6 +34,11 @@ class BillingFiltersTest {
         assertEquals(listOf("other"),
             BillingFilters.filter(charges,names,"Todas","maria",today,"2").map{it.id})
     }
+    @Test fun clientIdPreventsMixingDuplicateNames() {
+        val names=mapOf("1" to "Maria","2" to "Maria")
+        val found=BillingFilters.filter(charges,names,"Todas","Maria",today,"2")
+        assertEquals(listOf("other"),found.map{it.id})
+    }
     @Test fun malformedDateIsIgnoredInsteadOfCrashing() {
         assertTrue(BillingFilters.filter(listOf(c("invalid","2026-80-22")),
             names,"Todas","",today).isEmpty())
