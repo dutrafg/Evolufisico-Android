@@ -61,6 +61,8 @@ import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
+import br.com.evolufisico.android.billing.EncryptedChargeStore
+import br.com.evolufisico.android.backup.SecureBackupManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -84,6 +86,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val repository = EncryptedClientStore(applicationContext)
         val assessmentRepository = EncryptedAssessmentStore(applicationContext)
+        val chargeRepository = EncryptedChargeStore(applicationContext)
+        val backupManager = SecureBackupManager(applicationContext)
         val themePrefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
         setContent {
             var darkMode by remember { mutableStateOf(themePrefs.getBoolean("dark_mode", false)) }
@@ -91,6 +95,8 @@ class MainActivity : ComponentActivity() {
                 AppContent(
                     repository = repository,
                     assessmentRepository = assessmentRepository,
+                    chargeRepository = chargeRepository,
+                    backupManager = backupManager,
                     darkMode = darkMode,
                     onDarkModeChange = {
                         darkMode = it
@@ -107,6 +113,8 @@ class MainActivity : ComponentActivity() {
 private fun AppContent(
     repository: EncryptedClientStore,
     assessmentRepository: EncryptedAssessmentStore,
+    chargeRepository: EncryptedChargeStore,
+    backupManager: SecureBackupManager,
     darkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit
 ) {
@@ -133,7 +141,10 @@ private fun AppContent(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     if (removedIds.isNotEmpty() &&
-                        assessmentRepository.load().any { it.clientId in removedIds }) {
+                        (
+                            assessmentRepository.load().any { it.clientId in removedIds } ||
+                            chargeRepository.load().any { it.clientId in removedIds }
+                        )) {
                         throw IllegalArgumentException(
                             "Este cliente possui avaliações. Exclua as avaliações antes de excluir o cliente."
                         )
@@ -194,8 +205,12 @@ private fun AppContent(
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, onPersist = ::persist)
                     Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository)
-                    Section.BILLING -> PlaceholderScreen("Cobranças", "Recebimentos, pendências e histórico financeiro")
-                    Section.SETTINGS -> SettingsScreen(darkMode, onDarkModeChange)
+                    Section.BILLING -> BillingScreen(clients.toList(), chargeRepository)
+                    Section.SETTINGS -> DataSettingsScreen(darkMode, onDarkModeChange, backupManager) { snapshot ->
+                        clients.clear()
+                        clients.addAll(snapshot.clients)
+                        current = Section.HOME
+                    }
                 }
             }
         }
@@ -223,7 +238,7 @@ private fun HomeScreen(clientCount: Int, onNavigate: (Section) -> Unit) {
         }
         item { FeatureCard("Avaliações", "Histórico e medidas por cliente", { onNavigate(Section.ASSESSMENTS) }) }
         item { FeatureCard("Evolução", "Gráficos por período e relatórios PDF", { onNavigate(Section.EVOLUTION) }) }
-        item { FeatureCard("Cobranças", "Módulo em desenvolvimento", { onNavigate(Section.BILLING) }) }
+        item { FeatureCard("Cobranças", "Recebimentos e pendências por cliente", { onNavigate(Section.BILLING) }) }
     }
 }
 
@@ -341,21 +356,3 @@ private fun CenterMessage(message: String) {
     }
 }
 
-@Composable
-private fun SettingsScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Text("Modo escuro", style = MaterialTheme.typography.titleMedium)
-                Text("Preferência salva no dispositivo", style = MaterialTheme.typography.bodySmall)
-            }
-            Switch(checked = darkMode, onCheckedChange = onDarkModeChange)
-        }
-        Text("Segurança: clientes e avaliações cifrados com Android Keystore (AES-GCM).",
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Sem conexão com Google Drive. Sem backup/restauração nesta etapa.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Versão 0.3.0-alpha", style = MaterialTheme.typography.bodySmall)
-    }
-}

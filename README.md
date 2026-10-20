@@ -1,32 +1,39 @@
-# EvoluFísico Android — 0.3.0-alpha
+# EvoluFísico Android — v0.4.0-alpha
 
-Versão nativa para **Android 10+**, Kotlin e Jetpack Compose, independente das versões Web/Windows/Linux.
+Aplicativo **Kotlin + Jetpack Compose + Material Design 3**, Android 10+ (API 29), independente das versões Web, Windows e Linux.
 
-## Disponível no protótipo
+## Funcionalidades implementadas
 
-- **Clientes:** cadastro/edição/exclusão, IDs estáveis, dados locais cifrados com AES-256-GCM (Android Keystore).
-- **Avaliações:** histórico por cliente; anamnese inicial; peso, altura e medidas de cintura, quadril, braço e coxa; IMC e relação cintura/quadril; validações; armazenamento cifrado.
-- **Evolução (Fase 3):** indicador selecionável (peso, IMC, cintura, quadril, braço, coxa ou RCQ), linha de tendência e histórico numérico por cliente. Comparação por avaliação, último registro **com medida válida** em cada mês e último registro **com medida válida** em cada trimestre. Variação absoluta e percentual, sem interpretações clínicas.
-- **Relatório PDF nativo:** profissional, com identificação do cliente, datas, indicador, gráfico e tabela de evolução com paginação automática. O relatório é desenhado via `android.graphics.pdf.PdfDocument`, nunca imprime a interface do app.
-- **Salvar PDF:** `ActivityResultContracts.CreateDocument(application/pdf)` oferece o seletor de arquivos do sistema (SAF), sem requerer permissão ampla de armazenamento nem usar arquivos temporários abertos.
-- **Tema claro/escuro** e navegação.
-- **Sem Internet** e sem integração com Google Drive.
+**Clientes:** cadastro, edição e exclusão com IDs estáveis; exclusão bloqueada se houver avaliações ou cobranças. Armazenamento local cifrado AES-256-GCM/Android Keystore.
 
-## Como gerar o APK
+**Avaliações:** histórico por cliente, anamnese inicial, dados antropométricos, cálculos de IMC e RCQ, validações e arquivo criptografado.
 
-Abra no Android Studio (JDK 17, Android SDK API 36, Gradle 8.13) ou compile com `gradle :app:assembleDebug`. Testes unitários: `gradle :app:testDebugUnitTest`.
+**Evolução:** gráficos de peso, IMC, cintura, quadril, braço, coxa e RCQ; agrupamento mensal/trimestral por último dado válido; relatório PDF gerado com Android PdfDocument; seletor de destino via SAF.
 
-O projeto contém `gradle/wrapper/gradle-wrapper.properties`, mas não o JAR do Gradle Wrapper. Num ambiente com Gradle instalado, execute `gradle wrapper --gradle-version 8.13` para gerar scripts/JAR oficiais.
+**Cobranças (Fase 4):** lançar cobranças associadas ao cliente (serviço, vencimento e valor em **centavos inteiros**), ver saldos pendentes/recebidos, filtrar lançamentos e **marcar como recebido com confirmação**. Persistência local separada `charges.enc`, criptografada com AES-256-GCM/Keystore e escrita atômica. Os lançamentos usam a moeda BRL. Não há integração bancária ou emissão fiscal.
 
-O workflow em [Actions](https://github.com/dutrafg/Evolufisico-Android/actions) compila, testa e, se aprovado, publica o artifact `Evolufisico-Android-debug`. O APK é de desenvolvimento (assinatura debug).
+**Backup e restauração (Fase 4):**
 
-## Privacidade e limites importantes
+- Exportar **backup portátil criptografado** (`.efbak`): clientes + avaliações + cobranças, protegidos com senha de no mínimo 10 caracteres, PBKDF2-HMAC-SHA256 (250.000 iterações, salt aleatório) e AES-256-GCM autenticado.
+- Exportação via seletor Android `CreateDocument`, sem permissão ampla de arquivos, ou seleção de pasta com `OpenDocumentTree` e permissão persistente, criando **um novo arquivo a cada exportação**.
+- Restaurar pelo seletor Android `OpenDocument` usando a senha informada. Validação prévia de formato, autenticação criptográfica, IDs únicos, dados e vínculos entre cliente/avaliação/cobrança.
+- **Regra de segurança:** restauração só é permitida em instalação com dados de clientes, avaliações **e** cobranças vazios. Dados existentes nunca são sobrescritos nem mesclados. Em falha durante a gravação, tenta reverter os conjuntos que estavam vazios; interrupção do aparelho pode requerer intervenção manual. Conserve o arquivo de backup original.
+- A senha nunca é salva em preferências ou no GitHub. Não existe recuperação de senha: sem ela o backup não pode ser aberto.
 
-- **Dados de avaliações são sensíveis.** Não use dados reais de clientes antes da implantação de autenticação (PIN/biometria), backup criptografado, testes de segurança e validação de funcionamento em aparelhos reais.
-- PDF exportado não possui senha nem criptografia. O usuário é responsável pelo armazenamento seguro do arquivo e por não compartilhá-lo indevidamente.
-- IMC, RCQ e variações são **indicadores descritivos**, não diagnósticos; nenhum percentual de gordura é inferido.
-- Só há comparação de avaliações **existentes**: nenhuma medida é estimada. Ausência de valores opcionais pode reduzir pontos do gráfico.
-- Não existe migração da base Web, dobras cutâneas/Pollock/BIA, biometria, Cobranças, backup ou restauração nesta versão. A falta desses recursos não foi marcada como concluída.
-- Perder o Android Keystore ou desinstalar o app pode tornar os dados irrecuperáveis. Exportar PDF **não** é backup restaurável do banco de dados.
+**Importante:** backup na pasta escolhida é **manual**. O aplicativo ainda **não faz sincronização automática** de banco nem backup em segundo plano. A senha não é armazenada, por segurança. A pasta escolhida pode ser atendida por um provedor externo selecionado pelo usuário, mas não existe integração própria com Google Drive.
 
-Veja `QA.md` e `ROADMAP.md`.
+## Instalar e testar
+
+No [GitHub Actions](https://github.com/dutrafg/Evolufisico-Android/actions), abra o workflow mais recente com conclusão **success**, baixe o artefato `Evolufisico-Android-debug`, extraia `app-debug.apk` e instale no Android 10+ (depuração). **O resultado só deve ser tratado como compilado/testado após a execução de CI.**
+
+Android Studio: SDK API 36, Gradle 8.13, JDK 17. Com Gradle local execute `gradle :app:assembleDebug :app:testDebugUnitTest`. O wrapper possui as propriedades da distribuição, mas ainda requer gerar o `gradle-wrapper.jar` com `gradle wrapper --gradle-version 8.13`.
+
+## Limitações de segurança / dados pessoais
+
+- **Não usar dados reais de pacientes ou clientes nesta versão alpha**, antes de proteção por PIN/biometria, backup de recuperação devidamente homologado e testes em aparelho real.
+- Arquivos de backup são cifrados, mas **PDFs exportados não possuem senha/criptografia**.
+- Não existe sistema financeiro completo de faturamento, parcelas, renegociação ou estorno; lançamentos recebidos não são reversíveis pela interface desta versão.
+- Ainda faltam protocolos avançados de avaliação (Pollock/BIA/dobras), migração da versão Web, sincronização automática, auditoria de segurança, testes instrumentados e homologação em aparelhos.
+- Desinstalar o aplicativo pode destruir dados locais vinculados ao Keystore. Crie e confirme um backup exportado antes de fazer alterações irreversíveis.
+
+Consultar `ROADMAP.md` e `QA.md` para entregas e pendências.

@@ -1,25 +1,26 @@
-# QA — EvoluFísico Android 0.3.0-alpha
+# QA — EvoluFísico Android 0.4.0-alpha
 
-## Revisão de implementação e cobertura dos testes
+## Escopo da revisão de código
 
-- [x] Série de evolução usa **ID do cliente**; registros de outros clientes excluídos.
-- [x] Ordenação por data ISO com desempate determinístico por ID.
-- [x] Agrupamento mensal e trimestral escolhe o **último registro com medida presente**, evitando preencher lacunas fictícias.
-- [x] Variação absoluta/percentual de duas ou mais medições; uma medição não produz falso progresso.
-- [x] NaN/datas inválidas e medidas ausentes são ignoradas para o indicador selecionado.
-- [x] Gráfico nativo, histórico textual e seleção de indicador/período.
-- [x] PDF gerado via PdfDocument, com quebra de páginas e sem captura da interface principal.
-- [x] PDF salvo por Android SAF (CreateDocument), sem permissões genéricas de armazenamento.
-- [x] JUnit adicionado para isolamento de clientes, agrupamentos, valores ausentes e variações.
-- [x] **Build e testes da 0.3.0-alpha aprovados**: [GitHub Actions 39417903230](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39417903230), commit `e7ee4d02c3f50ecbe3c56d4cef961a62f1a74eb6`. Etapas `:app:assembleDebug` e `:app:testDebugUnitTest` concluídas com sucesso.
-- [x] Artifact `Evolufisico-Android-debug` gerado. ZIP e APK extraído tiveram integridade verificada; SHA-256 APK: `df8c990ca10814738de6f9dda1a05145ae3b73c7a670ffb897c70c1bc4b52cd7`.
-- [ ] Teste instrumentado/visual do PDF, inclusive caracteres e relatórios com múltiplas páginas.
-- [ ] Teste com aparelho Android 10+ físico, orientação, acessibilidade, modo escuro e seletor de arquivos.
-- [ ] Auditoria de proteção ao exportar informações sensíveis e proteção por PIN/biometria.
-- [ ] Backups seguros e migração da Web não implementados.
+- [x] Cobranças em centavos `Long`, sem valores financeiros em `Double` no armazenamento.
+- [x] Controle de recebimentos pendentes e recebidos; confirmação ao receber.
+- [x] Referência por ID e proteção contra excluir cliente com cobranças.
+- [x] AES-GCM com Android Keystore no armazenamento financeiro e AtomicFile.
+- [x] Exportação criptografada portátil via senha, salt e nonce aleatórios.
+- [x] Criptografia PBKDF2-HMAC-SHA256 + AES-256-GCM autenticado; senha não persistida.
+- [x] Backup inclui clientes, avaliações e cobranças; limites de tamanho e registros.
+- [x] Importação valida dados e relacionamentos **antes** de gravar, impede sobrescrever base preenchida.
+- [x] SAF: CreateDocument, OpenDocument e OpenDocumentTree; permissões persistentes para a pasta.
+- [x] Testes unitários para aritmética financeira, senha incorreta, integridade alterada e roundtrip criptográfico **adicionados**.
+- [ ] Build e testes da versão 0.4.0-alpha: **aguardando verificação de execução no GitHub Actions**.
+- [ ] Teste com Android físico: concessão/revogação de pastas, documentos em cartão SD, provedores remotos, pouco espaço disponível.
+- [ ] Testes instrumentados end-to-end de exportação/restauração com dados fictícios.
+- [ ] Testes de energia desligada durante importação; reversão e recuperação de arquivos.
+- [ ] PIN/biometria, proteção contra leitura com celular desbloqueado e pentest.
+- [ ] Revisão LGPD e políticas de retenção de dados e de exportação.
+- [ ] Backup automático e sincronização contínua: **não implementados**.
 
-## Histórico de QA anterior
+## Registro anterior
+0.3.0-alpha: [GitHub Actions aprovado](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39417903230).
 
-0.2.0-alpha: [build e testes aprovados](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39416578439).
-
-**Atenção:** PDFs exportados não são criptografados; o projeto ainda é um protótipo com funções de segurança pendentes.
+**Status:** projeto alpha; não utilizar registros reais sensíveis de clientes.
