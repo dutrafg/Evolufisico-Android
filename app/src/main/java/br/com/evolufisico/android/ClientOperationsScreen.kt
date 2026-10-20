@@ -33,6 +33,7 @@ fun ClientOperationsScreen(
 ) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
+    var message by remember {mutableStateOf<String?>(null)}
     var toExport by remember {mutableStateOf<List<ClientOperations>>(emptyList())}
     val exportCsv=rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -60,7 +61,6 @@ fun ClientOperationsScreen(
     var filter by remember {mutableStateOf("Todos")}
     var rows by remember {mutableStateOf<List<ClientOperations>>(emptyList())}
     var busy by remember {mutableStateOf(false)}
-    var message by remember {mutableStateOf<String?>(null)}
     var revision by remember {mutableIntStateOf(0)}
     LaunchedEffect(backupManager,revision) {
         busy=true
