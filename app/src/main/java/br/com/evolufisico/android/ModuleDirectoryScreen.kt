@@ -25,6 +25,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import java.text.Normalizer
 import java.util.Locale
 
@@ -60,114 +77,180 @@ object WorkspaceModules {
     }
 }
 
+object WorkspaceGrid {
+    fun columns(screenWidthDp:Int):Int = if(screenWidthDp>=700) 3 else 2
+}
+
 @Composable
 fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
-    var query by remember { mutableStateOf("") }
+    var search by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Todos") }
     val context=LocalContext.current
-    val preferences=remember(context) { context.getSharedPreferences(
-        "module_shortcuts",android.content.Context.MODE_PRIVATE) }
-    var favorites by remember(preferences) {
-        mutableStateOf(WorkspaceFavorites.parse(preferences.getString("routes","").orEmpty()))
+    val prefs=remember(context) {
+        context.getSharedPreferences("module_shortcuts",android.content.Context.MODE_PRIVATE)
     }
-    var recents by remember(preferences) {
-        mutableStateOf(WorkspaceRecents.parse(preferences.getString("recent_routes","").orEmpty()))
+    var favorites by remember(prefs) {
+        mutableStateOf(WorkspaceFavorites.parse(prefs.getString("routes","").orEmpty()))
+    }
+    var recents by remember(prefs) {
+        mutableStateOf(WorkspaceRecents.parse(prefs.getString("recent_routes","").orEmpty()))
     }
     fun navigate(route:String) {
         recents=WorkspaceRecents.open(recents,route)
-        preferences.edit().putString("recent_routes",WorkspaceRecents.serialize(recents)).apply()
+        prefs.edit().putString("recent_routes",WorkspaceRecents.serialize(recents)).apply()
         onNavigate(route)
     }
-    fun saveFavorites(next:Set<String>) {
-        favorites=next
-        preferences.edit().putString("routes",WorkspaceFavorites.serialize(next)).apply()
+    fun saveFavorites(updated:Set<String>) {
+        favorites=updated
+        prefs.edit().putString("routes",WorkspaceFavorites.serialize(updated)).apply()
     }
-    fun toggleFavorite(route:String) {
-        saveFavorites(WorkspaceFavorites.toggle(favorites,route))
+    fun toggle(route:String) { saveFavorites(WorkspaceFavorites.toggle(favorites,route)) }
+    fun move(route:String,offset:Int) {
+        saveFavorites(WorkspaceFavorites.move(favorites,route,offset))
     }
-    fun moveFavorite(route:String,direction:Int) {
-        saveFavorites(WorkspaceFavorites.move(favorites,route,direction))
-    }
-    val modules=WorkspaceModules.filter(query,category)
-    val pinned=if(query.isBlank() && category=="Todos")
-        favorites.mapNotNull { key -> modules.firstOrNull { it.route==key } } else emptyList()
-    val recentItems=if(query.isBlank() && category=="Todos")
-        recents.mapNotNull { key -> modules.firstOrNull { it.route==key } }
-            .filterNot { it in pinned } else emptyList()
-    LazyColumn(modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
-        verticalArrangement=Arrangement.spacedBy(10.dp)) {
+    val columns=WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp)
+    val filtered=WorkspaceModules.filter(search,category)
+    val featured=if(search.isBlank()&&category=="Todos") favorites.mapNotNull { id ->
+        WorkspaceModules.all.firstOrNull { it.route==id }
+    } else emptyList()
+    val recent=if(search.isBlank()&&category=="Todos") recents.mapNotNull { id ->
+        WorkspaceModules.all.firstOrNull{it.route==id}
+    }.filterNot { it in featured } else emptyList()
+
+    LazyColumn(modifier=Modifier.fillMaxSize(),
+        contentPadding=PaddingValues(horizontal=16.dp,vertical=16.dp),
+        verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Módulos",style=MaterialTheme.typography.headlineSmall)
-            Text("Acesse as funções por área, sem sobrecarregar a tela inicial.",
+            Text("Módulos",style=MaterialTheme.typography.headlineSmall,
+                fontWeight=FontWeight.Bold)
+            Text("Encontre suas ferramentas por área.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedTextField(query,{query=it.take(80)},modifier=Modifier.fillMaxWidth(),
-                label={Text("Buscar módulo")},singleLine=true)
-            Row(modifier=Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            OutlinedTextField(value=search,onValueChange={search=it.take(80)},
+                modifier=Modifier.fillMaxWidth(),singleLine=true,
+                leadingIcon={Icon(Icons.Outlined.Search,contentDescription=null)},
+                placeholder={Text("Buscar módulo")})
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                (listOf("Todos")+WorkspaceModules.categories).forEach { choice ->
-                    FilterChip(selected=category==choice,onClick={category=choice},
-                        label={Text(choice)})
+                (listOf("Todos")+WorkspaceModules.categories).forEach { filter ->
+                    FilterChip(selected=category==filter,onClick={category=filter},
+                        label={Text(filter)})
                 }
             }
-            Text(modules.size.toString()+" módulo(s) encontrado(s)",
-                color=MaterialTheme.colorScheme.onSurfaceVariant,
-                style=MaterialTheme.typography.bodySmall)
         }
-        if(pinned.isNotEmpty()) {
-            item { Text("Favoritos",style=MaterialTheme.typography.titleMedium,
-                color=MaterialTheme.colorScheme.primary) }
-            items(pinned.size) { index ->
-                val entry=pinned[index]
-                ModuleRow(entry,true,::navigate,
-                    onMoveUp=if(index>0) ({ moveFavorite(entry.route,-1) }) else null,
-                    onMoveDown=if(index<pinned.lastIndex) ({ moveFavorite(entry.route,1) }) else null
-                ) { toggleFavorite(entry.route) }
+        if(featured.isNotEmpty()) {
+            item { ModuleHeading("★ Favoritos",featured.size) }
+            items(featured.chunked(columns).size) { index ->
+                ModuleGridRow(featured.chunked(columns)[index],columns,favorites,::navigate,::toggle,
+                    moveUp={id->move(id,-1)},moveDown={id->move(id,1)})
             }
         }
-        if(recentItems.isNotEmpty()) {
-            item { Text("Acessados recentemente",style=MaterialTheme.typography.titleMedium,
-                color=MaterialTheme.colorScheme.primary) }
-            items(recentItems.size) { index ->
-                val entry=recentItems[index]
-                ModuleRow(entry,false,::navigate) { toggleFavorite(entry.route) }
+        if(recent.isNotEmpty()) {
+            item { ModuleHeading("Acessados recentemente",recent.size) }
+            items(recent.chunked(columns).size) { index ->
+                ModuleGridRow(recent.chunked(columns)[index],columns,favorites,::navigate,::toggle)
+            }
+        }
+        if(filtered.isNotEmpty()) {
+            item {
+                Text("Todos os módulos",style=MaterialTheme.typography.titleMedium,
+                    fontWeight=FontWeight.Bold)
             }
         }
         WorkspaceModules.categories.forEach { group ->
-            val entries=modules.filter { it.category==group && it !in pinned && it !in recentItems }
+            val entries=filtered.filter { it.category==group }
             if(entries.isNotEmpty()) {
-                item { Text(group,style=MaterialTheme.typography.titleMedium,
-                    color=MaterialTheme.colorScheme.primary) }
-                items(entries.size) { index ->
-                    val entry=entries[index]
-                    ModuleRow(entry,entry.route in favorites,::navigate) {
-                        toggleFavorite(entry.route)
-                    }
+                item { ModuleHeading(group,entries.size) }
+                items(entries.chunked(columns).size) { index ->
+                    ModuleGridRow(entries.chunked(columns)[index],columns,favorites,::navigate,::toggle)
                 }
             }
         }
-        if(modules.isEmpty()) item { Text("Nenhum módulo encontrado.") }
+        if(filtered.isEmpty()) item {
+            Text("Nenhum módulo encontrado. Tente outra busca.",
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
+@Composable
+private fun ModuleHeading(name:String,count:Int) {
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+        horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        Text(name,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold)
+        Text(count.toString(),color=MaterialTheme.colorScheme.primary,
+            style=MaterialTheme.typography.labelMedium)
+    }
+}
 
 @Composable
-private fun ModuleRow(
-    entry:WorkspaceModule, favorite:Boolean, onNavigate:(String)->Unit,
-    onMoveUp:(()->Unit)?=null,onMoveDown:(()->Unit)?=null,
-    onToggle:()->Unit
+private fun ModuleGridRow(
+    entries:List<WorkspaceModule>,columns:Int,favorites:Set<String>,
+    onNavigate:(String)->Unit,onToggle:(String)->Unit,
+    moveUp:((String)->Unit)?=null,moveDown:((String)->Unit)?=null
 ) {
-    Card(modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),
-        onClick={onNavigate(entry.route)}) {
-        Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(3.dp)) {
-            Text(entry.title,style=MaterialTheme.typography.titleSmall)
-            Text(entry.subtitle,style=MaterialTheme.typography.bodySmall,
-                color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick=onToggle) {
-                    Text(if(favorite) "Remover favorito" else "Favoritar")
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+        entries.forEach { module ->
+            ModuleTile(module,module.route in favorites,Modifier.weight(1f),
+                onOpen={onNavigate(module.route)},onFavorite={onToggle(module.route)},
+                onUp=moveUp?.let { { it(module.route) } },
+                onDown=moveDown?.let { { it(module.route) } })
+        }
+        repeat(columns-entries.size) { Spacer(Modifier.weight(1f)) }
+    }
+}
+
+@Composable
+private fun ModuleTile(
+    module:WorkspaceModule,favorite:Boolean,modifier:Modifier,
+    onOpen:()->Unit,onFavorite:()->Unit,
+    onUp:(()->Unit)?=null,onDown:(()->Unit)?=null
+) {
+    val icon=when(module.route) {
+        "ASSESSMENTS" -> Icons.Outlined.Assignment
+        "FORMS" -> Icons.Outlined.Description
+        "EVOLUTION","TRENDS" -> Icons.Outlined.Insights
+        "GOALS" -> Icons.Outlined.Flag
+        "NOTES" -> Icons.Outlined.NoteAlt
+        "SERVICES" -> Icons.Outlined.FitnessCenter
+        "INSIGHTS" -> Icons.Outlined.QueryStats
+        "SEARCH" -> Icons.Outlined.Search
+        "REPORTS" -> Icons.Outlined.Summarize
+        else -> Icons.Outlined.Groups
+    }
+    Card(modifier=modifier.heightIn(min=142.dp),onClick=onOpen,
+        shape=androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement=Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                Icon(icon,contentDescription=null,tint=MaterialTheme.colorScheme.primary,
+                    modifier=Modifier.size(24.dp))
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick=onFavorite,modifier=Modifier.size(36.dp)) {
+                    Icon(if(favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
+                        contentDescription=if(favorite) "Remover dos favoritos" else "Favoritar",
+                        tint=if(favorite) Color(0xFFE5A100)
+                            else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if(onMoveUp!=null) TextButton(onClick=onMoveUp) { Text("↑ Subir") }
-                if(onMoveDown!=null) TextButton(onClick=onMoveDown) { Text("↓ Descer") }
+            }
+            Text(module.title,style=MaterialTheme.typography.titleSmall,
+                fontWeight=FontWeight.SemiBold,maxLines=2,overflow=TextOverflow.Ellipsis)
+            Text(module.subtitle,style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines=2,overflow=TextOverflow.Ellipsis)
+            if(onUp!=null||onDown!=null) {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
+                    IconButton(onClick={onUp?:{}},enabled=onUp!=null,
+                        modifier=Modifier.size(30.dp)) {
+                        Icon(Icons.Outlined.ArrowUpward,contentDescription="Subir favorito",
+                            modifier=Modifier.size(18.dp))
+                    }
+                    IconButton(onClick={onDown?:{}},enabled=onDown!=null,
+                        modifier=Modifier.size(30.dp)) {
+                        Icon(Icons.Outlined.ArrowDownward,contentDescription="Descer favorito",
+                            modifier=Modifier.size(18.dp))
+                    }
+                }
             }
         }
     }
