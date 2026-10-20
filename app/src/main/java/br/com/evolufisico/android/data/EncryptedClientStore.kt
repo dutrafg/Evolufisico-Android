@@ -8,7 +8,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -48,9 +47,12 @@ class EncryptedClientStore(context: Context) {
         clients.forEach { arr.put(JSONObject().put("id", it.id).put("name", it.name)) }
         val plain = JSONObject().put("schema", 1).put("clients", arr)
             .toString().toByteArray(Charsets.UTF_8)
-        val iv = ByteArray(12).also { SecureRandom().nextBytes(it) }
+        
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key(), GCMParameterSpec(128, iv))
+        cipher.init(Cipher.ENCRYPT_MODE, key())
+        // Android Keystore gera o IV único; IV fornecido pelo app é recusado por padrão.
+        val iv = cipher.iv
+        require(iv.size == 12) { "IV AES-GCM inválido." }
         val blob = byteArrayOf(VERSION) + iv + cipher.doFinal(plain)
         val stream = file.startWrite()
         try {

@@ -8,7 +8,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -38,9 +37,12 @@ class EncryptedChargeStore(context: Context) {
         charges.forEach { require(ChargeRules.validate(it, clientIds) == null) }
         val bytes = JSONObject().put("schema", 1).put("charges", ChargeJson.toArray(charges))
             .toString().toByteArray(Charsets.UTF_8)
-        val nonce = ByteArray(12).also { SecureRandom().nextBytes(it) }
+        
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key(), GCMParameterSpec(128, nonce))
+        cipher.init(Cipher.ENCRYPT_MODE, key())
+        // Android Keystore gera o IV único; IV fornecido pelo app é recusado por padrão.
+        val nonce = cipher.iv
+        require(nonce.size == 12) { "IV AES-GCM inválido." }
         val encoded = byteArrayOf(1) + nonce + cipher.doFinal(bytes)
         val stream = file.startWrite()
         try { stream.write(encoded); file.finishWrite(stream) }
