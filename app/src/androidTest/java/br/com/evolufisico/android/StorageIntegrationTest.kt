@@ -28,7 +28,7 @@ import java.time.LocalDate
 @RunWith(AndroidJUnit4::class)
 class StorageIntegrationTest {
     @Test
-    fun encryptedStoresAndPortableRestoreOnEmptySandbox() {
+    fun jsonStoresAndPortableRestoreOnEmptySandbox() {
         val app = ApplicationProvider.getApplicationContext<Context>()
         val clients = EncryptedClientStore(app)
         val assessments = EncryptedAssessmentStore(app)
@@ -50,11 +50,11 @@ class StorageIntegrationTest {
         val password = "TesteBackupSenhaForte123!".toCharArray()
         try {
             clients.save(listOf(client))
-            val firstCiphertext = java.io.File(app.filesDir, "clients.enc").readBytes()
+            val firstJson = java.io.File(app.filesDir, "clients.json").readBytes()
             clients.save(listOf(client))
-            val secondCiphertext = java.io.File(app.filesDir, "clients.enc").readBytes()
-            // Criptografar duas vezes deve produzir IVs distintos, sem IV fornecido pelo app.
-            assertFalse(firstCiphertext.contentEquals(secondCiphertext))
+            val secondJson = java.io.File(app.filesDir, "clients.json").readBytes()
+            assertTrue(firstJson.contentEquals(secondJson))
+            assertTrue(String(secondJson).contains("Pessoa de Teste"))
             assertEquals(client.name, clients.load().first().name)
             assessments.save(listOf(assessment))
             charges.save(listOf(charge), setOf(client.id))
@@ -78,7 +78,11 @@ class StorageIntegrationTest {
             } finally { incorrect.fill('\u0000') }
             assertEquals("Inspeção nunca deve modificar dados", 1, clients.load().size)
             assertEquals(1, clients.load().size) // Verificação não pode alterar o banco
-            assertFalse(String(data, Charsets.ISO_8859_1).contains("Pessoa de Teste"))
+            assertTrue(String(data, Charsets.UTF_8).contains("Pessoa de Teste"))
+            val oldEncrypted = br.com.evolufisico.android.backup.PortableBackupCrypto.encrypt(
+                data, password)
+            val restoredOld = manager.inspectBackup(ByteArrayInputStream(oldEncrypted), password)
+            assertEquals(4, restoredOld.recordCount)
             forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())

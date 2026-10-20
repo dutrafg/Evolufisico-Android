@@ -33,8 +33,9 @@ data class BackupSnapshot(
 }
 
 /**
- * Backup portátil cifrado por senha. Importação APENAS para base vazia evita
- * sobrescrever dados existentes sem transação multi-arquivo.
+ * Backup em JSON legível para a fase alpha. Continua reconhecendo os backups
+ * AES-GCM antigos, exigindo senha apenas nesses casos.
+ * Importação somente numa base vazia evita sobrepor registros.
  */
 class SecureBackupManager(context: Context) {
     private val journal = File(context.applicationContext.filesDir, "restore_transaction.pending")
@@ -92,9 +93,7 @@ class SecureBackupManager(context: Context) {
             })
             .put("charges", ChargeJson.toArray(snapshot.charges))
             .put("forms", FormsJson.toArray(snapshot.forms))
-        return PortableBackupCrypto.encrypt(
-            json.toString().toByteArray(Charsets.UTF_8), password
-        )
+        return json.toString().toByteArray(Charsets.UTF_8)
     }
 
     /**
@@ -121,7 +120,10 @@ class SecureBackupManager(context: Context) {
             }
             target.toByteArray()
         }
-        val plain = PortableBackupCrypto.decrypt(encrypted, password)
+        // Arquivos novos são JSON simples. .efbak antigos continuam legíveis
+        // mediante a senha original; nunca restaurar sobre registros existentes.
+        val plain = if (encrypted.isNotEmpty() && encrypted[0] == '{'.code.toByte())
+            encrypted else PortableBackupCrypto.decrypt(encrypted, password)
         try {
             return parse(String(plain, Charsets.UTF_8)).also { validate(it) }
         } finally { plain.fill(0); encrypted.fill(0) }

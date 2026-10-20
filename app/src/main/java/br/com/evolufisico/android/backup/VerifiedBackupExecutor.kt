@@ -32,7 +32,7 @@ object VerifiedBackupExecutor {
                 it.uri == folder && it.isReadPermission && it.isWritePermission
             }) { "Permissão da pasta não está mais disponível. Escolha a pasta novamente." }
 
-            val credential = SealedBackupCredential(app).read()
+            val credential = CharArray(0) // Protótipo: backup sem senha ou criptografia
             password = credential
             val manager = SecureBackupManager(app)
             val archive = manager.export(credential)
@@ -42,7 +42,7 @@ object VerifiedBackupExecutor {
             )
             val stamp = LocalDateTime.now().format(
                 DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"))
-            val fileName = "EvoluFisico_AUTO_${stamp}_${UUID.randomUUID().toString().take(8)}.efbak"
+            val fileName = "EvoluFisico_AUTO_${stamp}_${UUID.randomUUID().toString().take(8)}.json"
             val created = DocumentsContract.createDocument(
                 app.contentResolver, parent, "application/octet-stream", fileName
             ) ?: error("A pasta escolhida não aceita a criação de arquivos.")
@@ -52,7 +52,7 @@ object VerifiedBackupExecutor {
                 out.flush()
             } ?: error("Não foi possível gravar o novo arquivo de backup.")
 
-            // Reabrir o arquivo na pasta SAF detecta erros de escrita, permissões e senha.
+            // Reabrir o JSON detecta falhas de escrita e conteúdo inválido.
             val input = app.contentResolver.openInputStream(created)
                 ?: error("A pasta permite gravar, mas não permite reler o backup.")
             val check = manager.inspectBackup(input, credential)

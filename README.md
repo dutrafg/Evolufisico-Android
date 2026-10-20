@@ -1,4 +1,6 @@
-# EvoluFísico Android — 0.40.0-alpha
+> **Protótipo sem criptografia:** novos registros em `clients.json`, `assessments.json`, `forms.json` e `charges.json` ficam legíveis no armazenamento interno do aplicativo. Novos backups são arquivos `.json` sem senha. Dados pessoais reais não devem ser usados nesta fase. Antes de atualizar, mantenha cópia de seus backups antigos.
+
+# EvoluFísico Android — 0.40.1-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -123,3 +125,14 @@ Versão `0.30.0-alpha` (`versionCode=30`), testes unitários do estado de backup
 Depois execute [Publish signed Android APK](https://github.com/dutrafg/Evolufisico-Android/actions/workflows/android-publish-signed-release.yml) com tag `v0.40.0-alpha`, somente após o CI aprovar e os secrets serem configurados. A primeira release ainda **NÃO existe**.
 
 **A versão antiga debug de assinatura diferente não aceitará a primeira release por cima.** Preservar e verificar backup portátil antes de uma migração é obrigatório; a desinstalação apaga os dados privados.
+
+## Simplificação temporária de armazenamento (0.40.1-alpha)
+
+Para acelerar o desenvolvimento funcional:
+- O novo armazenamento local é JSON com gravação atômica, sem AES/Keystore para **novas gravações**.
+- Ao abrir registros antigos, o app ainda consegue ler os arquivos `.enc` usando a chave já existente na instalação e gravar uma cópia JSON; **os arquivos cifrados anteriores não são apagados**.
+- Novos backups manuais e automáticos são `.json` sem senha, contendo os quatro módulos. A restauração continua permitida apenas com a base vazia.
+- Backups antigos `.efbak` com AES-GCM ainda podem ser verificados/restaurados mediante a senha original.
+- A rotina diária dispensa guardar credenciais criptográficas; o agendamento, a pasta SAF e a validação do conteúdo continuam funcionando.
+
+**Compatibilidade:** atualização direta ainda depende da mesma assinatura do APK. A retirada da criptografia **não corrige certificados incompatíveis** nem torna segura uma desinstalação sem backup. Não usar clientes reais sensíveis enquanto o protótipo estiver sem criptografia.

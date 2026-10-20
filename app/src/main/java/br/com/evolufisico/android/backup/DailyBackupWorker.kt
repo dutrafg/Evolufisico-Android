@@ -36,7 +36,6 @@ class DailyBackupScheduler(private val context: Context) {
 
     fun activate(folder: String, hour: Int, minute: Int, password: CharArray) {
         require(hour in 0..23 && minute in 0..59)
-        require(password.size >= 10)
         val uri = Uri.parse(folder)
         require(uri.scheme == "content" &&
             context.contentResolver.persistedUriPermissions.any {
@@ -44,16 +43,15 @@ class DailyBackupScheduler(private val context: Context) {
             }) { "Selecione uma pasta com permissão permanente de leitura e escrita." }
         // Verifica o acesso e o banco antes de habilitar agendamento.
         SecureBackupManager(context).summary()
-        keys.save(password)
+        // Versão alpha: arquivos JSON não usam senha; apaga credencial
+        // antiga, que não será mais necessária ao trabalho periódico.
+        keys.clear()
         val saved = prefs.edit().putBoolean("active",true)
             .putInt("hour",hour).putInt("minute",minute).putString("folder",folder)
             .putLong("enabled_at",System.currentTimeMillis())
             .putLong("last_success",0L).putLong("last_attempt",0L)
             .remove("last_file").remove("last_error").putInt("last_records",0).commit()
-        if (!saved) {
-            keys.clear()
-            error("Falha ao salvar programação.")
-        }
+        if (!saved) error("Falha ao salvar programação.")
         try { enqueue(hour,minute) }
         catch (e: Exception) {
             disable()

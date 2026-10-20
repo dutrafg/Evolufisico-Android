@@ -1,66 +1,30 @@
 package br.com.evolufisico.android.data
 
-import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.AtomicFile
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.security.KeyStore
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
 
-/**
- * Banco local cifrado e atômico. A chave não é exportável; dados não sobrevivem
- * à perda do Android Keystore ou desinstalação. Nenhuma recuperação silenciosa.
- */
-class EncryptedAssessmentStore(context: Context) {
-    private val file = AtomicFile(File(context.filesDir, "assessments.enc"))
+/** Compatível com as chamadas anteriores; nova gravação sem criptografia. */
+class EncryptedAssessmentStore(context: android.content.Context) {
+    private val file = PrototypeJsonStore(context, "assessments", "evolufisico.assessments.v1")
 
     fun load(): List<Assessment> {
-        val base = file.baseFile
-        if (!base.exists() && !File(base.path + ".bak").exists() &&
-            !File(base.path + ".new").exists()) return emptyList()
-        val blob = file.openRead().use { it.readBytes() }
-        require(blob.size >= 29 && blob[0] == 1.toByte()) { "Arquivo de avaliações inválido." }
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, blob.copyOfRange(1, 13)))
-        val root = JSONObject(String(cipher.doFinal(blob.copyOfRange(13, blob.size)), Charsets.UTF_8))
+        val root = file.load() ?: return emptyList()
         require(root.getInt("schema") == 1) { "Esquema de avaliações não suportado." }
         val records = root.getJSONArray("assessments")
-        val items = (0 until records.length()).map { fromJson(records.getJSONObject(it)) }
-        require(items.distinctBy { it.id }.size == items.size) { "IDs de avaliações duplicados." }
-        return items
+        require(records.length() <= 20000)
+        val entries = (0 until records.length()).map { fromJson(records.getJSONObject(it)) }
+        require(entries.distinctBy { it.id }.size == entries.size)
+        return entries
     }
 
     fun save(items: List<Assessment>) {
-        require(items.distinctBy { it.id }.size == items.size) { "IDs de avaliações duplicados." }
-        require(items.size <= 20_000) { "Limite local de avaliações excedido." }
+        require(items.size <= 20000 && items.distinctBy { it.id }.size == items.size)
         val array = JSONArray()
-        items.forEach { record ->
-            require(record.clientId.isNotBlank() && record.id.isNotBlank())
-            array.put(toJson(record))
+        items.forEach { item ->
+            require(item.clientId.isNotBlank() && item.id.isNotBlank())
+            array.put(toJson(item))
         }
-        val plain = JSONObject().put("schema", 1).put("assessments", array)
-            .toString().toByteArray(Charsets.UTF_8)
-        
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key())
-        // Android Keystore gera o IV único; IV fornecido pelo app é recusado por padrão.
-        val nonce = cipher.iv
-        require(nonce.size == 12) { "IV AES-GCM inválido." }
-        val blob = byteArrayOf(1) + nonce + cipher.doFinal(plain)
-        val stream = file.startWrite()
-        try {
-            stream.write(blob)
-            file.finishWrite(stream)
-        } catch (error: Exception) {
-            file.failWrite(stream)
-            throw error
-        }
+        file.save(JSONObject().put("schema", 1).put("assessments", array))
     }
 
     private fun toJson(a: Assessment): JSONObject = JSONObject()
@@ -89,20 +53,4 @@ class EncryptedAssessmentStore(context: Context) {
     private fun optional(j: JSONObject, field: String): Double? =
         if (j.isNull(field)) null else j.getDouble(field)
 
-    private fun key(): SecretKey {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
-        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        generator.init(
-            KeyGenParameterSpec.Builder(KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setKeySize(256).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build()
-        )
-        return generator.generateKey()
-    }
-
-    private companion object {
-        const val KEY_ALIAS = "evolufisico.assessments.v1"
-    }
 }

@@ -103,3 +103,13 @@
 - [ ] **Assinatura privada de produção NÃO cadastrada**: depende de execução local de script de setup com GitHub CLI e arquivamento seguro da chave pelo proprietário.
 - [ ] **APK RELEASE oficial NÃO publicado**: requer os 4 GitHub Secrets e PIN SHA-256 de certificado para acionar o workflow.
 - [ ] Verificar atualização de dois APKs RELEASE sucessivos assinados com a mesma chave no dispositivo real.
+
+## JSON temporário de desenvolvimento — 0.40.1-alpha
+- [x] Novas gravações locais usam `*.json` sem cifra, com `AtomicFile`.
+- [x] Leitura legada dos quatro `*.enc` com chave Keystore e cópia para JSON sem apagar os arquivos antigos.
+- [x] Novos backups são JSON sem senha; leitura do formato `.efbak` protegido anterior permanece.
+- [x] Agendamento automático sem credencial criptográfica, validação de backup ainda realizada.
+- [x] Teste instrumentado ajustado para JSON e importação de backup antigo.
+- [ ] Build da 0.40.1-alpha e testes no emulador ainda precisam ser concluídos.
+- [ ] Testar migração dos bancos AES-GCM em dispositivo contendo dados anteriores.
+- [ ] Uso de dados reais sensíveis **não permitido neste protótipo sem criptografia**.

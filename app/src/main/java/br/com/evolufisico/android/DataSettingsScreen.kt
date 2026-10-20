@@ -98,7 +98,7 @@ fun DataSettingsScreen(
                                 stream.write(bytes)
                                 stream.flush()
                             } ?: throw IllegalStateException("Destino selecionado não permite gravação.")
-                            "Backup cifrado salvo no local escolhido."
+                            "Backup JSON salvo no local escolhido (sem senha)."
                         }
                     } finally { credential.fill('\u0000') }
                 }
@@ -206,11 +206,6 @@ fun DataSettingsScreen(
         val folder = folderUri ?: return
         val credential = password.toCharArray()
         password = ""
-        if (credential.size < 10) {
-            credential.fill('\u0000')
-            message = "A senha deve conter pelo menos 10 caracteres."
-            return
-        }
         busy = true
         scope.launch {
             val outcome = withContext(Dispatchers.IO) {
@@ -230,7 +225,7 @@ fun DataSettingsScreen(
                         val file = DocumentsContract.createDocument(
                             context.contentResolver, parent,
                             "application/octet-stream",
-                            "EvoluFisico_${timestamp}.efbak"
+                            "EvoluFisico_${timestamp}.json"
                         ) ?: error("Pasta não permite criar arquivos.")
                         try {
                             context.contentResolver.openOutputStream(file, "w")?.use {
@@ -240,7 +235,7 @@ fun DataSettingsScreen(
                             runCatching { DocumentsContract.deleteDocument(context.contentResolver, file) }
                             throw error
                         }
-                        "Backup criptografado criado na pasta selecionada."
+                        "Backup JSON criado na pasta selecionada, sem senha."
                     }
                 } finally { credential.fill('\u0000') }
             }
@@ -260,25 +255,25 @@ fun DataSettingsScreen(
         }
         HorizontalDivider()
         Text("Dados e backups", style = MaterialTheme.typography.titleLarge)
-        Text("Clientes, avaliações, formulários e cobranças são criptografados no dispositivo. " +
-            "O backup portátil usa senha própria, necessária para restaurar em outro aparelho.",
+        Text("Versão alpha: clientes, avaliações, formulários e cobranças são salvos em " +
+            "JSON local legível. Novos backups JSON não usam senha. Evite dados sensíveis reais.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(
             value = password, onValueChange = { password = it.take(128) },
-            label = { Text("Senha do backup (mínimo 10 caracteres)") },
+            label = { Text("Senha (apenas backups antigos .efbak)") },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
         Button(
-            enabled = !busy && password.length >= 10,
+            enabled = !busy,
             onClick = {
                 pendingPassword = password.toCharArray()
                 onDocumentFlow(true)
                 createDocument.launch("EvoluFisico_${LocalDateTime.now().format(
-                    DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.efbak")
+                    DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.json")
             }, modifier = Modifier.fillMaxWidth()
-        ) { Text("Exportar backup criptografado") }
+        ) { Text("Exportar backup JSON") }
         OutlinedButton(
             enabled = !busy,
             onClick = { onDocumentFlow(true); openTree.launch(null) },
@@ -290,7 +285,7 @@ fun DataSettingsScreen(
             style = MaterialTheme.typography.bodySmall
         )
         OutlinedButton(
-            enabled = !busy && folderUri != null && password.length >= 10,
+            enabled = !busy && folderUri != null,
             onClick = { exportToFolder() }, modifier = Modifier.fillMaxWidth()
         ) { Text("Salvar novo backup na pasta") }
         HorizontalDivider()
@@ -313,7 +308,7 @@ fun DataSettingsScreen(
             else "selecionada pelo Android"),
             style = MaterialTheme.typography.bodySmall)
         Button(
-            enabled = !busy && folderUri != null && password.length >= 10,
+            enabled = !busy && folderUri != null,
             modifier = Modifier.fillMaxWidth(),
             onClick = {
                 val secret = password.toCharArray()
@@ -330,7 +325,7 @@ fun DataSettingsScreen(
                     }
                     daily = dailyScheduler.state()
                     message = operation.fold(
-                        onSuccess = { "Backup diário ativado. O Android pode atrasar a execução." },
+                        onSuccess = { "Backup JSON diário ativado. O Android pode atrasar a execução." },
                         onFailure = { "Não foi possível agendar: " + (it.localizedMessage ?: "Erro.") }
                     )
                     busy = false
@@ -362,9 +357,8 @@ fun DataSettingsScreen(
             onClick = { daily = dailyScheduler.state() }) {
             Text("Atualizar status do backup")
         }
-        Text("A senha do agendamento é guardada criptografada pelo Android Keystore. " +
-            "Guarde também sua senha fora do aparelho: ela não poderá ser recuperada após desinstalar. " +
-            "Os backups automáticos são criados como novos arquivos AUTO na pasta escolhida.",
+        Text("O backup automático grava arquivos JSON sem senha. Os arquivos antigos " +
+            ".efbak protegidos continuam exigindo a senha usada na criação.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         HorizontalDivider()
@@ -373,19 +367,19 @@ fun DataSettingsScreen(
             "É recomendado antes de atualizar ou reinstalar o aplicativo.",
             style = MaterialTheme.typography.bodySmall)
         OutlinedButton(
-            enabled = !busy && password.length >= 10,
+            enabled = !busy,
             onClick = {
                 pendingPassword = password.toCharArray()
                 onDocumentFlow(true)
                 inspectDocument.launch(arrayOf("*/*"))
             }, modifier = Modifier.fillMaxWidth()
-        ) { Text("Verificar arquivo .efbak") }
+        ) { Text("Verificar backup .json ou .efbak") }
         HorizontalDivider()
         Text("Restaurar arquivo de backup", style = MaterialTheme.typography.titleMedium)
         Text(
             "Por segurança, a restauração só é permitida se clientes, avaliações, formulários e cobranças locais " +
                 "estiverem vazios. Ela nunca sobrescreve uma base existente. " +
-                "Guarde o arquivo e a senha; sem a senha, não é possível recuperar o conteúdo.",
+                "Backups JSON novos não exigem senha; arquivos .efbak antigos precisam dela.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (localRecords != null && localRecords!! > 0) {
@@ -393,18 +387,15 @@ fun DataSettingsScreen(
                 " registro(s) no aparelho. Use 'Verificar arquivo .efbak' sem sobrescrever " +
                 "nenhuma informação. Após uma instalação nova com base vazia, a restauração poderá ser feita.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else if (localRecords == 0 && password.length < 10) {
-            Text("Para habilitar a restauração, digite acima a senha de pelo menos " +
-                "10 caracteres usada na criação do backup.")
         }
         localDataProblem?.let {
             Text(it, color = MaterialTheme.colorScheme.error)
         }
         OutlinedButton(
-            enabled = !busy && password.length >= 10 && localRecords == 0,
+            enabled = !busy && localRecords == 0,
             onClick = { showRestoreConfirmation = true },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Restaurar de arquivo (.efbak)") }
+        ) { Text("Restaurar backup .json ou .efbak") }
         if (busy) Text("Processando arquivo. Não feche o aplicativo.")
         message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         HorizontalDivider()
@@ -431,9 +422,9 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.40.0-alpha (Fases 31 a 40)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.40.1-alpha (JSON local para desenvolvimento)", style = MaterialTheme.typography.bodySmall)
         Text(
-            "Backup automático usa WorkManager e uma senha cifrada localmente pelo Keystore. " +
+            "Backup automático usa WorkManager e JSON sem senha durante a fase alpha. " +
             "Não existe sincronização própria com nuvem ou garantia de execução no minuto exato.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
@@ -442,7 +433,7 @@ fun DataSettingsScreen(
     if (showRestoreConfirmation) {
         AlertDialog(
             onDismissRequest = { showRestoreConfirmation = false },
-            title = { Text("Restaurar backup protegido?") },
+            title = { Text("Restaurar backup?") },
             text = {
                 Text("A restauração só é permitida se não existirem clientes, avaliações, formulários ou cobranças " +
                     "na base local. O aplicativo validará o arquivo e a senha antes de gravar. " +

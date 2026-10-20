@@ -67,3 +67,9 @@
 - [ ] Criar a primeira chave privada e cadastrar no GitHub Secrets (ação manual, não autorizada nesta conexão)
 - [ ] Publicar APK RELEASE oficial após configurar a chave e aprovar o CI
 - [ ] Homologar atualização entre dois APKs RELEASE assinados com a mesma chave em aparelho físico
+
+## Ajuste temporário 0.40.1-alpha
+- [x] Simplificar armazenamento local para JSON sem criptografia durante o desenvolvimento.
+- [x] Migrar de forma não destrutiva a leitura dos arquivos cifrados antigos.
+- [x] Gerar backups JSON sem senha e continuar aceitando .efbak antigos com senha.
+- [ ] Revisar a proteção de dados e políticas de criptografia quando o produto estiver funcionalmente completo.
