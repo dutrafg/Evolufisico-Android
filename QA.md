@@ -12,7 +12,9 @@
 - [x] Importação valida dados e relacionamentos **antes** de gravar, impede sobrescrever base preenchida.
 - [x] SAF: CreateDocument, OpenDocument e OpenDocumentTree; permissões persistentes para a pasta.
 - [x] Testes unitários para aritmética financeira, senha incorreta, integridade alterada e roundtrip criptográfico **adicionados**.
-- [ ] Build e testes da versão 0.4.0-alpha: **aguardando verificação de execução no GitHub Actions**.
+- [x] **Build e testes da versão 0.4.0-alpha aprovados em 20/10/2026:** [GitHub Actions 39423939587](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39423939587), commit `88dc46986c51d131c3d601bc6882ddbe4af5a285`. Tarefas `:app:assembleDebug` e `:app:testDebugUnitTest` e envio do APK concluídos com sucesso.
+- [x] ZIP inspecionado, `testzip()` sem erros. APK debug extraído (57.720.709 bytes); SHA-256: `f6b56d3b383905c7b99bcfd1146fcd7069f66be56ee4629346e4a7c5724bc0a4`.
+- [x] Arquivos originais de Evolução e relatórios preservados da Fase 3 após correção da árvore de publicação.
 - [ ] Teste com Android físico: concessão/revogação de pastas, documentos em cartão SD, provedores remotos, pouco espaço disponível.
 - [ ] Testes instrumentados end-to-end de exportação/restauração com dados fictícios.
 - [ ] Testes de energia desligada durante importação; reversão e recuperação de arquivos.
