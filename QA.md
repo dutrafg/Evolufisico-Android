@@ -125,7 +125,16 @@
 - [x] Interface integrada: atalhos Home, menu lateral rolável, Agenda, Metas e Serviços, ficha de cliente, PDF e cobranças
 - [x] JSON operacional incluído no backup, validação de vínculos e restauração sem sobrescrita; backups antigos sem `operations` aceitos
 - [x] Teste instrumentado estendido: grava/carrega dados operacionais, exporta backup, restaura e confere clientes e serviços
-- [ ] Aprovação da compilação, JUnit, Lint, AAB e testes instrumentados em emulador deste commit — **verificar execução CI**
+- [x] CI 0.100.0-alpha aprovada: [run 39482980500](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39482980500) — compilação APK, testes unitários, compilação de testes instrumentados, Android Lint, AAB e teste de assinatura descartável.
+- [x] QA em Android 10 aprovada: [run 39482980507](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39482980507), 3/3 testes instrumentados sem falhas.
 - [ ] Testes visuais em smartphone e tablet físicos
 - [ ] Homologação de assinatura de APK release com chave permanente
 - [ ] Protótipo sem criptografia: não utilizar dados sensíveis reais
+
+### Pacote validado v0.100.0-alpha
+
+- [x] ZIP debug baixado do artifact `12292003375` e testado sem erros.
+- [x] `app-debug.apk`: 59.730.810 bytes, SHA-256 `e9857db023269984c3ef63846f62c5bf7ddc7e6f6c8d530dc7295d5b26fa961e`.
+- [ ] QA manual em Android real, validação visual dos diálogos, edição e preenchimento automático de serviços e verificação de backup SAF externo.
+- [ ] Assinatura de distribuição fixa pendente; este APK debug pode ser incompatível com a assinatura das versões já instaladas.
+- [ ] Segurança/criptografia desativada temporariamente: só dados fictícios.
