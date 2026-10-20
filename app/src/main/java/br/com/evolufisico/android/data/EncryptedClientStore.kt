@@ -22,7 +22,9 @@ class EncryptedClientStore(context: Context) {
     private val file = AtomicFile(File(context.filesDir, "clients.enc"))
 
     fun load(): List<Client> {
-        if (!file.exists()) return emptyList()
+        val base = file.baseFile
+        if (!base.exists() && !File(base.path + ".bak").exists() &&
+            !File(base.path + ".new").exists()) return emptyList()
         val bytes = file.openRead().use { it.readBytes() }
         require(bytes.size >= HEADER_SIZE + TAG_SIZE) { "Arquivo criptografado inválido." }
         require(bytes[0] == VERSION) { "Formato de armazenamento não suportado." }
