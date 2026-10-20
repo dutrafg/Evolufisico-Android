@@ -216,3 +216,13 @@
 - [x] Testes de UTF-8, folding de linhas, escape de descrição, datas e exclusão de cancelamentos
 - [ ] CI e testes instrumentados da versão 3.0.2-alpha.3
 - [ ] Verificar leitura dos arquivos ICS em calendário externo no smartphone
+
+## Alpha 3 — integração e critérios finais (ciclo 0–100)
+
+- [x] Teste instrumentado ampliado para confirmar que a restauração conserva atendimentos, leitura mensal e saída ICS.
+- [x] Regras de conflito e série semanal cobertas por JUnit.
+- [ ] Teste de compatibilidade ICS em aplicativo de calendário real.
+- [ ] Teste visual em Android 10+ com diferentes configurações de fonte.
+- [ ] Validação de backup/restauração SAF no smartphone.
+- [ ] Assinatura de distribuição fixa para atualizar sem reinstalar. O APK debug não resolve isso.
+- [ ] Somente após essas etapas, considerar a homologação final da Alpha 3.

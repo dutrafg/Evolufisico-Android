@@ -199,7 +199,10 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [x] 71–75: horários locais, identificadores, caracteres especiais e UTF-8
 - [x] 76–80: testes de ICS, exclusão de cancelados/faltas e saída portátil
 - [ ] Integração com calendário de terceiros por API permanece fora do escopo
-- [ ] 81–100: acessibilidade, responsividade e QA automatizado de todos os fluxos
+- [x] 81–85: extensão de teste Android para restauração da Agenda e presença no calendário
+- [x] 86–90: teste Android de geração ICS a partir de dados restaurados
+- [ ] 91–95: QA visual completo de Agenda, calendário, diálogos e filtros em smartphone
+- [ ] 96–100: validação real de backup, instalação por assinatura compatível e correção de problemas críticos
 - [ ] Validação manual em smartphone real, restauração a partir de backup externo e atualização assinada de forma permanente
 
 **Ciclos seguintes:** Alpha 4, Alpha 5 etc. somente conforme necessidades funcionais reais. A transição para **Beta** será baseada nos critérios definidos em `BETA_CRITERIOS.md`, não numa contagem arbitrária de etapas.

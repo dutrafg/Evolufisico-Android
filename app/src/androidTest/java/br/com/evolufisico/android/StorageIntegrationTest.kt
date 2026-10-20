@@ -16,6 +16,8 @@ import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.forms.EncryptedFormStore
 import br.com.evolufisico.android.forms.FormCatalog
 import br.com.evolufisico.android.forms.FormResponse
+import br.com.evolufisico.android.agenda.AgendaCalendar
+import br.com.evolufisico.android.agenda.AgendaIcs
 import br.com.evolufisico.android.ops.Appointment
 import br.com.evolufisico.android.ops.ClientGoal
 import br.com.evolufisico.android.ops.ServiceItem
@@ -29,6 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayInputStream
 import java.time.LocalDate
+import java.time.YearMonth
 
 /** Somente executar em emulador vazio; protege instalações já preenchidas. */
 @RunWith(AndroidJUnit4::class)
@@ -115,6 +118,12 @@ class StorageIntegrationTest {
             val result = manager.restore(ByteArrayInputStream(data), password)
             assertEquals(8, result.recordCount)
             assertEquals("Avaliação",operations.load().services.first().name)
+            val restoredAgenda=operations.load().appointments
+            assertEquals(1,AgendaCalendar.active(YearMonth.now(),restoredAgenda))
+            val calendar=AgendaIcs.generate(restoredAgenda,mapOf(client.id to client.name))
+                .toString(Charsets.UTF_8)
+            assertTrue(calendar.contains("BEGIN:VEVENT"))
+            assertTrue(calendar.contains("SUMMARY:Avaliação - Pessoa de Teste"))
             assertEquals(1,operations.load().goals.size)
             assertEquals("Teste de registro",operations.load().notes.first().title)
             assertEquals(form.templateId, forms.load().first().templateId)
