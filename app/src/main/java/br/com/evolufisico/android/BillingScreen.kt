@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.billing.Charge
 import br.com.evolufisico.android.billing.ChargeRules
+import br.com.evolufisico.android.billing.BillingFilters
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.ops.OperationalStore
@@ -89,17 +90,7 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
     if (error != null) { BillingNotice(error!!); return }
 
     val clientNames = clients.associate { it.id to it.name }
-    val visible = charges.filter { charge ->
-        val statusMatches = when (status) {
-            "Pendentes" -> !charge.isReceived
-            "Atrasadas" -> ChargeRules.isOverdue(charge)
-            "Recebidas" -> charge.isReceived
-            else -> true
-        }
-        statusMatches && (search.isBlank() ||
-            charge.description.contains(search.trim(),ignoreCase = true) ||
-            (clientNames[charge.clientId] ?: "").contains(search.trim(),ignoreCase = true))
-    }.sortedWith(compareBy<Charge> { it.dueDateIso }.thenBy { it.id })
+    val visible = BillingFilters.filter(charges,clientNames,status,search,LocalDate.now())
     LazyColumn(modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -140,11 +131,15 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore, operationa
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf("Pendentes", "Atrasadas", "Recebidas", "Todas").forEach { choice ->
+                listOf("Pendentes", "Atrasadas", "Próximos 7 dias", "Recebidas", "Todas").forEach { choice ->
                     FilterChip(selected = status == choice, onClick = { status = choice },
                         label = { Text(choice) })
                 }
             }
+            Text("Exibindo: "+visible.size+" cobrança(s) · total: "+
+                reais(visible.sumOf { it.amountCents }),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
         if (visible.isEmpty()) item { Text("Nenhuma cobrança nesta categoria.") }
