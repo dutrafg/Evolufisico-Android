@@ -21,6 +21,7 @@ import br.com.evolufisico.android.ops.*
 import br.com.evolufisico.android.agenda.WeeklyAppointments
 import br.com.evolufisico.android.agenda.AgendaIcs
 import br.com.evolufisico.android.agenda.AgendaCsv
+import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -102,17 +103,11 @@ private fun AppointmentsModule(
     val scope=rememberCoroutineScope()
     var exportResult by remember { mutableStateOf<String?>(null) }
     var pendingCsv by remember { mutableStateOf<List<Appointment>>(emptyList()) }
-    val today=LocalDate.now().toString()
+    val todayDate=LocalDate.now()
+    val today=todayDate.toString()
+    val pulse=AgendaPulse.summarize(all,todayDate)
     val visible=all.filter { a ->
-        val matchPeriod=when(period) {
-            "Hoje" -> a.startIso.startsWith(today)
-            "Dia" -> selectedDay != null && a.startIso.startsWith(selectedDay.toString())
-            "Futuras" -> a.startIso.substringBefore('T')>=today && a.status=="Agendado"
-            "Concluídas" -> a.status=="Concluído"
-            "Canceladas" -> a.status=="Cancelado"
-            "Faltas" -> a.status=="Faltou"
-            else -> true
-        }
+        val matchPeriod=AgendaPulse.matches(a,period,selectedDay,todayDate)
         matchPeriod && (search.isBlank() || a.service.contains(search,true) ||
             (name[a.clientId]?:"").contains(search,true) || a.startIso.contains(search))
     }.sortedBy { it.startIso }
@@ -168,9 +163,11 @@ private fun AppointmentsModule(
             Text("Agenda de atendimentos",style=MaterialTheme.typography.titleLarge)
             Text("Agendamentos locais vinculados ao cliente.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Hoje: "+all.count{it.startIso.startsWith(today)&&it.status=="Agendado"}+
-                " · Concluídos: "+all.count{it.status=="Concluído"}+
-                " · Faltas: "+all.count{it.status=="Faltou"})
+            Text("Hoje: "+pulse.scheduledToday+
+                " · Próximos 7 dias: "+pulse.upcomingSevenDays+
+                " · Pendentes anteriores: "+pulse.overdue)
+            Text("No mês: "+pulse.completedMonth+" concluídos · "+
+                pulse.missedMonth+" faltas",color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             AgendaCalendarPanel(all,selectedDay,onSelect={ day ->
@@ -185,10 +182,16 @@ private fun AppointmentsModule(
             OutlinedTextField(search,{search=it.take(80)},modifier=Modifier.fillMaxWidth(),
                 label={Text("Buscar cliente, serviço ou data")},singleLine=true)
             Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                listOf("Todas","Hoje","Dia","Futuras","Concluídas","Canceladas","Faltas").forEach { c ->
-                    FilterChip(selected=period==c,onClick={period=c},label={Text(c)})
+                listOf("Todas","Hoje","Dia","Semana","Pendentes","Futuras",
+                    "Concluídas","Canceladas","Faltas").forEach { c ->
+                    FilterChip(selected=period==c,onClick={period=c},
+                        enabled=c!="Dia" || selectedDay!=null,label={Text(c)})
                 }
             }
+            Text("Semana: de hoje até os próximos seis dias. Pendentes: atendimentos "+
+                "ainda agendados com data anterior a hoje.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(
                 enabled=!busy&&visible.any{it.status=="Agendado"},
                 modifier=Modifier.fillMaxWidth(),

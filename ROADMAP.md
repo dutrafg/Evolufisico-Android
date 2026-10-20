@@ -236,3 +236,21 @@ Etapas pendentes não são marcadas como prontas sem implementação e testes.
 - [ ] 91–100: homologação final da Alpha 5 e avaliação dos critérios da Beta
 - [ ] Instalação do APK debug em smartphone Android 10+ e teste de migração por backup
 - [ ] Assinatura release definitiva necessária para atualizações na mesma instalação
+
+
+## Alpha 6 — incremento funcional
+
+- [x] Versão 6.0.0-alpha.6 e APK debug paralelo .alpha6
+- [x] Exportação da Agenda filtrada para CSV com estados e observações
+- [x] Escrita via SAF, proteção de células e testes unitários de CSV
+- [ ] Validação de compartilhamento/exportação num dispositivo físico Android 10+
+
+## Alpha 7 — incremento funcional
+
+- [x] Versão 7.0.0-alpha.7 e APK debug paralelo .alpha7
+- [x] Indicadores Hoje, Semana, Pendentes e histórico mensal de faltas/conclusões
+- [x] Filtros Semana e Pendentes compatíveis com seleção e exportações
+- [x] Testes unitários das fronteiras de sete dias, estados e meses
+- [ ] Instalação física e comparação de backups entre variantes
+- [ ] Assinatura release fixa para atualização direta do APK original
+- [ ] Homologação visual/acessibilidade completa das 100 etapas de cada ciclo

@@ -223,3 +223,13 @@ Estes incrementos formam a **primeira entrega da Alpha 4**, sem alegar que as 10
 - **APK DEBUG de homologação:** usa o identificador **`br.com.evolufisico.android.alpha5`** em vez do `br.com.evolufisico.android` principal. Assim o aplicativo de teste pode ser instalado ao lado do antigo sem substituí-lo ou apagar seus dados, mesmo quando as assinaturas são diferentes. Seu banco fica **isolado** e começa vazio. Para migrar dados, exporte um backup JSON pelo app antigo e restaure no Alpha 5 (somente numa base vazia); mantenha o original instalado até validar os registros. 
 - A variante **RELEASE** conserva o identificador original. Atualização sobre a mesma instalação ainda depende da assinatura de distribuição permanente, que não está configurada. Não confundir o APK DEBUG paralelo com APK de atualização.
 - Ainda há trabalho da Alpha 5 (etapas 41–100) e testes em aparelhos reais; a contagem de fases não substitui homologação para a Beta.
+
+## Alpha 6 — CSV da Agenda (6.0.0-alpha.6)
+
+A Agenda agora exporta **todos os atendimentos filtrados** para CSV, incluindo faltas e cancelamentos, pelo seletor SAF. O arquivo possui BOM UTF-8, ponto-e-vírgula, nomes dos clientes, duração, status e observações, com escape de fórmulas e conteúdo delimitado. Sem alteração de formato do banco. APK debug independente `br.com.evolufisico.android.alpha6`.
+
+## Alpha 7 — visão semanal e atendimentos pendentes (7.0.0-alpha.7)
+
+A Agenda recebe contadores de atendimentos **hoje**, **próximos sete dias**, **pendentes com datas anteriores à atual**, **concluídos no mês** e **faltas no mês**. Novos filtros **Semana** e **Pendentes** respeitam o status Agendado. O filtro Dia só pode ser selecionado após a escolha de uma data no calendário. Os CSV e ICS preservam os filtros existentes e não fazem sincronização externa automática.
+
+A build debug Alpha 7 usa o identificador `br.com.evolufisico.android.alpha7`, para instalação em paralelo com o aplicativo principal e com os APKs de homologação Alpha 5/6. **Ela inicia com base própria vazia**: para dados de teste, use backup JSON externo e restaure apenas em base vazia. Não desinstale a versão antiga sem verificar o backup. Essa opção **não resolve** a assinatura de atualização no mesmo pacote; assinatura de distribuição permanente segue pendente. Use dados fictícios enquanto o JSON estiver sem criptografia.

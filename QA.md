@@ -246,3 +246,17 @@
 - [ ] Testes instrumentados em Android 10 da Alpha 5.
 - [ ] Instalação paralela e restauração de backup em smartphone real — pendente.
 - [ ] Validação visual dos novos botões e conteúdo compartilhado — pendente.
+
+
+## Alpha 6 e Alpha 7 — novas rotinas
+
+- [x] Exportador CSV da Agenda com BOM UTF-8, todos os estados filtrados e neutralização de fórmulas
+- [x] Testes JUnit para ordenação, cabeçalho, aspas, quebras de linha e estados
+- [x] Indicadores da Agenda por data e status, filtros Semana e Pendentes
+- [x] Testes JUnit para início/fim da semana, atrasos, estados e mudança de mês
+- [ ] Confirmar CI, lint, unitários e emulador Android 10 do commit Alpha 7
+- [ ] Testar abertura do CSV em planilha do smartphone e cancelamento do SAF
+- [ ] Testar restauração JSON para a instalação paralela Alpha 7 em dispositivo físico
+- [ ] Comprovar atualização da variante oficial com assinatura release persistente
+
+**Atenção:** pacotes debug das Alpha 5/6/7 são isolados para proteger o principal. Sem a mesma assinatura, não substituem instalações anteriores. Dados JSON do protótipo ainda não estão criptografados.
