@@ -11,3 +11,8 @@ build/
 *.keystore
 *.hprof
 .DS_Store
+*.p12
+*.pfx
+*.jks
+*.keystore
+signing.properties

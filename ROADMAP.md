@@ -51,3 +51,19 @@
 - [x] **30:** testes unitários adicionais, compilação instrumentada e QA de regressão
 - [ ] Validar visualmente e com uso real em Android 10+, pasta SAF local ou externa, reinício, Doze e restrições de fabricante
 - [ ] Implementar uma release de distribuição assinada de forma permanente para permitir atualizações sem reinstalar
+
+## Fases 31–40 — Distribuição assinada
+
+- [x] 31. Scripts para criar keystore privado no PC do proprietário
+- [x] 32. Assistência para cadastrar segredos e fingerprint público no GitHub
+- [x] 33. Preflight de assinatura, identidade de pacote e tag/versionName
+- [x] 34. Rejeição de troca de certificado entre releases
+- [x] 35. Publicação de APK release com certificado e checksum
+- [x] 36. Seleção semântica da release oficial mais nova
+- [x] 37. Checksum SHA-256 e certificado verificados antes do download
+- [x] 38. Validação do arquivo .efbak contra registros locais antes da instalação
+- [x] 39. CI com chave descartável para testar assinatura sem distribuí-la
+- [x] 40. Testes unitários, documentação e versionamento v0.40.0-alpha
+- [ ] Criar a primeira chave privada e cadastrar no GitHub Secrets (ação manual, não autorizada nesta conexão)
+- [ ] Publicar APK RELEASE oficial após configurar a chave e aprovar o CI
+- [ ] Homologar atualização entre dois APKs RELEASE assinados com a mesma chave em aparelho físico

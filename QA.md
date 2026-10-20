@@ -1,4 +1,4 @@
-# QA — EvoluFísico Android 0.30.0-alpha
+# QA — EvoluFísico Android 0.40.0-alpha
 
 ## Alterações e verificações adicionadas
 - [x] Formulários: busca e filtros sem gravar ou transmitir respostas
@@ -77,3 +77,20 @@
 - [x] `app-debug.apk` com **59.353.919 bytes**, SHA-256 `af3676792a3cb11460862a26e1fdde062ef0cf7de6d38b78a50a81becb27ba9f`.
 - [ ] Testar em smartphone o botão `Fazer backup agora`, acesso SAF real, execução diária no horário aproximado, Doze e bloqueios do fabricante.
 - [ ] Criar APK RELEASE com assinatura fixa. **APK DEBUG CI não atualiza a versão 0.15 com certificado diferente.**
+
+## Validação das Fases 31–40
+
+- [x] Configuração guiada de chave privada em Windows e Linux, excluída do Git
+- [x] Workflow release exige 4 secrets e variável SHA-256 pública (identidade imutável)
+- [x] Recusa tag diferente do versionName, ID de pacote divergente e troca de certificado
+- [x] Release inclui APK, arquivo SHA-256 e impressão digital do certificado
+- [x] Busca semântica da release oficial mais recente e descarte de APKs debug
+- [x] Validação SHA-256 obrigatória, fingerprint igual ao instalado ANTES de baixar
+- [x] Preflight de backup .efbak criptograficamente verificado e comparado ao banco atual
+- [x] JUnit novo para versão semântica, checksum e impressão digital
+- [x] Teste efêmero de assinatura APK RELEASE no CI (sem chave privada de produção)
+- [ ] CI v0.40.0-alpha aguardando execução e validação
+- [ ] Emulador Android 10 v0.40.0-alpha aguardando execução
+- [ ] Primeira release oficial depende de executar script privado no PC e cadastrar secrets
+- [ ] Teste de atualização sobre release de MESMO certificado em smartphone
+- [ ] Migração DEBUG legado para RELEASE exige backup externo verificado e plano de restauração

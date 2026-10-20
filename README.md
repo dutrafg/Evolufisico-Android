@@ -1,4 +1,4 @@
-# EvoluFísico Android — 0.30.0-alpha
+# EvoluFísico Android — 0.40.0-alpha
 
 Aplicativo Android 10+ nativo em Kotlin / Jetpack Compose / Material Design 3. Versão alpha para testes com dados fictícios, mantida separada dos projetos Web, Windows e Linux.
 
@@ -104,3 +104,22 @@ Foram acrescentados testes instrumentados Android que verificam: senha errada e 
 Versão `0.30.0-alpha` (`versionCode=30`), testes unitários do estado de backup e calendário, compilação, Android Lint, AAB não assinado, teste Android instrumentado no emulador (quando aprovado). Testes físicos de Doze, persistência de permissões do provedor SAF, reinício e bateria permanecem pendentes. Nenhum APK debug CI se torna atualizável por cima de outro certificado distinto: é necessário configurar uma chave de assinatura de distribuição permanente.
 
 **Limites do agendamento:** WorkManager não garante o minuto exato nem execução após encerramento forçado pelo usuário/fornecedor. O backup local usa a pasta escolhida; o app não possui integração própria com Google Drive.
+
+## Fases 31–40: releases oficiais e atualização (0.40.0-alpha)
+
+1. Gerar keystore permanente com script local Windows/Linux.
+2. Enviar chave cifrada em Base64 aos GitHub Secrets sem incluí-la em commits.
+3. Exigir secrets, fingerprint e versão/tag antes de assinar.
+4. Impedir alteração de certificado entre releases.
+5. Gerar APK, checksum e fingerprint oficiais verificados por apksigner.
+6. Selecionar a release mais nova pelo número semântico, sem APKs debug.
+7. Rejeitar download sem SHA-256 e certificado oficial.
+8. Confirmar backup .efbak autenticado que contenha exatamente os registros locais antes de instalar.
+9. Testar assinatura de release em CI com chave descartável (NÃO distribui essa chave).
+10. JUnit, Android CI, emulador e documentação de migração.
+
+**Ativação da assinatura depende de ação sua.** O acesso GitHub disponível neste chat permite atualizar código, mas NÃO cadastrar segredos. Execute no SEU computador o script `scripts/setup-release-signing.ps1` (Windows) ou `scripts/setup-release-signing.sh` (Linux/macOS), com JDK 17 e GitHub CLI autenticado. O script pede senha localmente, cria `evolufisico-release.p12` fora do repositório, cadastra 4 secrets e a variável pública `EF_SIGNING_CERT_SHA256`. Guarde duas cópias privadas da chave e senha fora do GitHub. Não compartilhe o keystore no chat.
+
+Depois execute [Publish signed Android APK](https://github.com/dutrafg/Evolufisico-Android/actions/workflows/android-publish-signed-release.yml) com tag `v0.40.0-alpha`, somente após o CI aprovar e os secrets serem configurados. A primeira release ainda **NÃO existe**.
+
+**A versão antiga debug de assinatura diferente não aceitará a primeira release por cima.** Preservar e verificar backup portátil antes de uma migração é obrigatório; a desinstalação apaga os dados privados.

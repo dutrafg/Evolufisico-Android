@@ -56,6 +56,9 @@ object VerifiedBackupExecutor {
             val input = app.contentResolver.openInputStream(created)
                 ?: error("A pasta permite gravar, mas não permite reler o backup.")
             val check = manager.inspectBackup(input, credential)
+            check(check == manager.summary()) {
+                "Os dados locais mudaram durante a criação do backup. Tente novamente."
+            }
             val report = BackupRunReport(fileName, check.recordCount)
             destination = null // arquivo verificado: não apagar em finally
             scheduler.markSuccess(report)

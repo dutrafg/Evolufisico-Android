@@ -49,3 +49,11 @@ Execute **Actions > Publish signed Android APK > Run workflow**, na branch `main
 O atualizador consulta GitHub Releases, baixa APK oficial via HTTPS ou escolhe arquivo local e verifica pacote, versionCode crescente e certificado. Quando compatível, abre o instalador padrão Android, que solicita consentimento. Isso não é uma atualização silenciosa igual ao mecanismo exclusivo da Play Store.
 
 Relatórios PDF não são backups restauráveis. A desinstalação padrão remove os dados locais e o Android Keystore.
+
+## Procedimento novo — 0.40.0-alpha
+
+Na sua máquina com JDK 17 e GitHub CLI autenticado, execute o script em `scripts/setup-release-signing.ps1` (Windows) ou `scripts/setup-release-signing.sh` (Linux/macOS). Ele cria o keystore privado `evolufisico-release.p12` fora do repositório e cadastra os segredos `EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS`, `EF_KEY_PASSWORD` e a variável `EF_SIGNING_CERT_SHA256`. Guarde a chave e senha privadamente em dois locais independentes. Não anexe a chave no chat.
+
+Após o CI aprovar a tag `v0.40.0-alpha`, execute o workflow `Publish signed Android APK` na branch main. A primeira publicação ainda NÃO existe. A identidade será verificada por SHA-256 antes de qualquer release, inclusive a primeira.
+
+Versões antigas DEBUG com outro certificado não podem receber update direto; confira `.efbak` e migre apenas após preparar restauração em base nova e vazia.

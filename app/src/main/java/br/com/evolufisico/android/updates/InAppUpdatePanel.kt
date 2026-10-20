@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import br.com.evolufisico.android.backup.SecureBackupManager
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,7 +41,9 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
     var selectedApk by remember { mutableStateOf<File?>(null) }
     var summary by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
-    var confirmBackup by remember { mutableStateOf(false) }
+    var backupPassword by remember { mutableStateOf("") }
+    var backupVerified by remember { mutableStateOf(false) }
+    var backupReport by remember { mutableStateOf<String?>(null) }
     var confirmInstall by remember { mutableStateOf(false) }
 
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -65,6 +69,49 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                 checking = false
             }
         }
+    }
+
+    val backupPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        onDocumentFlow(false)
+        backupVerified = false
+        backupReport = null
+        val credential = backupPassword.toCharArray()
+        backupPassword = ""
+        if (uri != null && credential.size >= 10) {
+            checking = true
+            scope.launch {
+                val validation = withContext(Dispatchers.IO) {
+                    try {
+                        runCatching {
+                            val manager = SecureBackupManager(context.applicationContext)
+                            val input = context.contentResolver.openInputStream(uri)
+                                ?: error("Não foi possível abrir o arquivo escolhido.")
+                            val backup = manager.inspectBackup(input, credential)
+                            val local = manager.summary()
+                            require(local.clients.toSet() == backup.clients.toSet() &&
+                                local.assessments.toSet() == backup.assessments.toSet() &&
+                                local.forms.toSet() == backup.forms.toSet() &&
+                                local.charges.toSet() == backup.charges.toSet()) {
+                                "O backup é válido, mas não contém exatamente o estado atual " +
+                                    "dos dados. Faça um novo backup antes de atualizar."
+                            }
+                            backup.recordCount
+                        }
+                    } finally { credential.fill('\u0000') }
+                }
+                validation.onSuccess {
+                    backupVerified = true
+                    backupReport = "Backup .efbak verificado: $it registro(s), " +
+                        "incluindo o estado atual do aparelho."
+                }.onFailure {
+                    backupVerified = false
+                    backupReport = it.localizedMessage ?: "Falha ao verificar o backup."
+                }
+                checking = false
+            }
+        } else credential.fill('\u0000')
     }
 
     val unknownSources = rememberLauncherForActivityResult(
@@ -152,22 +199,39 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
 
         summary?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
 
-        androidx.compose.foundation.layout.Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            Checkbox(checked = confirmBackup, onCheckedChange = { confirmBackup = it })
-            Text("Já salvei meu backup criptografado (.efbak) fora do aplicativo.",
+        OutlinedTextField(
+            value = backupPassword,
+            onValueChange = {
+                backupPassword = it.take(128)
+                backupVerified = false
+                backupReport = null
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Senha do arquivo .efbak (mínimo 10 caracteres)") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
+        )
+        OutlinedButton(
+            enabled = !checking && backupPassword.length >= 10,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                onDocumentFlow(true)
+                backupPicker.launch(arrayOf("*/*"))
+            }
+        ) { Text("Selecionar e verificar backup antes de atualizar") }
+        backupReport?.let {
+            Text(it, color = if (backupVerified) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall)
         }
-
         Button(modifier = Modifier.fillMaxWidth(),
-            enabled = !checking && selectedApk != null && confirmBackup,
+            enabled = !checking && selectedApk != null && backupVerified,
             onClick = { confirmInstall = true }) {
             Text("Instalar atualização verificada")
         }
-        Text("Se o Android rejeitar a assinatura, NÃO desinstale antes de " +
-            "exportar e conferir seu backup em uma pasta externa. A desinstalação " +
-            "normal apaga os dados locais e as chaves do Android Keystore.",
+        Text("O instalador só será liberado após verificar um backup portátil .efbak " +
+            "que corresponda aos registros atuais. Ainda é obrigatório usar uma assinatura " +
+            "compatível no APK. Não desinstale sem uma migração planejada.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (checking) Text("Verificando o arquivo, assinatura e versão...")

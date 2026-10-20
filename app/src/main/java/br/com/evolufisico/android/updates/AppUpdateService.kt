@@ -23,7 +23,7 @@ import java.security.MessageDigest
 data class AvailableRelease(
     val tag: String,
     val apkUrl: String,
-    val sha256: String?,
+    val sha256: String,
     val sizeBytes: Long
 )
 
@@ -32,9 +32,11 @@ class AppUpdateService(private val context: Context) {
     private val outputDir = File(context.cacheDir, "apk-updates")
     private val maxSize = 250L * 1024 * 1024
 
+    /** Oferece somente o APK RELEASE mais novo, com checksum da release oficial. */
+    @Suppress("DEPRECATION")
     fun releaseFromGitHub(): AvailableRelease? {
         val connection = (URL(
-            "https://api.github.com/repos/dutrafg/Evolufisico-Android/releases?per_page=10"
+            "https://api.github.com/repos/dutrafg/Evolufisico-Android/releases?per_page=40"
         ).openConnection() as HttpURLConnection).apply {
             connectTimeout = 12000
             readTimeout = 15000
@@ -42,31 +44,124 @@ class AppUpdateService(private val context: Context) {
             setRequestProperty("User-Agent", "EvoluFisico-Android-AppUpdater")
         }
         val content = try {
-            check(connection.responseCode == 200) { "Consulta de versões falhou (HTTP ${connection.responseCode})." }
+            check(connection.responseCode == 200) {
+                "Consulta de versões falhou (HTTP ${connection.responseCode})."
+            }
             connection.inputStream.bufferedReader().use { it.readText() }
-        } finally {
-            connection.disconnect()
-        }
+        } finally { connection.disconnect() }
+        val installed = context.packageManager.getPackageInfo(pkg, 0).versionName.orEmpty()
         val releases = JSONArray(content)
+        var selected: JSONObject? = null
+        var selectedAsset: JSONObject? = null
+        var selectedSidecar: JSONObject? = null
+        var selectedCert: JSONObject? = null
+        var topVersion: ReleaseTag? = null
+        val apkName = "Evolufisico-Android-release.apk"
         for (i in 0 until releases.length()) {
             val release = releases.getJSONObject(i)
-            if (release.optBoolean("draft", false)) continue
+            if (release.optBoolean("draft",false)) continue
+            val tag = release.optString("tag_name")
+            val version = ReleasePolicy.parse(tag) ?: continue
+            if (!ReleasePolicy.newer(tag,installed)) continue
             val assets = release.optJSONArray("assets") ?: continue
+            var apk: JSONObject? = null
+            var sidecar: JSONObject? = null
+            var certificate: JSONObject? = null
             for (j in 0 until assets.length()) {
                 val asset = assets.getJSONObject(j)
-                val name = asset.optString("name", "")
-                val size = asset.optLong("size", 0)
-                if (!name.endsWith(".apk", ignoreCase = true) || size !in 1..maxSize) continue
-                val location = asset.optString("browser_download_url")
-                requireTrustedReleaseUrl(location)
-                val digest = asset.optString("digest", "")
-                    .takeIf { it.matches(Regex("sha256:[a-fA-F0-9]{64}")) }
-                    ?.substringAfter(':')?.lowercase()
-                return AvailableRelease(release.optString("tag_name", "Sem etiqueta"),
-                    location, digest, size)
+                when (asset.optString("name")) {
+                    apkName -> apk = asset
+                    "$apkName.sha256" -> sidecar = asset
+                    "Evolufisico-Android-release.cert.sha256" -> certificate = asset
+                }
+            }
+            if (apk == null || sidecar == null || certificate == null ||
+                apk.optLong("size",0) !in 1..maxSize ||
+                sidecar.optLong("size",0) !in 1..1024 ||
+                certificate.optLong("size",0) !in 1..1024) continue
+            if (topVersion == null || version > topVersion) {
+                topVersion = version
+                selected = release
+                selectedAsset = apk
+                selectedSidecar = sidecar
+                selectedCert = certificate
             }
         }
-        return null
+        val release = selected ?: return null
+        val asset = selectedAsset ?: return null
+        val sidecar = selectedSidecar ?: return null
+        val certificate = selectedCert ?: return null
+        val downloadUrl = asset.getString("browser_download_url")
+        val checksumUrl = sidecar.getString("browser_download_url")
+        requireTrustedReleaseUrl(downloadUrl)
+        requireTrustedReleaseUrl(checksumUrl)
+        val certificateUrl = certificate.getString("browser_download_url")
+        requireTrustedReleaseUrl(certificateUrl)
+        val releaseFingerprint = ReleasePolicy.readFingerprint(
+            readOfficialSmallFile(certificateUrl,1024)
+        ) ?: error("Certificado oficial sem SHA-256 válido.")
+        val packageInfo = context.packageManager.getPackageInfo(
+            pkg, PackageManager.GET_SIGNING_CERTIFICATES
+        )
+        val installedFingerprint = packageInfo.signingInfo
+            ?.apkContentsSigners?.firstOrNull()?.toByteArray()
+            ?.let { certificateSha256(it) }
+            ?: error("Certificado instalado indisponível.")
+        require(releaseFingerprint.equals(installedFingerprint,ignoreCase = true)) {
+            "A release oficial usa outra assinatura: instalada " +
+                "${installedFingerprint.take(16)}…, release ${releaseFingerprint.take(16)}…. " +
+                "Uma instalação DEBUG antiga não pode receber diretamente a primeira " +
+                "RELEASE. Faça e confira um backup .efbak e migre somente quando seguro."
+        }
+        val checksum = ReleasePolicy.readChecksum(
+            readOfficialSmallFile(checksumUrl,1024), apkName
+        ) ?: error("Checksum oficial .sha256 inválido; instalação recusada.")
+        val declared = asset.optString("digest","")
+            .takeIf { it.matches(Regex("sha256:[a-fA-F0-9]{64}")) }
+            ?.substringAfter(':')?.lowercase()
+        require(declared == null || declared == checksum) {
+            "Checksum da API e do arquivo oficial divergem. Instalação recusada."
+        }
+        return AvailableRelease(release.getString("tag_name"),
+            downloadUrl, checksum, asset.getLong("size"))
+    }
+
+    private fun readOfficialSmallFile(raw: String, limit: Int): String {
+        requireTrustedReleaseUrl(raw)
+        var address = URL(raw)
+        for (redirect in 0..5) {
+            requireTrustedDownloadHost(address)
+            val connection = (address.openConnection() as HttpURLConnection).apply {
+                instanceFollowRedirects = false
+                connectTimeout = 12000
+                readTimeout = 15000
+                setRequestProperty("User-Agent","EvoluFisico-Android-AppUpdater")
+            }
+            try {
+                val status = connection.responseCode
+                if (status in listOf(301,302,303,307,308)) {
+                    val destination = connection.getHeaderField("Location")
+                        ?: error("Redirecionamento sem destino.")
+                    if (redirect == 5) error("Redirecionamentos excessivos.")
+                    address = URL(address,destination)
+                    continue
+                }
+                check(status == 200) { "Falha ao ler checksum (HTTP $status)." }
+                val bytes = connection.inputStream.use { stream ->
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(256)
+                    while (true) {
+                        val n = stream.read(buffer)
+                        if (n < 0) break
+                        require(output.size() + n <= limit) { "Checksum excessivamente grande." }
+                        output.write(buffer,0,n)
+                    }
+                    output.toByteArray()
+                }
+                return String(bytes,Charsets.US_ASCII)
+            } finally { connection.disconnect() }
+        }
+        error("Não foi possível ler o checksum.")
     }
 
     /**
@@ -76,6 +171,9 @@ class AppUpdateService(private val context: Context) {
     fun download(release: AvailableRelease): File {
         requireTrustedReleaseUrl(release.apkUrl)
         require(release.sizeBytes in 1..maxSize)
+        require(release.sha256.matches(Regex("[a-fA-F0-9]{64}"))) {
+            "Atualização sem SHA-256 oficial verificável."
+        }
         outputDir.mkdirs()
         val staged = File(outputDir, "evolufisico-update.tmp")
         val ready = File(outputDir, "evolufisico-update.apk")
@@ -123,10 +221,8 @@ class AppUpdateService(private val context: Context) {
                 connection.disconnect()
                 require(bytes == release.sizeBytes) { "Download incompleto." }
                 val calculated = hash.digest().joinToString("") { "%02x".format(it) }
-                if (release.sha256 != null) {
-                    require(calculated.equals(release.sha256, ignoreCase = true)) {
-                        "O SHA-256 do APK não corresponde ao publicado no GitHub."
-                    }
+                require(calculated.equals(release.sha256, ignoreCase = true)) {
+                    "O SHA-256 do APK não corresponde ao publicado no GitHub."
                 }
                 check(staged.renameTo(ready)) { "Falha ao finalizar arquivo de atualização." }
                 return ready

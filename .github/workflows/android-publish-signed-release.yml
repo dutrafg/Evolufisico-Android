@@ -4,19 +4,53 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (for example v0.10.0-alpha)"
+        description: "Tag igual ao versionName do app (por exemplo, v0.40.0-alpha)"
         required: true
-        default: "v0.20.1-alpha"
+        default: "v0.40.0-alpha"
 
 permissions:
   contents: write
 
+concurrency:
+  group: evolufisico-production-signing
+  cancel-in-progress: false
+
 jobs:
   signed-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     if: github.ref == 'refs/heads/main'
+    env:
+      TAG: ${{ inputs.tag }}
+      PINNED_SHA256: ${{ vars.EF_SIGNING_CERT_SHA256 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Preflight version and signing identity
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.EF_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.EF_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.EF_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.EF_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha|-beta|-rc[0-9]+)?$ ]] || {
+            echo "Release tag malformed."; exit 1;
+          }
+          [[ "$PINNED_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]] || {
+            echo "Missing valid repository variable EF_SIGNING_CERT_SHA256."; exit 1;
+          }
+          for secret in "$KEYSTORE_B64" "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD"; do
+            if [ -z "$secret" ]; then
+              echo "Missing stable signing secrets; nothing will be published."
+              exit 1
+            fi
+          done
+          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' app/build.gradle.kts)"
+          [ "$TAG" = "v$VERSION_NAME" ] || {
+            echo "Release tag and app versionName are different."; exit 1;
+          }
+          echo "Release preflight OK: $TAG"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -32,29 +66,22 @@ jobs:
           if [ ! -x "$MANAGER" ]; then MANAGER="$(command -v sdkmanager)"; fi
           yes | "$MANAGER" --licenses > /dev/null || true
           "$MANAGER" 'platforms;android-36' 'build-tools;35.0.0'
-      - name: Prepare secret signing identity
+      - name: Restore PRIVATE signing keystore to runner temporary directory
         shell: bash
         env:
           KEYSTORE_B64: ${{ secrets.EF_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.EF_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.EF_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.EF_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "Missing stable signing key secrets. No release will be published."
-            exit 1
-          fi
-          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/ef-distribution.jks"
-          chmod 600 "$RUNNER_TEMP/ef-distribution.jks"
-          {
-            echo "EF_KEYSTORE_FILE=$RUNNER_TEMP/ef-distribution.jks"
-            echo "EF_KEYSTORE_PASSWORD=$STORE_PASSWORD"
-            echo "EF_KEY_ALIAS=$KEY_ALIAS"
-            echo "EF_KEY_PASSWORD=$KEY_PASSWORD"
-          } >> "$GITHUB_ENV"
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/evolufisico-release.p12"
+          test -s "$RUNNER_TEMP/evolufisico-release.p12"
+          echo "EF_KEYSTORE_FILE=$RUNNER_TEMP/evolufisico-release.p12" >> "$GITHUB_ENV"
       - name: Build and validate signed release
         shell: bash
+        env:
+          EF_KEYSTORE_PASSWORD: ${{ secrets.EF_KEYSTORE_PASSWORD }}
+          EF_KEY_ALIAS: ${{ secrets.EF_KEY_ALIAS }}
+          EF_KEY_PASSWORD: ${{ secrets.EF_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
@@ -62,21 +89,33 @@ jobs:
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
           PACKAGE_INFO="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | sed -n '1p')"
+          [[ "$PACKAGE_INFO" == *"package: name='br.com.evolufisico.android'"* ]] || {
+            echo "Package identity mismatch."; exit 1;
+          }
           [[ "$PACKAGE_INFO" == *"versionName='${TAG#v}'"* ]] || {
-            echo "Tag does not match APK versionName"; exit 1;
+            echo "Tag does not match embedded APK versionName."; exit 1;
           }
           CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" |
-            sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
-          test -n "$CERT"
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 |
+            tr '[:lower:]' '[:upper:]')"
+          [ -n "$CERT" ] || exit 1
+          [ "$CERT" = "${PINNED_SHA256^^}" ] || {
+            echo "Certificate differs from pinned fingerprint. RELEASE BLOCKED."
+            exit 1
+          }
           printf '%s\n' "$CERT" > Evolufisico-Android-release.cert.sha256
           cp "$APK" Evolufisico-Android-release.apk
           sha256sum Evolufisico-Android-release.apk > Evolufisico-Android-release.apk.sha256
-      - name: Reject changed signing key from previous release
+      - name: Reject certificate rotation and existing tags
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release already exists: refusing to overwrite immutable tag."
+            exit 1
+          fi
           PREVIOUS="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // ""')"
           if [ -n "$PREVIOUS" ]; then
             mkdir -p "$RUNNER_TEMP/previous-release"
@@ -84,25 +123,23 @@ jobs:
               --dir "$RUNNER_TEMP/previous-release"
             cmp "$RUNNER_TEMP/previous-release/Evolufisico-Android-release.cert.sha256" \
               Evolufisico-Android-release.cert.sha256 || {
-              echo "Signing certificate changed! Update would erase installation continuity."
+              echo "Previous release uses another certificate. RELEASE BLOCKED."
               exit 1
             }
           fi
-      - name: Publish GitHub Release after signature verification
+      - name: Publish official signed APK and checksums
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha|-beta|-rc[0-9]+)?$ ]] || {
-            echo "Invalid release tag"; exit 1;
-          }
-          gh release create "$TAG" Evolufisico-Android-release.apk \
+          gh release create "$TAG" --target "$GITHUB_SHA" \
+            Evolufisico-Android-release.apk \
             Evolufisico-Android-release.apk.sha256 \
             Evolufisico-Android-release.cert.sha256 \
             --title "EvoluFísico Android $TAG" --prerelease \
-            --notes "Android native signed release. Use the in-app updater; Android verifies the installed signing identity. Export an encrypted backup before updating."
-      - name: Remove private keystore
+            --notes "APK RELEASE assinado por identidade permanente. Antes de migrar de DEBUG, exporte e confira o backup .efbak. Nunca desinstale sem backup externo."
+      - name: Securely erase temporary keystore file
         if: always()
-        run: rm -f "$RUNNER_TEMP/ef-distribution.jks"
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/evolufisico-release.p12"

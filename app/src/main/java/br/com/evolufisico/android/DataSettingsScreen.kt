@@ -431,7 +431,7 @@ fun DataSettingsScreen(
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
         InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-        Text("Versão 0.30.0-alpha (Fases 26 a 30)", style = MaterialTheme.typography.bodySmall)
+        Text("Versão 0.40.0-alpha (Fases 31 a 40)", style = MaterialTheme.typography.bodySmall)
         Text(
             "Backup automático usa WorkManager e uma senha cifrada localmente pelo Keystore. " +
             "Não existe sincronização própria com nuvem ou garantia de execução no minuto exato.",
