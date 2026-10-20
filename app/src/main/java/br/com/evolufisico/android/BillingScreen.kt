@@ -112,11 +112,6 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore) {
                     Text("No mês atual: " + month.monthValue.toString().padStart(2,'0') + "/" + month.year)
                     Text("Vence no mês: " + reais(ChargeRules.monthlyTotal(charges,false,month)))
                     Text("Recebido no mês: " + reais(ChargeRules.monthlyTotal(charges,true,month)))
-                    val month = java.time.YearMonth.now()
-                    Text("Mês atual (${month.monthValue.toString().padStart(2,'0')}/${month.year}):",
-                        style = MaterialTheme.typography.labelLarge)
-                    Text("Vence no mês: ${reais(ChargeRules.monthlyTotal(charges,false,month))}")
-                    Text("Recebido no mês: ${reais(ChargeRules.monthlyTotal(charges,true,month))}")
                 }
             }
         }
