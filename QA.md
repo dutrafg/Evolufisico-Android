@@ -66,7 +66,14 @@
 - [x] Registro de tentativa, sucesso verificado, nome de arquivo, contagem e último erro; alerta após 36 h
 - [x] Testes unitários para regra de alerta de backup atrasado e cómputo de próximo horário
 - [x] Testes instrumentados reforçados: arquivo cifrado adulterado, senha incorreta, credencial AES-GCM adulterada
-- [ ] CI da 0.30.0-alpha — aguarda execução e validação
-- [ ] Testes instrumentados da 0.30.0-alpha em emulador — aguarda execução
+- [x] **CI da 0.30.0-alpha aprovada**: [GitHub Actions 39457780192](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39457780192): build APK, JUnit, Lint, compilação de instrumentados, AAB não assinado e upload de APK debug
+- [x] **3/3 testes instrumentados Android 10 aprovados**: [GitHub Actions 39457779961](https://github.com/dutrafg/Evolufisico-Android/actions/runs/39457779961). Inclui as verificações de corrupção de backup e credencial Keystore
 - [ ] Execução real do WorkManager/SAF e verificação de restauração em aparelho físico
 - [ ] Assinatura estável para instalação por atualização; não disponível em build DEBUG CI
+
+### APK verificado (0.30.0-alpha)
+
+- [x] Artifact debug `Evolufisico-Android-QA-DEBUG-NAO-ATUALIZAVEL` baixado, ZIP íntegro.
+- [x] `app-debug.apk` com **59.353.919 bytes**, SHA-256 `af3676792a3cb11460862a26e1fdde062ef0cf7de6d38b78a50a81becb27ba9f`.
+- [ ] Testar em smartphone o botão `Fazer backup agora`, acesso SAF real, execução diária no horário aproximado, Doze e bloqueios do fabricante.
+- [ ] Criar APK RELEASE com assinatura fixa. **APK DEBUG CI não atualiza a versão 0.15 com certificado diferente.**
