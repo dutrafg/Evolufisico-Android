@@ -303,3 +303,10 @@ Para **atualização instalando um APK por cima**: mantenha o mesmo `application
 - `UpdatePolicy.sameSigningCertificate` exige o conjunto completo dos certificados. O Android ainda executa sua própria validação.
 - APK debug temporário não atualiza instalações anteriores; para distribuir APK que substitua app existente, o repositório precisa da **chave de release original** e deve compilar a versão *release* sem sufixo de aplicativo.
 - O plano de 100 etapas e respectivas evidências está em `docs/BETA_2_100_ETAPAS.md`.
+
+
+## Beta 3 — redesign responsivo e plano de 1.000 etapas
+
+Versão experimental **89.0.0-beta.3** (Android 10+, versionCode 196, instalação debug isolada como `br.com.evolufisico.android.beta3`). Nesta etapa foram aprimorados o cálculo de largura disponível em tablets com barra lateral, a quantidade de colunas na Home e em Módulos, a adaptação das métricas às 10 paletas no modo claro/escuro e o acesso para personalização dos favoritos. Foram adicionados testes das larguras 320, 360, 699, 840, 1079, 1150 e 1200 dp. A Agenda também recebeu aperfeiçoamento de sugestão de horários quando existe conflito.
+
+O [plano de 1.000 etapas](docs/BETA_3_1000_ETAPAS.md) organiza módulos, desenvolvimento, validações e QA; **as mil etapas ainda não foram concluídas**. Este pacote é de teste e não substitui instalações anteriores.
