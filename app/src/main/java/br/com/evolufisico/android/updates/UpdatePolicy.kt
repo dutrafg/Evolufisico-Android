@@ -29,8 +29,8 @@ object UpdatePolicy {
             "Evolufisico-Android-release.cert.sha256"
         )
         return suffixes.any { suffix ->
-            validReleaseUrl(text.removeSuffix(".sha256")) &&
-                text.endsWith("/"+suffix)
+            text.endsWith("/"+suffix) &&
+                validReleaseUrl(text.removeSuffix(suffix) + "Evolufisico-Android-release.apk")
         }
     }
 
