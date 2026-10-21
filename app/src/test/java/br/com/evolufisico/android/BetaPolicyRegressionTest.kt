@@ -153,4 +153,8 @@ class BetaPolicyRegressionTest {
         assertEquals(listOf("GOALS"),WorkspaceRecents.open(listOf("GOALS"),"BAD_ROUTE"))
     }
 
+    @Test fun alpha72LocalDataRegression() {
+        assertNull(ClientRules.validateName("Cliente Exemplo"))
+    }
+
 }
