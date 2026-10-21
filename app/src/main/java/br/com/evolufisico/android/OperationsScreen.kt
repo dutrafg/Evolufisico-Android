@@ -24,6 +24,7 @@ import br.com.evolufisico.android.agenda.AgendaCsv
 import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.AgendaActions
 import br.com.evolufisico.android.agenda.AgendaAvailability
+import br.com.evolufisico.android.agenda.AgendaWindow
 import br.com.evolufisico.android.agenda.AgendaFilters
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
