@@ -89,6 +89,7 @@ import br.com.evolufisico.android.data.ClientSearch
 import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.PreRegistration
 import br.com.evolufisico.android.data.PreRegistrationRules
+import br.com.evolufisico.android.data.PreRegistrationConversion
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.billing.EncryptedChargeStore
@@ -305,25 +306,10 @@ private fun AppContent(
         scope.launch {
             val outcome=withContext(Dispatchers.IO) {
                 runCatching {
-                    PreRegistrationRules.validate(draft)?.let { error(it) }
                     val current=repository.load()
-                    val client=Client(draft.id,draft.name,draft.phone,draft.email)
-                    val existing=current.firstOrNull { it.id==draft.id }
-                    if(existing!=null) {
-                        require(existing==client) {
-                            "Já existe outro cliente com o mesmo identificador."
-                        }
-                        current
-                    } else {
-                        require(current.none { it.email.isNotBlank() &&
-                            it.email.equals(client.email,ignoreCase=true) }) {
-                            "Já existe um cliente com este e-mail."
-                        }
-                        require(ClientRules.validateContact(client)==null) {
-                            "Contato inválido para cadastro definitivo."
-                        }
-                        (current+client).also { repository.save(it) }
-                    }
+                    val next=PreRegistrationConversion.prepare(current,draft)
+                    if(next!==current) repository.save(next)
+                    next
                 }
             }
             outcome.onSuccess {
