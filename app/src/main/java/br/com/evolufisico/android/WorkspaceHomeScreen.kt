@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.agenda.AgendaHome
+import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.UpcomingAppointment
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
@@ -67,7 +68,9 @@ import java.util.Locale
 data class WorkspaceMetrics(
     val clients:Int, val appointmentsToday:Int,
     val overdueAppointments:Int, val pendingCharges:Int,
-    val next:List<UpcomingAppointment>
+    val next:List<UpcomingAppointment>,
+    val appointmentsSevenDays:Int=0,
+    val attendancePercent:Int?=null
 )
 
 data class WorkspaceAction(val label:String,val route:String)
@@ -92,16 +95,18 @@ object WorkspaceAttention {
 object WorkspaceSummary {
     fun calculate(snapshot:BackupSnapshot, now:LocalDateTime):WorkspaceMetrics {
         val names=snapshot.clients.associate { it.id to it.name }
+        val pulse=AgendaPulse.summarize(snapshot.operations.appointments,now.toLocalDate())
+        val attended=pulse.completedMonth+pulse.missedMonth
         return WorkspaceMetrics(
             clients=snapshot.clients.size,
-            appointmentsToday=snapshot.operations.appointments.count { a ->
-                a.status=="Agendado" && a.startIso.substringBefore('T')==now.toLocalDate().toString()
-            },
-            overdueAppointments=snapshot.operations.appointments.count { a ->
-                a.status=="Agendado" && a.startIso.substringBefore('T')<now.toLocalDate().toString()
-            },
+            appointmentsToday=pulse.scheduledToday,
+            overdueAppointments=pulse.overdue,
             pendingCharges=snapshot.charges.count { !it.isReceived },
-            next=AgendaHome.next(snapshot.operations.appointments,names,now,3)
+            next=AgendaHome.next(snapshot.operations.appointments,names,now,3),
+            appointmentsSevenDays=pulse.upcomingSevenDays,
+            // Presença considera somente concluídos e faltas; cancelamentos não entram.
+            attendancePercent=if(attended==0) null
+                else (pulse.completedMonth*100.0/attended).toInt()
         )
     }
 }
@@ -190,6 +195,28 @@ fun WorkspaceHomeScreen(
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                     WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
                     WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.weight(1f),onClick={onNavigate("BILLING")})
+                }
+            }
+        }
+        metrics?.let { summary ->
+            item {
+                Card(modifier=Modifier.fillMaxWidth(),
+                    shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                    colors=CardDefaults.cardColors(
+                        containerColor=MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor=MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                        Text("Resumo da agenda",style=MaterialTheme.typography.titleSmall,
+                            color=MaterialTheme.colorScheme.onSurface)
+                        Text("Próximos 7 dias: ${summary.appointmentsSevenDays} atendimentos agendados")
+                        Text("Presença neste mês: "+
+                            (summary.attendancePercent?.let { "$it%" } ?: "— (sem registros)"))
+                        TextButton(onClick={onNavigate("AGENDA")},
+                            modifier=Modifier.heightIn(min=48.dp)) {
+                            Text("Abrir agenda e agendar")
+                        }
+                    }
                 }
             }
         }
