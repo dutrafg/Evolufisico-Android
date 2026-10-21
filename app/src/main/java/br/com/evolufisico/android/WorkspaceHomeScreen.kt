@@ -281,7 +281,8 @@ private fun WorkspaceMetric(
     onClick:()->Unit
 ) {
     val palette=when(label) {
-        "Clientes" -> Color(0xFFE9F2FF) to Color(0xFF174E91)
+        "Clientes" -> MaterialTheme.colorScheme.primaryContainer to
+            MaterialTheme.colorScheme.onPrimaryContainer
         "Hoje" -> Color(0xFFE5F5ED) to Color(0xFF156B46)
         "Agenda pendente" -> Color(0xFFFFF2DC) to Color(0xFF94600A)
         else -> Color(0xFFFCE9F0) to Color(0xFF9C2D4A)
@@ -298,7 +299,8 @@ private fun WorkspaceMetric(
             }
             Icon(icon,contentDescription=null,tint=palette.second,
                 modifier=Modifier.size(19.dp))
-            Text(label,style=MaterialTheme.typography.labelMedium,color=palette.second)
+            Text(label,style=MaterialTheme.typography.labelMedium,color=palette.second,
+                maxLines=2)
             Spacer(Modifier.height(3.dp))
             Text(value,style=MaterialTheme.typography.headlineMedium,
                 fontWeight=FontWeight.Bold,color=palette.second)
