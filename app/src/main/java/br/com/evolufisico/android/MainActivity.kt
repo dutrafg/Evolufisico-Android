@@ -198,7 +198,7 @@ private fun AppContent(
 ) {
     var current by remember { mutableStateOf(Section.HOME) }
     var quickLaunch by remember { mutableStateOf<QuickLaunch?>(null) }
-    var quickSequence by remember { mutableIntStateOf(0) }
+    var quickSequence by remember { mutableStateOf(0) }
     fun launchFavorite(route:String) {
         val destination=Section.entries.firstOrNull { it.name==route } ?: return
         quickSequence++
@@ -293,7 +293,10 @@ private fun AppContent(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { current = Section.SETTINGS }) {
+                    IconButton(onClick = {
+                        clearQuickLaunch()
+                        current = Section.SETTINGS
+                    }) {
                         Icon(Icons.Outlined.Settings, contentDescription = "Configurações")
                     }
                 }
@@ -376,7 +379,10 @@ private fun AppContent(
                         onGoals = { current = Section.GOALS })
                     Section.TRENDS -> TrendsScreen(clients.toList(), backupManager)
                     Section.SEARCH -> GlobalSearchScreen(backupManager, onOpen = { key ->
-                        Section.entries.firstOrNull { it.name == key }?.let { current = it }
+                        Section.entries.firstOrNull { it.name == key }?.let {
+                            clearQuickLaunch()
+                            current = it
+                        }
                     })
                     Section.NOTES -> OperationsScreen(clients.toList(),operationalRepository,OperationsTab.NOTES,
                         quickCreateId=quickLaunch?.takeIf { it.route=="NOTES" }?.id?:0,
