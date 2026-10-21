@@ -102,4 +102,9 @@ class BetaPolicyRegressionTest {
         assertTrue(UpdatePolicy.sameSigningCertificate(listOf(old),listOf(old.clone())))
     }
 
+    @Test fun alpha61PolicyRegression() {
+        assertFalse(UpdatePolicy.sameSigningCertificate(listOf("a".toByteArray()),listOf("b".toByteArray())))
+        assertFalse(UpdatePolicy.sameSigningCertificate(emptyList(),listOf("a".toByteArray())))
+    }
+
 }
