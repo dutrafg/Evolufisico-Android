@@ -30,6 +30,22 @@ class UpdatePolicyTest {
         assertFalse(UpdatePolicy.validReleaseUrl(prefix+"v1..2/app.apk"))
         assertTrue(UpdatePolicy.validReleaseUrl(prefix+"v1.0.0-beta.1/official.apk"))
     }
+    @Test fun onlyOfficialReleaseChecksumAndCertificateMetadataAreAccepted() {
+        val prefix="https://github.com/dutrafg/Evolufisico-Android/releases/download/v97.0.0-beta.11/"
+        assertTrue(UpdatePolicy.validReleaseMetadataUrl(
+            prefix+"Evolufisico-Android-release.apk.sha256"))
+        assertTrue(UpdatePolicy.validReleaseMetadataUrl(
+            prefix+"Evolufisico-Android-release.cert.sha256"))
+        assertFalse(UpdatePolicy.validReleaseUrl(
+            prefix+"Evolufisico-Android-release.apk.sha256"))
+        assertFalse(UpdatePolicy.validReleaseMetadataUrl(prefix+"evil.apk.sha256"))
+        assertFalse(UpdatePolicy.validReleaseMetadataUrl(
+            prefix+"Evolufisico-Android-release.apk.sha256?redirect=evil"))
+        assertFalse(UpdatePolicy.validReleaseMetadataUrl(
+            "https://github.com.attacker.test/dutrafg/Evolufisico-Android/releases/download/v1.0.0/"+
+                "Evolufisico-Android-release.cert.sha256"))
+    }
+
     @Test fun preventsDowngradesAndReinstallsOfSameVersion() {
         assertTrue(UpdatePolicy.isUpgrade(6,10))
         assertFalse(UpdatePolicy.isUpgrade(10,10))
