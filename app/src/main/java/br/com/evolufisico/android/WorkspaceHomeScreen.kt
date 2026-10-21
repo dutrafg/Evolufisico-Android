@@ -217,7 +217,9 @@ fun WorkspaceHomeScreen(
             val surfaceDark=VisualTokens.dark(MaterialTheme.colorScheme)
             Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
                 modifier=Modifier.fillMaxWidth(),
-                colors=CardDefaults.cardColors(containerColor=VisualTokens.panel(surfaceDark)),
+                colors=CardDefaults.cardColors(
+                    containerColor=VisualTokens.panel(surfaceDark),
+                    contentColor=MaterialTheme.colorScheme.onSurface),
                 elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
                 Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
