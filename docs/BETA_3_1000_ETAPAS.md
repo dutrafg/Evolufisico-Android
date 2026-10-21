@@ -769,17 +769,17 @@
 ### 10.4 Conflito de horário
 
 - [ ] 0466 — Especificar critérios verificáveis: Conflito de horário
-- [ ] 0467 — Implementar o fluxo e a interface: Conflito de horário
+- [x] 0467 — Implementar o fluxo e a interface: Conflito de horário
 - [ ] 0468 — Tratar estados vazios, erros e limites: Conflito de horário
-- [ ] 0469 — Automatizar testes e regressões: Conflito de horário
+- [x] 0469 — Automatizar testes e regressões: Conflito de horário
 - [ ] 0470 — Homologar no celular e tablet: Conflito de horário
 
 ### 10.5 Sugestão de horário livre
 
 - [ ] 0471 — Especificar critérios verificáveis: Sugestão de horário livre
-- [ ] 0472 — Implementar o fluxo e a interface: Sugestão de horário livre
-- [ ] 0473 — Tratar estados vazios, erros e limites: Sugestão de horário livre
-- [ ] 0474 — Automatizar testes e regressões: Sugestão de horário livre
+- [x] 0472 — Implementar o fluxo e a interface: Sugestão de horário livre
+- [x] 0473 — Tratar estados vazios, erros e limites: Sugestão de horário livre
+- [x] 0474 — Automatizar testes e regressões: Sugestão de horário livre
 - [ ] 0475 — Homologar no celular e tablet: Sugestão de horário livre
 
 ### 10.6 Agendamento por cliente
@@ -1647,3 +1647,9 @@
 - Implementados inicialmente: correções de responsividade da Home e Módulos, contraste das dez paletas e personalização de favoritos, com testes de breakpoints. A Agenda também recebeu ajustes de conflitos.
 - Pendentes: execução/validação individual dos checkpoints acima e homologação visual em Android real e tablet.
 - Não considerar o plano concluído apenas pelo incremento do número da versão.
+
+## Evidências iniciais da Beta 3
+
+- **Etapas 0467, 0469, 0472, 0473 e 0474:** código e testes JUnit da detecção de conflitos e sugestões de horário livre. Os testes unitários do commit `67e020217afb12ba47c78fe54a9cc9a61fff9faf` passaram na execução do GitHub Actions `39532730804` (a integração e a homologação física ainda devem ser validadas separadamente).
+- **Total marcado neste documento:** 5 de 1.000 etapas; **995 permanecem pendentes**.
+- O teste foi corrigido para considerar que um atendimento de 15h a 16h ocupa inclusive os horários iniciados às 15h30.
