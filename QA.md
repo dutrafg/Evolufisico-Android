@@ -347,3 +347,16 @@
 - [ ] Instalar release assinado pela MESMA chave da versão anterior em smartphone físico
 - [ ] Executar upgrade preservando dados e validar backup/restauração
 - [ ] Corrigir falta de proteção de dados e backups para Beta com dados reais
+
+
+## Beta 3 — critérios de QA
+
+- [x] Código de layout responsivo agora desconta a barra lateral em tablets
+- [x] Testes unitários acrescentados para 1/2/3/4 colunas e limiares de indicadores
+- [x] Métricas e iniciais dos próximos atendimentos usam cores do tema MD3
+- [x] Usuário encontra Personalizar e estado vazio na área de favoritos
+- [ ] Concluir 1.000 checkpoints individuais do plano de Beta 3
+- [ ] Aprovar build, JUnit, Lint e integridade final do APK Beta 3
+- [ ] Aprovar testes instrumentados Android 10
+- [ ] Revisar contraste e alinhamento em tablet físico e smartphone real
+- [ ] Homologar backup/restauração com dados fictícios antes de migração
