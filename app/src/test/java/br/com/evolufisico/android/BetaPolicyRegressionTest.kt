@@ -117,4 +117,9 @@ class BetaPolicyRegressionTest {
         assertTrue(WorkspaceFavorites.toggle(selected,"GOALS").isEmpty())
     }
 
+    @Test fun alpha64PolicyRegression() {
+        val filled=linkedSetOf("GOALS","NOTES","FORMS","ASSESSMENTS")
+        assertEquals(filled,WorkspaceFavorites.toggle(filled,"SERVICES"))
+    }
+
 }
