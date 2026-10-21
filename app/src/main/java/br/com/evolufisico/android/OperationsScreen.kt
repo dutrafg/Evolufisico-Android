@@ -78,7 +78,8 @@ fun OperationsScreen(
         OperationsTab.SERVICES -> ServicesModule(data.services,busy,message) {
             persist(data.copy(services=it))
         }
-        OperationsTab.NOTES -> ClientNotesModule(clients,data.notes,busy,message) {
+        OperationsTab.NOTES -> ClientNotesModule(clients,data.notes,busy,message,
+            quickCreateId,onQuickConsumed) {
             persist(data.copy(notes=it))
         }
     }

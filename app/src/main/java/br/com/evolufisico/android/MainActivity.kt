@@ -374,7 +374,9 @@ private fun AppContent(
                     Section.SEARCH -> GlobalSearchScreen(backupManager, onOpen = { key ->
                         Section.entries.firstOrNull { it.name == key }?.let { current = it }
                     })
-                    Section.NOTES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.NOTES)
+                    Section.NOTES -> OperationsScreen(clients.toList(),operationalRepository,OperationsTab.NOTES,
+                        quickCreateId=quickLaunch?.takeIf { it.route=="NOTES" }?.id?:0,
+                        onQuickConsumed=::clearQuickLaunch)
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository, onDocumentFlow)
                     Section.SETTINGS -> DataSettingsScreen(

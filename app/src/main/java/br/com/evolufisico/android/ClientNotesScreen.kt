@@ -20,7 +20,8 @@ import java.util.UUID
 @Composable
 fun ClientNotesModule(
     clients:List<Client>, all:List<ClientNote>, busy:Boolean,
-    message:String?, save:(List<ClientNote>)->Unit
+    message:String?,quickCreateId:Int=0,onQuickConsumed:()->Unit={},
+    save:(List<ClientNote>)->Unit
 ) {
     var clientId by remember { mutableStateOf(clients.firstOrNull()?.id.orEmpty()) }
     var chooseClient by remember { mutableStateOf(false) }
@@ -29,6 +30,12 @@ fun ClientNotesModule(
     var editing by remember { mutableStateOf<ClientNote?>(null) }
     var showingEditor by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<ClientNote?>(null) }
+    LaunchedEffect(quickCreateId,busy,clients.size) {
+        if(quickCreateId>0 && !busy) {
+            if(clients.isNotEmpty()) { editing=null;showingEditor=true }
+            onQuickConsumed()
+        }
+    }
 
     LaunchedEffect(clients) {
         if(clients.isNotEmpty() && clients.none { it.id==clientId }) clientId=clients.first().id

@@ -6,7 +6,8 @@ object QuickLaunchRules {
     private val createActions=mapOf(
         "ASSESSMENTS" to "Nova avaliação",
         "FORMS" to "Novo formulário",
-        "GOALS" to "Nova meta"
+        "GOALS" to "Nova meta",
+        "NOTES" to "Nova anotação"
     )
     fun supportsCreate(route:String):Boolean=route in createActions
     fun label(route:String):String=createActions[route]?:"Abrir função"
