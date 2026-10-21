@@ -97,4 +97,9 @@ class BetaPolicyRegressionTest {
         assertFalse(UpdatePolicy.isUpgrade(138,137))
     }
 
+    @Test fun alpha60PolicyRegression() {
+        val old="original".toByteArray()
+        assertTrue(UpdatePolicy.sameSigningCertificate(listOf(old),listOf(old.clone())))
+    }
+
 }
