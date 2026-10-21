@@ -136,7 +136,8 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
     }
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(modifier = Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal=VisualLayout.edgePaddingDp(
+            androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp).dp,vertical=20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
             Text("Visão geral",style=MaterialTheme.typography.titleLarge,

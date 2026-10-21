@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -121,7 +123,10 @@ fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
     val visible = assessments.filter { it.clientId == selectedClientId }
         .sortedWith(compareByDescending<Assessment> { it.dateIso }.thenByDescending { it.id })
 
-    Column(Modifier.fillMaxSize().padding(20.dp),
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    Column(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)
+        .fillMaxHeight().padding(VisualLayout.edgePaddingDp(
+            androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp).dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Avaliação física e anamnese", style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold)
@@ -188,6 +193,7 @@ fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
                 }
             }
         }
+    }
     }
 
     if (editorOpen) {

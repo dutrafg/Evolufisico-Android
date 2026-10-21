@@ -177,7 +177,8 @@ private fun AppointmentsModule(
         }
     }
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
-    LazyColumn(contentPadding=PaddingValues(20.dp),
+    LazyColumn(contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(
+        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp).dp,vertical=20.dp),
         verticalArrangement=Arrangement.spacedBy(18.dp),
         modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)) {
         item {

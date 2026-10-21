@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -129,9 +130,13 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore, onDo
     }
     val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("pt-BR")) }
 
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        modifier = Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal=VisualLayout.edgePaddingDp(
+                androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp).dp,
+            vertical=20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -241,6 +246,7 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore, onDo
             item { Text("Exibidos os 100 registros mais recentes. O relatório contém todos os pontos.",
                 style = MaterialTheme.typography.bodySmall) }
         }
+    }
     }
 }
 

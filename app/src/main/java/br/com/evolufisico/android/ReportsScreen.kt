@@ -8,6 +8,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.SecureBackupManager
@@ -67,7 +69,10 @@ fun ReportsScreen(
             }
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    Column(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)
+        .verticalScroll(rememberScrollState())
+        .padding(VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp),
         verticalArrangement=Arrangement.spacedBy(13.dp)) {
         Text("Relatórios e exportações",style=MaterialTheme.typography.headlineSmall)
         Text("Exporte dados locais para planilhas CSV, com filtros opcionais. " +
@@ -133,5 +138,6 @@ fun ReportsScreen(
         Text("Arquivos CSV e JSON gerados nesta fase não possuem criptografia. " +
             "Use somente dados fictícios até a implantação das proteções finais.",
             color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }
     }
 }
