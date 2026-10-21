@@ -127,4 +127,9 @@ class BetaPolicyRegressionTest {
         assertEquals(listOf("FORMS","GOALS"),WorkspaceFavorites.move(before,"FORMS",-1).toList())
     }
 
+    @Test fun alpha66PolicyRegression() {
+        assertEquals("GOALS",WorkspaceFavorites.serialize(setOf("GOALS","INVALID")))
+        assertEquals(setOf("GOALS"),WorkspaceFavorites.parse("INVALID,GOALS"))
+    }
+
 }
