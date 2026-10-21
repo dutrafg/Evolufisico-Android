@@ -75,6 +75,7 @@ fun AgendaCalendarPanel(
             // dentro da rolagem horizontal. Cada coluna tem ao menos 48 dp.
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val gridWidth = maxOf(maxWidth, 336.dp)
+                val showScrollHint=maxWidth<gridWidth
                 Column(Modifier.fillMaxWidth(),
                     verticalArrangement=Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
@@ -138,7 +139,7 @@ fun AgendaCalendarPanel(
                     }
                     }
                 }
-                if(maxWidth < gridWidth) {
+                if(showScrollHint) {
                     Text("Deslize para os lados para ver os sete dias",
                         style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant)
