@@ -15,3 +15,11 @@ object WorkspaceLayoutRules {
     fun metricColumns(screenWidthDp:Int):Int =
         if(contentWidthDp(screenWidthDp)>=1000) 4 else 2
 }
+
+/** Padding balanceado para a densidade de smartphone/tablet. */
+object VisualLayout {
+    fun edgePaddingDp(screenWidthDp:Int):Int = if(screenWidthDp>=840)24 else 20
+    fun maxContentWidthDp():Int = VisualTokens.contentMaxWidthDp
+    fun moduleColumns(screenWidthDp:Int):Int=WorkspaceLayoutRules.gridColumns(screenWidthDp)
+    fun isTablet(screenWidthDp:Int):Boolean=screenWidthDp>=840
+}

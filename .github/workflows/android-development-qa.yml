@@ -8,6 +8,7 @@ on:
       - beta-3-development
       - beta-4-development
       - beta-5-development
+      - beta-6-visual-redesign
     paths:
       - 'app/**'
       - '.github/workflows/android-development-qa.yml'
