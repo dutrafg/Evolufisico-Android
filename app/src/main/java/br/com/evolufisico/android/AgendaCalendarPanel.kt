@@ -59,18 +59,23 @@ fun AgendaCalendarPanel(
                 color=MaterialTheme.colorScheme.onSurface)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                 IconButton(onClick={month=month.minusMonths(1)}) {
-                    Icon(Icons.Outlined.ChevronLeft,contentDescription="Mês anterior")
+                    Icon(Icons.Outlined.ChevronLeft,contentDescription="Mês anterior",
+                        tint=MaterialTheme.colorScheme.onSurface)
                 }
                 Text(caption,modifier=Modifier.weight(1f).padding(top=10.dp),
-                    textAlign=TextAlign.Center,style=MaterialTheme.typography.titleSmall)
+                    textAlign=TextAlign.Center,style=MaterialTheme.typography.titleSmall,
+                    color=MaterialTheme.colorScheme.onSurface)
                 IconButton(onClick={month=month.plusMonths(1)}) {
-                    Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês")
+                    Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês",
+                        tint=MaterialTheme.colorScheme.onSurface)
                 }
             }
             // A largura definida evita linhas de calendario sem restricoes
             // dentro da rolagem horizontal. Cada coluna tem ao menos 48 dp.
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val gridWidth = maxOf(maxWidth, 336.dp)
+                Column(Modifier.fillMaxWidth(),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                     Column(Modifier.width(gridWidth),
                         verticalArrangement=Arrangement.spacedBy(4.dp)) {
@@ -131,6 +136,12 @@ fun AgendaCalendarPanel(
                         }
                     }
                     }
+                }
+                if(maxWidth < gridWidth) {
+                    Text("Deslize para os lados para ver os sete dias",
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 }
             }
             Text("• = atendimento agendado · "+AgendaCalendar.active(month,appointments)+
