@@ -88,7 +88,6 @@ import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientSearch
 import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.PreRegistration
-import br.com.evolufisico.android.data.PreRegistrationRules
 import br.com.evolufisico.android.data.PreRegistrationConversion
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
