@@ -201,4 +201,10 @@ class BetaPolicyRegressionTest {
         assertEquals(10,BetaReadiness.criteria(BetaEvidence()).size)
     }
 
+    @Test fun alpha82ReadinessRegression() {
+        val e=BetaEvidence(successfulCi=true)
+        assertFalse(BetaReadiness.canRelease(e))
+        assertEquals(9,BetaReadiness.pending(e).size)
+    }
+
 }
