@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
+import br.com.evolufisico.android.data.ClientSearch
 import br.com.evolufisico.android.data.ClientRules
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
@@ -425,7 +426,7 @@ private fun ClientsScreen(
     var query by remember { mutableStateOf("") }
     var descending by remember { mutableStateOf(false) }
     val visibleClients = clients.filter {
-        it.name.contains(query.trim(), ignoreCase = true)
+        ClientSearch.matches(it,query)
     }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
         .let { if (descending) it.reversed() else it }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -436,7 +437,7 @@ private fun ClientsScreen(
         }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = query, onValueChange = { query = it.take(100) },
-            label = { Text("Buscar cliente por nome") },
+            label = { Text("Buscar por nome, telefone ou e-mail") },
             modifier = Modifier.fillMaxWidth(), singleLine = true)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = !descending, onClick = { descending = false },
@@ -458,6 +459,16 @@ private fun ClientsScreen(
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                         Column(Modifier.padding(16.dp)) {
                             Text(client.name, style = MaterialTheme.typography.titleMedium)
+                            if(client.phone.isNotBlank()) {
+                                Text("Telefone: "+client.phone,
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if(client.email.isNotBlank()) {
+                                Text("E-mail: "+client.email,
+                                    style=MaterialTheme.typography.bodySmall,
+                                    color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { overview = client }) {
                                     Text("Ficha")
@@ -477,14 +488,13 @@ private fun ClientsScreen(
     }
     if (editorOpen) {
         ClientEditorDialog(
-            initialName = editing?.name ?: "",
-            onDismiss = { editorOpen = false },
-            onSave = { name ->
-                val chosen = editing
-                val updated = if (chosen == null) clients + Client.new(name)
-                    else clients.map { if (it.id == chosen.id) it.copy(name = name.trim()) else it }
+            initial=editing,
+            onDismiss={ editorOpen=false },
+            onSave={ item ->
+                val updated=if(editing==null) clients+item else
+                    clients.map { if(it.id==item.id) item else it }
                 onPersist(updated)
-                editorOpen = false
+                editorOpen=false
             }
         )
     }
@@ -507,23 +517,54 @@ private fun ClientsScreen(
 }
 
 @Composable
-private fun ClientEditorDialog(initialName: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var name by remember(initialName) { mutableStateOf(initialName) }
-    val error = ClientRules.validateName(name)
+private fun ClientEditorDialog(
+    initial:Client?,onDismiss:()->Unit,onSave:(Client)->Unit
+) {
+    var name by remember(initial?.id) { mutableStateOf(initial?.name.orEmpty()) }
+    var phone by remember(initial?.id) { mutableStateOf(initial?.phone.orEmpty()) }
+    var email by remember(initial?.id) { mutableStateOf(initial?.email.orEmpty()) }
+    var birthDate by remember(initial?.id) { mutableStateOf(initial?.birthDateIso.orEmpty()) }
+    val candidate=if(initial==null)
+        Client("__temporary__",name.trim(),phone.trim(),email.trim(),birthDate.trim())
+        else initial.copy(name=name.trim(),phone=phone.trim(),
+            email=email.trim(),birthDateIso=birthDate.trim())
+    val error=ClientRules.validateContact(candidate)
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (initialName.isEmpty()) "Novo cliente" else "Editar cliente") },
-        text = {
-            Column {
-                OutlinedTextField(value = name, onValueChange = { name = it },
-                    label = { Text("Nome") }, singleLine = true, isError = error != null,
-                    modifier = Modifier.fillMaxWidth())
-                if (error != null) Text(error, color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall)
+        onDismissRequest=onDismiss,
+        title={Text(if(initial==null) "Novo cliente" else "Editar cliente")},
+        text={
+            Column(Modifier.heightIn(max=420.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value=name,onValueChange={name=it.take(90)},
+                    label={Text("Nome completo")},singleLine=true,
+                    isError=error!=null && name.isBlank(),
+                    modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(value=phone,onValueChange={phone=it.take(32)},
+                    label={Text("Telefone (opcional)")},singleLine=true,
+                    modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(value=email,onValueChange={email=it.take(120)},
+                    label={Text("E-mail (opcional)")},singleLine=true,
+                    modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(value=birthDate,
+                    onValueChange={birthDate=it.take(10)},
+                    label={Text("Nascimento (AAAA-MM-DD, opcional)")},
+                    singleLine=true,modifier=Modifier.fillMaxWidth())
+                if(error!=null) Text(error,color=MaterialTheme.colorScheme.error,
+                    style=MaterialTheme.typography.bodySmall)
+                Text("Os dados permanecem vinculados ao ID permanente do cliente.",
+                    style=MaterialTheme.typography.bodySmall,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        confirmButton = { Button(enabled = error == null, onClick = { onSave(name.trim()) }) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        confirmButton={
+            Button(enabled=error==null,onClick={
+                val item=if(initial==null)
+                    Client.new(candidate.name,candidate.phone,candidate.email,candidate.birthDateIso)
+                    else candidate
+                onSave(item)
+            }){Text("Salvar")}
+        },
+        dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}}
     )
 }
 

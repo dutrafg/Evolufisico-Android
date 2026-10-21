@@ -81,7 +81,11 @@ class SecureBackupManager(context: Context) {
             .put("schema", 1).put("app", "EvoluFisico-Android")
             .put("createdAt", Instant.now().toString())
             .put("clients", JSONArray().apply {
-                snapshot.clients.forEach { put(JSONObject().put("id", it.id).put("name", it.name)) }
+                snapshot.clients.forEach {
+                    put(JSONObject().put("id",it.id).put("name",it.name)
+                        .put("phone",it.phone).put("email",it.email)
+                        .put("birthDateIso",it.birthDateIso))
+                }
             })
             .put("assessments", JSONArray().apply {
                 snapshot.assessments.forEach { a ->
@@ -202,7 +206,9 @@ class SecureBackupManager(context: Context) {
         require(clientsArray.length() <= 20000 && assessmentArray.length() <= 20000)
         val clients = (0 until clientsArray.length()).map { i ->
             val entry = clientsArray.getJSONObject(i)
-            Client(entry.getString("id"), entry.getString("name"))
+            Client(entry.getString("id"),entry.getString("name"),
+                entry.optString("phone",""),entry.optString("email",""),
+                entry.optString("birthDateIso",""))
         }
         val assessments = (0 until assessmentArray.length()).map { i ->
             val j = assessmentArray.getJSONObject(i)
@@ -235,7 +241,7 @@ class SecureBackupManager(context: Context) {
         val ids = snapshot.clients.map { it.id }.toSet()
         require(ids.size == snapshot.clients.size)
         require(snapshot.clients.all { it.id.isNotBlank() &&
-            ClientRules.validateName(it.name) == null }) { "Clientes inválidos no backup." }
+            ClientRules.validateContact(it) == null }) { "Clientes inválidos no backup." }
         require(snapshot.assessments.distinctBy { it.id }.size == snapshot.assessments.size)
         require(snapshot.assessments.all { it.id.isNotBlank() &&
             AssessmentRules.validate(it, ids) == null }) { "Avaliações inválidas no backup." }
