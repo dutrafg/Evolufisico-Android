@@ -3,9 +3,9 @@ package br.com.evolufisico.android
 import org.junit.Assert.*
 import org.junit.Test
 
-/** Matriz algorítmica: NÃO equivale a 100 mil screenshots nem testes de UI em Android. */
+/** Matriz algorítmica: NÃO equivale a screenshots nem testes completos de UI. */
 class Beta11VisualRegressionTest {
-    @Test fun oneHundredThousandResponsiveAndThemeCombinations() {
+    @Test fun oneHundredFiftyThousandResponsiveAndThemeCombinations() {
         val fontScales=listOf(1.0f,1.15f,1.3f,1.5f,2.0f)
         var tested=0
         for(width in 320..1319) {
@@ -39,7 +39,7 @@ class Beta11VisualRegressionTest {
                 }
             }
         }
-        assertEquals(100_000,tested)
+        assertEquals(150_000,tested)
     }
     @Test fun everyCatalogEntryReceivesAStableAccent() {
         assertEquals(11,WorkspaceModules.all.map { it.route }.distinct().size)
