@@ -157,4 +157,9 @@ class BetaPolicyRegressionTest {
         assertNull(ClientRules.validateName("Cliente Exemplo"))
     }
 
+    @Test fun alpha73LocalDataRegression() {
+        assertNotNull(ClientRules.validateName("  "))
+        assertNotNull(ClientRules.validateName("A".repeat(81)))
+    }
+
 }
