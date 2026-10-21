@@ -34,7 +34,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.EF_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha|-beta|-rc[0-9]+)?$ ]] || {
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)([.-]?[0-9]+)?)?$ ]] || {
             echo "Release tag malformed."; exit 1;
           }
           [[ "$PINNED_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]] || {
@@ -119,13 +119,28 @@ jobs:
           PREVIOUS="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // ""')"
           if [ -n "$PREVIOUS" ]; then
             mkdir -p "$RUNNER_TEMP/previous-release"
-            gh release download "$PREVIOUS" --pattern 'Evolufisico-Android-release.cert.sha256' \
+            gh release download "$PREVIOUS" \
+              --pattern 'Evolufisico-Android-release.cert.sha256' \
+              --pattern 'Evolufisico-Android-release.apk' \
               --dir "$RUNNER_TEMP/previous-release"
             cmp "$RUNNER_TEMP/previous-release/Evolufisico-Android-release.cert.sha256" \
               Evolufisico-Android-release.cert.sha256 || {
               echo "Previous release uses another certificate. RELEASE BLOCKED."
               exit 1
             }
+            PREV_APK="$RUNNER_TEMP/previous-release/Evolufisico-Android-release.apk"
+            PREV_PACKAGE="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$PREV_APK" | head -1)"
+            NEW_PACKAGE="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Evolufisico-Android-release.apk | head -1)"
+            PREV_CODE="$(printf '%s\n' "$PREV_PACKAGE" | sed -nE "s/.*versionCode='([0-9]+)'.*/\\1/p")"
+            NEW_CODE="$(printf '%s\n' "$NEW_PACKAGE" | sed -nE "s/.*versionCode='([0-9]+)'.*/\\1/p")"
+            [[ "$PREV_CODE" =~ ^[0-9]+$ && "$NEW_CODE" =~ ^[0-9]+$ ]] || {
+              echo "Missing numeric versionCode in APK. RELEASE BLOCKED."; exit 1;
+            }
+            (( 10#$NEW_CODE > 10#$PREV_CODE )) || {
+              echo "New versionCode must be greater than previous release. RELEASE BLOCKED."
+              exit 1
+            }
+            echo "::notice::Upgrade identity preserved; versionCode increased."
           fi
       - name: Publish official signed APK and checksums
         shell: bash

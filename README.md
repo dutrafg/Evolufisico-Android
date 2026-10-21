@@ -285,3 +285,12 @@ APK debug independente (`.alpha25`), banco próprio. Antes de mudar de instalaç
 Os favoritos da Área de trabalho podem abrir diretamente os formulários de **Nova avaliação, Novo formulário, Nova meta, Nova anotação e Novo serviço**. O comportamento normal do catálogo de módulos não foi modificado. O atalho da Agenda pode iniciar **Novo atendimento**, quando aplicável. As demais ferramentas sem editor de criação continuam abrindo sua função habitual. A solicitação de criação é temporária e é limpa ao navegar para outra tela. Novas Alphas aprimoram visual dos atalhos, evitam títulos repetidos, melhoram alvos do calendário e adaptam a cor principal ao tema escolhido. O arquivo `docs/ALPHAS_28_A_38_100_ETAPAS.md` acompanha 100 checkpoints por versão; muitos permanecem pendentes.
 
 **Alpha 38 debug** instala separadamente (`br.com.evolufisico.android.alpha38`). Não substitui o app oficial nem lê o banco de outro pacote automaticamente. Antes de usar dados reais, resolver a assinatura permanente, a criptografia prevista para o protótipo e homologar no dispositivo.
+
+
+## Alphas 39–88: segurança de atualização e análise Beta 1
+
+As Alphas 39–88 adicionaram testes incrementais de regras de release, atualização, validação de nomes, favoritos, preferências locais e status de backups. Estas alterações **não equivalem** a 50 módulos novos nem a 50 builds homologados. A branch de desenvolvimento possui testes unitários, mas a liberação Beta exige critérios de evidência adicionais.
+
+O arquivo `app/src/main/java/br/com/evolufisico/android/BetaReadiness.kt` registra dez requisitos de prontidão. A versão de desenvolvimento é `88.0.0-alpha.88` (versionCode 193), com pacote debug próprio.
+
+Para **atualização instalando um APK por cima**: mantenha o mesmo `applicationId`, a mesma chave de assinatura de release e aumente estritamente o `versionCode`. Nunca distribua um APK com a chave temporária do CI. O workflow assinado necessita dos secrets `EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS`, `EF_KEY_PASSWORD` e da variável `EF_SIGNING_CERT_SHA256` (SHA-256 do certificado). O novo build compara também `versionCode` e a identidade da última release.

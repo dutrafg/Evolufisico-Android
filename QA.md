@@ -323,3 +323,16 @@
 - [ ] Teste manual em smartphone e tablet, com e sem clientes cadastrados
 - [ ] Validar dados antes e depois dos backups e restauração externa
 - [ ] Assinatura fixa de distribuição para atualizar o aplicativo oficial
+
+
+## Alpha 39–88 / Portão de Beta 1
+
+- [x] Adicionar testes de regressão cumulativos para versões, URLs de releases e preferências locais
+- [x] Impedir publicação assinada quando certificado divergir do publicado anteriormente
+- [x] Impedir publicação assinada com versionCode não crescente
+- [x] Adicionar painel para os dez requisitos de Beta, sem marcar evidências ausentes como aprovadas
+- [ ] Confirmar Android CI na branch Alpha 88
+- [ ] Configurar e preservar chave release de assinatura permanente nos GitHub Secrets
+- [ ] Testar atualização in-place em aparelho físico com mesmo package/signature e versionCode maior
+- [ ] Concluir migração para criptografia e backups protegidos antes de Beta com dados reais
+- [ ] Validar no smartphone e tablet físico
