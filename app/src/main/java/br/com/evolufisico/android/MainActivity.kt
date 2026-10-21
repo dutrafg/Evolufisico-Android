@@ -453,11 +453,24 @@ private fun ClientsScreen(
     Column(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)
         .padding(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=24.dp),
         verticalArrangement=Arrangement.spacedBy(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("${clients.size} cadastro(s)", style = MaterialTheme.typography.titleMedium)
-            Button(enabled = !saving,onClick={editing=null;editorOpen=true},
-                modifier=Modifier.heightIn(min=48.dp)) { Text("+ Novo cliente") }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 420.dp) {
+                Column(Modifier.fillMaxWidth(),
+                    verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Text("${clients.size} cadastro(s)", style=MaterialTheme.typography.titleMedium)
+                    Button(enabled=!saving,onClick={editing=null;editorOpen=true},
+                        modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                        Text("+ Novo cliente")
+                    }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                    horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("${clients.size} cadastro(s)",style=MaterialTheme.typography.titleMedium)
+                    Button(enabled=!saving,onClick={editing=null;editorOpen=true},
+                        modifier=Modifier.heightIn(min=48.dp)) { Text("+ Novo cliente") }
+                }
+            }
         }
         OutlinedTextField(value = query, onValueChange = { query = it.take(100) },
             label = { Text("Buscar por nome, telefone ou e-mail") },
