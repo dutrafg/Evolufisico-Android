@@ -134,6 +134,9 @@ fun WorkspaceHomeScreen(
         }
         loading=false
     }
+    val screenWidthDp=LocalConfiguration.current.screenWidthDp
+    val largeLayout=screenWidthDp>=840
+    val favoriteColumns=WorkspaceGrid.columns(screenWidthDp)
     LazyColumn(
         contentPadding=PaddingValues(horizontal=16.dp,vertical=18.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
@@ -151,7 +154,6 @@ fun WorkspaceHomeScreen(
                 }
             }
         }
-        val largeLayout=LocalConfiguration.current.screenWidthDp>=840
         if(largeLayout) item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                 WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
@@ -236,10 +238,10 @@ fun WorkspaceHomeScreen(
                     color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val chunks=WorkspaceHomeModules.selected(favoriteRoutes)
-                .chunked(WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp))
+                .chunked(favoriteColumns)
             items(chunks.size) { index ->
                 val group=chunks[index]
-                val columns=WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp)
+                val columns=favoriteColumns
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                     group.forEach { entry ->
                         WorkspaceFavoriteTile(entry,Modifier.weight(1f),
