@@ -182,13 +182,23 @@ private fun AppointmentsModule(
         modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)) {
         item {
             Text("Agenda de atendimentos",style=MaterialTheme.typography.titleLarge)
-            Text("Agendamentos locais vinculados ao cliente.",
+            Text("Organize o seu dia e acompanhe os próximos atendimentos.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Hoje: "+pulse.scheduledToday+
-                " · Próximos 7 dias: "+pulse.upcomingSevenDays+
-                " · Pendentes anteriores: "+pulse.overdue)
-            Text("No mês: "+pulse.completedMonth+" concluídos · "+
-                pulse.missedMonth+" faltas",color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                colors=CardDefaults.cardColors(
+                    containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme)))) {
+                Column(Modifier.fillMaxWidth().padding(15.dp),
+                    verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                    Text("Hoje: "+pulse.scheduledToday+
+                        "  ·  Próximos 7 dias: "+pulse.upcomingSevenDays,
+                        style=MaterialTheme.typography.titleSmall)
+                    Text("Pendentes: "+pulse.overdue+
+                        "  ·  Concluídos no mês: "+pulse.completedMonth+
+                        "  ·  Faltas: "+pulse.missedMonth,
+                        style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
         item {
             AgendaCalendarPanel(all,selectedDay,onSelect={ day ->

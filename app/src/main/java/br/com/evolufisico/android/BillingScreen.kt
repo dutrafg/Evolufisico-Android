@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
@@ -138,22 +139,30 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
-            Text("Recebimentos vinculados ao cliente", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Visão geral",style=MaterialTheme.typography.titleLarge,
+                fontWeight=FontWeight.SemiBold)
+            Text("Recebimentos vinculados aos clientes",
+                color=MaterialTheme.colorScheme.onSurfaceVariant,
+                style=MaterialTheme.typography.bodyMedium)
         }
         item {
             Card(shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors=androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme))),
+                    containerColor=VisualTokens.metric(3,
+                        VisualTokens.dark(MaterialTheme.colorScheme)).background),
                 elevation=androidx.compose.material3.CardDefaults.cardElevation(defaultElevation=1.dp)) {
                 Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                    Text("A receber", style = MaterialTheme.typography.labelLarge)
+                    Text("A receber",style=MaterialTheme.typography.titleSmall,
+                        color=VisualTokens.metric(3,
+                            VisualTokens.dark(MaterialTheme.colorScheme)).ink)
                     Text(reais(ChargeRules.total(charges,false)),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     Text("Recebido: ${reais(ChargeRules.total(charges,true))}")
                     val month = java.time.YearMonth.now()
-                    Text("No mês atual: " + month.monthValue.toString().padStart(2,'0') + "/" + month.year)
+                    Text("Competência: " + month.monthValue.toString().padStart(2,'0') + "/" + month.year,
+                        style=MaterialTheme.typography.bodySmall)
                     Text("Vence no mês: " + reais(ChargeRules.monthlyTotal(charges,false,month)))
                     Text("Recebido no mês: " + reais(ChargeRules.monthlyTotal(charges,true,month)))
                 }
@@ -161,7 +170,8 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
         }
         item {
             Button(enabled = !busy && clients.isNotEmpty(),
-                onClick = { editing = null; editor = true }, modifier = Modifier.fillMaxWidth()) {
+                onClick = { editing = null; editor = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min=48.dp)) {
                 Text("Nova cobrança")
             }
             if (clients.isEmpty()) Text("Cadastre um cliente antes de criar cobranças.")
