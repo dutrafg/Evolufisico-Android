@@ -131,11 +131,11 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore, onDo
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text("Evolução das avaliações", style = MaterialTheme.typography.titleLarge,
+            Text("Evolução e resultados", style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold)
             Text("Comparação descritiva de medidas, vinculada ao cliente.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -170,7 +170,8 @@ fun EvolutionScreen(clients: List<Client>, store: EncryptedAssessmentStore, onDo
             }
         }
         item {
-            Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                modifier=Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(metric.title, style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary)

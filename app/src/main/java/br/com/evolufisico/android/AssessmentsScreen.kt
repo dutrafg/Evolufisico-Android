@@ -121,15 +121,16 @@ fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
     val visible = assessments.filter { it.clientId == selectedClientId }
         .sortedWith(compareByDescending<Assessment> { it.dateIso }.thenByDescending { it.id })
 
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Avaliação física e anamnese", style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold)
         ClientChooser(clients, selectedClientId, onSelect = { selectedClientId = it })
         Button(
             enabled = !saving,
             onClick = { editing = null; editorOpen = true },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Nova avaliação") }
+            modifier = Modifier.fillMaxWidth().heightIn(min=48.dp)
+        ) { Text("+ Nova avaliação") }
         warning?.let {
             Text(it, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary)
@@ -143,7 +144,8 @@ fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
             LazyColumn(modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(visible, key = { it.id }) { record ->
-                    Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                        modifier=Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             val displayDate = runCatching {
                                 LocalDate.parse(record.dateIso)

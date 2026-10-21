@@ -153,8 +153,8 @@ fun FormsScreen(
     }.sortedWith(compareByDescending<FormResponse> { it.dateIso }.thenByDescending { it.id })
 
     LazyColumn(modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("Modelos e respostas individuais vinculados ao perfil do cliente.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -187,10 +187,11 @@ fun FormsScreen(
             }
         }
         item {
-            Button(modifier = Modifier.fillMaxWidth(), enabled = !saving, onClick = {
+            Button(modifier = Modifier.fillMaxWidth().heightIn(min=48.dp),
+                enabled = !saving, onClick = {
                 editing = null
                 editingOpen = true
-            }) { Text("Novo formulário") }
+            }) { Text("+ Novo formulário") }
             status?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             Text("Histórico filtrado · " + visible.size + " registros",
                 style = MaterialTheme.typography.titleMedium)
@@ -200,7 +201,8 @@ fun FormsScreen(
         }
         items(visible, key = { it.id }) { record ->
             val template = FormCatalog.find(record.templateId)
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(template?.title ?: "Modelo indisponível",
                         style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

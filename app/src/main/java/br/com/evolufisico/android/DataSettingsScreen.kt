@@ -261,9 +261,10 @@ fun DataSettingsScreen(
 
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     Column(
-        modifier=Modifier.widthIn(max=920.dp).fillMaxWidth().fillMaxHeight()
-            .verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement=Arrangement.spacedBy(14.dp)
+        modifier=Modifier.widthIn(max=VisualTokens.contentMaxWidthDp.dp)
+            .fillMaxWidth().fillMaxHeight()
+            .verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement=Arrangement.spacedBy(18.dp)
     ) {
         Text("Gerencie o ambiente, proteja seus dados e execute a manutenção.",
             style=MaterialTheme.typography.bodyMedium,
@@ -305,7 +306,12 @@ fun DataSettingsScreen(
                 }
             }
             HorizontalDivider()
-            Card(onClick = { settingsPage="dados" }, modifier = Modifier.fillMaxWidth()) {
+            Card(onClick = { settingsPage="dados" }, modifier = Modifier.fillMaxWidth(),
+                shape=androidx.compose.foundation.shape.RoundedCornerShape(
+                    VisualTokens.cardRadiusDp.dp),
+                colors=androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor=VisualTokens.panel(
+                        VisualTokens.dark(MaterialTheme.colorScheme)))) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Dados e Privacidade", style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary)
@@ -320,7 +326,7 @@ fun DataSettingsScreen(
             HorizontalDivider()
             Text("Atualizações", style = MaterialTheme.typography.titleLarge)
             InAppUpdatePanel(onDocumentFlow = onDocumentFlow)
-            Text("Alpha 2 · ciclo de desenvolvimento",
+            Text("Configurações · versão de testes",
                 style = MaterialTheme.typography.bodySmall)
         } else {
         if(settingsPage=="dados") {
