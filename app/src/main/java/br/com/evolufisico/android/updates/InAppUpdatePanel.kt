@@ -138,6 +138,15 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
         Text(service.installedVersionDiagnostics(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary)
+        if (context.packageName != "br.com.evolufisico.android") {
+            Text("Esta cópia é um aplicativo de testes separado (${context.packageName}). " +
+                "Ela não atualiza automaticamente a Beta anterior nem o RELEASE oficial. " +
+                "Os APKs DEBUG do GitHub podem ter assinaturas diferentes. " +
+                "Faça backup nesta cópia, instale o RELEASE com assinatura permanente e " +
+                "restaure os dados nele antes de remover qualquer instalação antiga.",
+                style=MaterialTheme.typography.bodyMedium,
+                color=MaterialTheme.colorScheme.error)
+        }
         OutlinedButton(
             enabled = !checking,
             modifier = Modifier.fillMaxWidth(),
