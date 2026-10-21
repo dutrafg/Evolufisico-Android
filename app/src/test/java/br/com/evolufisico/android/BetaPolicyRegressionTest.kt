@@ -221,4 +221,9 @@ class BetaPolicyRegressionTest {
         assertTrue(BetaReadiness.pending(e).any { it.code=="local" })
     }
 
+    @Test fun alpha85ReleaseGateRegression() {
+        val e=BetaEvidence(stableSigningKeyVerified=true,encryptedLocalData=true)
+        assertTrue(BetaReadiness.pending(e).any { it.code=="backup" })
+    }
+
 }
