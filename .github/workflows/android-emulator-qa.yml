@@ -9,6 +9,10 @@ on:
       - 'app/build.gradle.kts'
       - '.github/workflows/android-emulator-qa.yml'
 
+concurrency:
+  group: android-emulator-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
 jobs:
   instrumented:
     runs-on: ubuntu-latest
