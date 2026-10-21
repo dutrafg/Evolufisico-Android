@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import java.text.Normalizer
@@ -110,7 +111,8 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
     fun move(route:String,offset:Int) {
         saveFavorites(WorkspaceFavorites.move(favorites,route,offset))
     }
-    val columns=WorkspaceLayoutRules.gridColumns(LocalConfiguration.current.screenWidthDp)
+    val columns=WorkspaceLayoutRules.gridColumns(
+        LocalConfiguration.current.screenWidthDp,LocalDensity.current.fontScale)
     val filtered=WorkspaceModules.filter(search,category)
     val featured=if(search.isBlank()&&category=="Todos") favorites.mapNotNull { id ->
         WorkspaceModules.all.firstOrNull { it.route==id }
