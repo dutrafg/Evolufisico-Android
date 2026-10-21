@@ -136,4 +136,8 @@ class BetaPolicyRegressionTest {
         assertEquals(listOf("GOALS"),WorkspaceRecents.open(emptyList(),"GOALS"))
     }
 
+    @Test fun alpha68LocalDataRegression() {
+        assertEquals(listOf("NOTES","GOALS"),WorkspaceRecents.open(listOf("GOALS","NOTES"),"NOTES"))
+    }
+
 }
