@@ -360,3 +360,14 @@
 - [ ] Aprovar testes instrumentados Android 10
 - [ ] Revisar contraste e alinhamento em tablet físico e smartphone real
 - [ ] Homologar backup/restauração com dados fictícios antes de migração
+
+
+## Beta 4 — Agenda e 1.000 etapas
+
+- [x] Busca proativa de horários mesmo sem conflito
+- [x] Escolha de 3 janelas de expediente para sugestões
+- [x] Alternância de sugestões de segunda a sexta
+- [x] Testes unitários de janelas, fins de semana e virada de dia
+- [ ] Confirmar CI e emulador Beta 4
+- [ ] Executar QA manual em tablet e celular físico
+- [ ] Revisar as demais etapas do documento BETA_4_1000_ETAPAS.md

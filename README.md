@@ -310,3 +310,10 @@ Para **atualização instalando um APK por cima**: mantenha o mesmo `application
 Versão experimental **89.0.0-beta.3** (Android 10+, versionCode 196, instalação debug isolada como `br.com.evolufisico.android.beta3`). Nesta etapa foram aprimorados o cálculo de largura disponível em tablets com barra lateral, a quantidade de colunas na Home e em Módulos, a adaptação das métricas às 10 paletas no modo claro/escuro e o acesso para personalização dos favoritos. Foram adicionados testes das larguras 320, 360, 699, 840, 1079, 1150 e 1200 dp. A Agenda também recebeu aperfeiçoamento de sugestão de horários quando existe conflito.
 
 O [plano de 1.000 etapas](docs/BETA_3_1000_ETAPAS.md) organiza módulos, desenvolvimento, validações e QA; **as mil etapas ainda não foram concluídas**. Este pacote é de teste e não substitui instalações anteriores.
+
+
+## Beta 4 experimental (90.0.0-beta.4)
+
+A Agenda agora permite **procurar horários livres a qualquer momento**, escolher o expediente (07–22h, 08–18h ou 09–21h) e limitar resultados a segunda–sexta. A busca não grava nem remove atendimentos e valida a duração para evitar agendamentos que ultrapassem o fim do dia.
+
+O plano completo de **outras 1.000 etapas** está em `docs/BETA_4_1000_ETAPAS.md`, além das 1.000 da Beta 3. As etapas pendentes continuam explicitamente desmarcadas. O APK debug usa o pacote isolado `.beta4` e assinatura temporária de CI; não é garantia de atualização por cima da Beta 3.

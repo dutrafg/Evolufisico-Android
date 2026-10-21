@@ -326,3 +326,11 @@ Detalhes em `docs/ALPHAS_16_A_20_100_ETAPAS.md`.
 - [ ] Reunir chave original de assinatura e configurar GitHub Secrets
 - [ ] Confirmar testes em CI, emulador, smartphone e tablet
 - [ ] Testar atualização de release no mesmo identificador sem perda de dados
+
+
+## Beta 4 — planejamento adicional de 1.000 etapas
+
+- [x] Publicar `docs/BETA_4_1000_ETAPAS.md` com etapas 0001–1000
+- [x] Iniciar melhorias na disponibilidade da Agenda
+- [ ] Homologar CI, instrumento Android 10 e fluxo em tablet real
+- [ ] Concluir os checkpoints pendentes por desenvolvimento verificável
