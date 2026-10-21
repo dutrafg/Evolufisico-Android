@@ -3,10 +3,11 @@ name: Android Emulator QA (manual)
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, beta-2-development ]
     paths:
       - 'app/src/**'
       - 'app/build.gradle.kts'
+      - '.github/workflows/android-emulator-qa.yml'
 
 jobs:
   instrumented:
