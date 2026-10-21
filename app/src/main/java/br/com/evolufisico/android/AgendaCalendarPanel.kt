@@ -66,10 +66,13 @@ fun AgendaCalendarPanel(
                     Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês")
                 }
             }
-            // Rolagem sincronizada do cabeçalho e das datas no celular estreito.
-            Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                Column(Modifier.widthIn(min=350.dp),
-                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
+            // A largura definida evita linhas de calendario sem restricoes
+            // dentro da rolagem horizontal. Cada coluna tem ao menos 48 dp.
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val gridWidth = maxOf(maxWidth, 336.dp)
+                Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                    Column(Modifier.width(gridWidth),
+                        verticalArrangement=Arrangement.spacedBy(4.dp)) {
                     Row(Modifier.fillMaxWidth()) {
                         listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom").forEach { day ->
                             Text(day,modifier=Modifier.weight(1f),
@@ -125,6 +128,7 @@ fun AgendaCalendarPanel(
                                 }
                             }
                         }
+                    }
                     }
                 }
             }
