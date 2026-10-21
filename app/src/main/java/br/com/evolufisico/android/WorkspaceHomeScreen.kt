@@ -57,6 +57,7 @@ import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.UpcomingAppointment
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
+import br.com.evolufisico.android.data.PreRegistration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -129,6 +130,7 @@ object WorkspaceDisplay {
 fun WorkspaceHomeScreen(
     clientCount:Int, backupManager:SecureBackupManager,
     favoriteRoutes:Set<String>,onFavoritesChange:(Set<String>)->Unit,
+    onCompleteDraft:(PreRegistration,(Boolean,String?)->Unit)->Unit,
     onNavigate:(String)->Unit
 ) {
     var metrics by remember { mutableStateOf<WorkspaceMetrics?>(null) }
@@ -238,7 +240,13 @@ fun WorkspaceHomeScreen(
             }
         }
         item {
-            PreRegistrationPanel(onOpenClients={onNavigate("CLIENTS")})
+            PreRegistrationPanel(onOpenClients={onNavigate("CLIENTS")},
+                onCompleteDraft={ draft,callback ->
+                    onCompleteDraft(draft) { success,message ->
+                        if(success) refresh++
+                        callback(success,message)
+                    }
+                })
         }
         error?.let { issue -> item {
             Text(issue,color=MaterialTheme.colorScheme.error)
