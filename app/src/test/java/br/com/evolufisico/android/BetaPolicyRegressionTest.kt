@@ -32,4 +32,9 @@ class BetaPolicyRegressionTest {
         assertEquals(2,ReleasePolicy.parse("v1.0.0-rc.2")?.channelNumber)
     }
 
+    @Test fun alpha46ReleaseRegression() {
+        assertTrue(ReleasePolicy.newer("1.0.0","1.0.0-rc.9"))
+        assertFalse(ReleasePolicy.newer("1.0.0-beta.1","1.0.0"))
+    }
+
 }
