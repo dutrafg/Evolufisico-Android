@@ -27,9 +27,14 @@ object UpdatePolicy {
 
     fun sameSigningCertificate(
         installed: List<ByteArray>, candidate: List<ByteArray>
-    ): Boolean =
-        installed.isNotEmpty() && candidate.isNotEmpty() &&
-            candidate.any { incoming -> installed.any {
-                current -> MessageDigest.isEqual(incoming, current)
-            } }
+    ): Boolean {
+        if(installed.isEmpty() || installed.size!=candidate.size) return false
+        val unmatched=candidate.toMutableList()
+        return installed.all { original ->
+            val idx=unmatched.indexOfFirst { incoming ->
+                MessageDigest.isEqual(original,incoming)
+            }
+            if(idx<0) false else { unmatched.removeAt(idx);true }
+        } && unmatched.isEmpty()
+    }
 }

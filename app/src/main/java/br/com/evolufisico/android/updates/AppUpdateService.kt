@@ -291,31 +291,32 @@ class AppUpdateService(private val context: Context) {
         val packageManager = context.packageManager
         val candidate = packageManager.getPackageArchiveInfo(file.absolutePath, flags)
             ?: error("Este arquivo não é um APK Android válido.")
-        require(candidate.packageName == pkg) {
-            "O APK pertence a outro aplicativo. Nenhum dado foi alterado."
-        }
-        val installed = packageManager.getPackageInfo(pkg, flags)
-        require(UpdatePolicy.isUpgrade(installed.longVersionCode, candidate.longVersionCode)) {
-            "O APK não possui versãoCode superior à instalada (${installed.longVersionCode})."
-        }
-        val incoming = candidate.signingInfo?.apkContentsSigners
-            ?: error("APK sem assinatura verificável.")
-        val current = installed.signingInfo?.apkContentsSigners
-            ?: error("Assinatura instalada indisponível.")
-        val matching = UpdatePolicy.sameSigningCertificate(
-            current.map { it.toByteArray() }, incoming.map { it.toByteArray() }
+        val installed=packageManager.getPackageInfo(pkg,flags)
+        val current=installed.signingInfo?.apkContentsSigners.orEmpty()
+        val incoming=candidate.signingInfo?.apkContentsSigners.orEmpty()
+        val currentBytes=current.map { it.toByteArray() }
+        val incomingBytes=incoming.map { it.toByteArray() }
+        val blocker=UpdateCompatibility.diagnose(
+            installed.packageName,candidate.packageName,
+            installed.longVersionCode,candidate.longVersionCode,currentBytes,incomingBytes
         )
-        require(matching) {
-            val installedFingerprint = current.firstOrNull()?.toByteArray()
-                ?.let { certificateSha256(it) } ?: "indisponível"
-            val candidateFingerprint = incoming.firstOrNull()?.toByteArray()
-                ?.let { certificateSha256(it) } ?: "indisponível"
-            "ASSINATURA INCOMPATÍVEL. Instalada: ${installedFingerprint.take(16)}… " +
-                "Nova: ${candidateFingerprint.take(16)}…. " +
-                "O GitHub Actions usou certificados DEBUG diferentes. Não existe atualização " +
-                "direta segura entre essas assinaturas. Faça backup .efbak fora do app, " +
-                "verifique o backup e só então planeje uma migração. " +
-                "Para atualizações futuras use sempre o mesmo APK RELEASE assinado."
+        when(blocker) {
+            UpdateBlocker.DIFFERENT_APPLICATION ->
+                error("Este APK pertence a outro aplicativo. Nenhum arquivo foi alterado.")
+            UpdateBlocker.VERSION_NOT_NEWER ->
+                error("Este APK precisa ter versionCode maior que o instalado ("+
+                    installed.longVersionCode+").")
+            UpdateBlocker.SIGNATURE_MISSING ->
+                error("Não foi possível verificar os certificados de assinatura.")
+            UpdateBlocker.SIGNATURE_MISMATCH -> {
+                val before=currentBytes.firstOrNull()?.let { certificateSha256(it) }?:"indisponível"
+                val after=incomingBytes.firstOrNull()?.let { certificateSha256(it) }?:"indisponível"
+                error("ASSINATURA INCOMPATÍVEL. Instalada: "+before.take(16)+
+                    "… Nova: "+after.take(16)+
+                    "…. Atualize somente com a chave que assinou a instalação atual. "+
+                    "Verifique seu backup antes de migrar.")
+            }
+            UpdateBlocker.NONE -> Unit
         }
         return "APK compatível: versãoCode ${installed.longVersionCode} → ${candidate.longVersionCode}."
     }

@@ -35,6 +35,14 @@ class UpdatePolicyTest {
         assertFalse(UpdatePolicy.isUpgrade(10,10))
         assertFalse(UpdatePolicy.isUpgrade(10,9))
     }
+    @Test fun rejectsPartialMultiSignerMatches() {
+        val a="first".toByteArray()
+        val b="second".toByteArray()
+        assertFalse(UpdatePolicy.sameSigningCertificate(listOf(a,b),listOf(a)))
+        assertFalse(UpdatePolicy.sameSigningCertificate(listOf(a,b),
+            listOf(a,"wrong".toByteArray())))
+        assertTrue(UpdatePolicy.sameSigningCertificate(listOf(a,b),listOf(b,a)))
+    }
     @Test fun rejectsIncompatibleSigningCertificate() {
         val old = "certificate-1".toByteArray()
         assertTrue(UpdatePolicy.sameSigningCertificate(listOf(old), listOf(old.clone())))
