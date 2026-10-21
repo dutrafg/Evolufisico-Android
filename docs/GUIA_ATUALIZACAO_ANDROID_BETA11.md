@@ -12,10 +12,10 @@ O Android só faz atualização no lugar quando **pacote e assinatura coincidem*
 ## Como prosseguir sem perder dados
 
 1. **Não desinstalar nenhuma das cópias atuais.**
-2. Na cópia que contém os registros, usar **Configurações → Dados e privacidade → Backup**; exportar `.efbak` para fora do aplicativo e conferir se o arquivo pode ser restaurado.
+2. Na **Beta 11 com os dados que deseja preservar**, abrir **Configurações → Dados e privacidade → Backup manual**; exportar o backup **`.json`** para uma pasta externa e tocar em **Verificar backup .json ou .efbak**. A Beta 11 atual grava backups JSON sem senha; backups `.efbak` antigos continuam exigindo a senha original.
 3. No GitHub, gerar e publicar o APK **RELEASE assinado** pela chave fixa, após o CI e QA. É o **único canal de atualizações oficiais**, com pacote `br.com.evolufisico.android`.
 4. Caso o aparelho já tenha o RELEASE oficial com **mesmo certificado**, instalar a nova versão sobre a antiga.
-5. Caso o aparelho só tenha DEBUG (Beta 10 ou Beta 11), a mudança para o RELEASE é uma **migração única**: instalar o RELEASE separadamente, restaurar o backup nele e comparar os registros antes de remover qualquer cópia de testes.
+5. Caso o aparelho tenha o DEBUG Beta 11 (`br.com.evolufisico.android.beta11`), a mudança para o RELEASE é uma **migração única**: manter a Beta 11 instalada, instalar o RELEASE separadamente, restaurar o arquivo `.json` na instalação RELEASE **vazia** e comparar clientes, avaliações, cobranças, formulários, agenda, metas, serviços e anotações antes de remover qualquer cópia de testes.
 6. Nas próximas versões do RELEASE, manter o mesmo `applicationId`, a mesma chave de assinatura permanente e incrementar `versionCode`.
 
 ## Build e publicação
@@ -35,3 +35,5 @@ adb shell pm list packages | grep evolufisico
 ```
 
 O backup exportado deve ser mantido até concluir a restauração e validar os dados.
+
+> **Privacidade:** o JSON exportado pela Beta 11 contém informações legíveis, inclusive dados dos clientes. Guarde-o em pasta privada e não compartilhe publicamente nem envie para o repositório.
