@@ -18,6 +18,20 @@ class QuickLaunchRulesTest {
   assertEquals("Novo formulário",QuickLaunchRules.label("FORMS"))
   assertEquals("Abrir função",QuickLaunchRules.label("EVOLUTION"))
  }
+ @Test fun allFavoriteCreationActionsHaveReadableLabels() {
+  val cases=mapOf(
+   "ASSESSMENTS" to "Nova avaliação",
+   "FORMS" to "Novo formulário",
+   "GOALS" to "Nova meta",
+   "NOTES" to "Nova anotação",
+   "SERVICES" to "Novo serviço",
+   "AGENDA" to "Novo atendimento")
+  cases.forEach { (route,label) ->
+   assertTrue(QuickLaunchRules.supportsCreate(route))
+   assertEquals(label,QuickLaunchRules.label(route))
+  }
+  assertEquals("Abrir função",QuickLaunchRules.label("REPORTS"))
+ }
  @Test fun originalCatalogRoutesRemainAvailable() {
   assertTrue(WorkspaceModules.all.any{it.route=="ASSESSMENTS"})
   assertTrue(WorkspaceModules.all.any{it.route=="FORMS"})

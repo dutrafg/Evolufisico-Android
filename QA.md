@@ -310,3 +310,16 @@
 - [ ] Testar em aparelho real fontes grandes, sobreposição, contraste e toque
 - [ ] Testar restauração de backup JSON de teste em pacote isolado Alpha 25
 - [ ] Validar assinatura release persistente antes de atualizar aplicativo oficial
+
+
+## Ações diretas nos favoritos — Alpha 28 a 38
+
+- [x] Atalhos de Avaliações e Formulários foram ligados ao editor direto
+- [x] Atalhos de Metas, Anotações, Serviços e Agenda ligados ao comando de criar
+- [x] Limpeza da solicitação ao voltar e ao navegar pelo catálogo
+- [x] Etiquetas de ação e teste unitário para as rotas contempladas
+- [x] Nova navegação e seleção de dias aprimoradas, sem alterar o banco
+- [ ] CI da última versão: compilação, JUnit, Android Lint, testes instrumentados
+- [ ] Teste manual em smartphone e tablet, com e sem clientes cadastrados
+- [ ] Validar dados antes e depois dos backups e restauração externa
+- [ ] Assinatura fixa de distribuição para atualizar o aplicativo oficial

@@ -278,3 +278,10 @@ Veja [matriz de 500 checkpoints](docs/ALPHAS_16_A_20_100_ETAPAS.md). A matriz n�
 O início apresenta quatro indicadores com cores suaves, próximos atendimentos reais e acesso rápido. A área Módulos usa cartões em grade com busca, filtros, favoritos e recentes; layout com 1/2/3 colunas em telas estreitas/telefones/tablets. Cores e formas claro/escuro receberam padronização corporativa. A Alpha 25 acrescenta ícones e QA automatizado. Código e checkpoints em `docs/ALPHAS_21_A_25_VISUAL.md`.
 
 APK debug independente (`.alpha25`), banco próprio. Antes de mudar de instalação, faça backup JSON e valide restauração. Assinatura oficial permanente e QA visual físico ainda pendentes.
+
+
+## Alpha 28–38 — ações diretas nos favoritos
+
+Os favoritos da Área de trabalho podem abrir diretamente os formulários de **Nova avaliação, Novo formulário, Nova meta, Nova anotação e Novo serviço**. O comportamento normal do catálogo de módulos não foi modificado. O atalho da Agenda pode iniciar **Novo atendimento**, quando aplicável. As demais ferramentas sem editor de criação continuam abrindo sua função habitual. A solicitação de criação é temporária e é limpa ao navegar para outra tela. Novas Alphas aprimoram visual dos atalhos, evitam títulos repetidos, melhoram alvos do calendário e adaptam a cor principal ao tema escolhido. O arquivo `docs/ALPHAS_28_A_38_100_ETAPAS.md` acompanha 100 checkpoints por versão; muitos permanecem pendentes.
+
+**Alpha 38 debug** instala separadamente (`br.com.evolufisico.android.alpha38`). Não substitui o app oficial nem lê o banco de outro pacote automaticamente. Antes de usar dados reais, resolver a assinatura permanente, a criptografia prevista para o protótipo e homologar no dispositivo.

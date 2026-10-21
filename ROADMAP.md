@@ -297,3 +297,22 @@ Veja `docs/ALPHAS_10_A_15_100_ETAPAS.md`.
 - [ ] Configurar assinatura release fixa para atualizar sem perder dados
 
 Detalhes em `docs/ALPHAS_16_A_20_100_ETAPAS.md`.
+
+
+## Alpha 28–38 — direto para ação
+
+- [x] Alpha 28: Atalho Nova avaliação e Novo formulário
+- [x] Alpha 29: Favorito abre Nova meta
+- [x] Alpha 30: Favorito abre Nova anotação
+- [x] Alpha 31: Favorito abre Novo serviço
+- [x] Alpha 32: Atalho Novo atendimento na Agenda
+- [x] Alpha 33: Corrigir compilação e limpar solicitação ao sair da tela
+- [x] Alpha 34: Identificar ação no cartão favorito e melhorar contraste
+- [x] Alpha 35: Eliminar títulos duplicados em telas
+- [x] Alpha 36: Calendário com navegação mensal compacta e alvos maiores
+- [x] Alpha 37: Aplicar paleta do tema aos indicadores
+- [x] Alpha 38: Regressão de ações rápidas e distribuição do APK
+- [ ] Validar CI e QA de Android da Alpha 38
+- [ ] Homologar todos os checkpoints da matriz de 1100 tarefas planejadas
+- [ ] Testar todos os editores em um dispositivo e tablet real
+- [ ] Assinar release definitivo e testar atualização in-place com backup.
