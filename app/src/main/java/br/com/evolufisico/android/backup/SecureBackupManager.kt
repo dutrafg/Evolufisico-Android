@@ -58,8 +58,16 @@ class SecureBackupManager(context: Context) {
     @Synchronized
     fun recoverInterruptedRestore() {
         if (!journal.exists()) return
-        require(journal.readText(Charsets.US_ASCII) == "EF_RESTORE_V1") {
-            "Estado de restauração inesperado. Dados protegidos."
+        val state=journal.readText(Charsets.US_ASCII)
+        if(state=="EF_RESTORE_V1_COMMITTED") {
+            // Crash apos todos os saves: nunca remover dados ja consolidados.
+            validate(BackupSnapshot(clientStore.load(),assessmentStore.load(),
+                chargeStore.load(),formStore.load(),operationsStore.load()))
+            check(journal.delete()) { "Restauração íntegra; marcador não pôde ser removido." }
+            return
+        }
+        require(state=="EF_RESTORE_V1") {
+            "Estado de restauração inesperado. Dados preservados para recuperação."
         }
         operationsStore.save(OperationsData(),emptySet())
         formStore.save(emptyList(), emptySet())
@@ -165,8 +173,19 @@ class SecureBackupManager(context: Context) {
             chargeStore.save(snapshot.charges, snapshot.clients.map { it.id }.toSet())
             formStore.save(snapshot.forms, snapshot.clients.map { it.id }.toSet())
             operationsStore.save(snapshot.operations, snapshot.clients.map { it.id }.toSet())
-            check(journal.delete()) { "Falha ao concluir a transação de restauração." }
+            // Marca commit de forma sincronizada. Se cair antes de apagar o diário,
+            // a inicialização seguinte valida e conserva os dados restaurados.
+            FileOutputStream(journal).use { out ->
+                out.write("EF_RESTORE_V1_COMMITTED".toByteArray(Charsets.US_ASCII))
+                out.fd.sync()
+            }
+            check(journal.delete()) { "Dados restaurados; finalização do marcador pendente." }
         } catch (error: Exception) {
+            if(journal.exists() &&
+                journal.readText(Charsets.US_ASCII)=="EF_RESTORE_V1_COMMITTED") {
+                throw IllegalStateException(
+                    "Dados restaurados; reabra o app para concluir a recuperação.",error)
+            }
             val failures = listOf(
                 runCatching { operationsStore.save(OperationsData(), emptySet()) },
                 runCatching { formStore.save(emptyList(), emptySet()) },
