@@ -24,13 +24,13 @@ data class PreRegistration(
 object PreRegistrationRules {
     fun validate(record:PreRegistration):String? {
         if(record.id.isBlank() || record.id.length>100) return "Identificador inválido."
-        if(record.name.isBlank() || record.name.length>120) return "Nome obrigatório (até 120 caracteres)."
-        if(record.email.length !in 5..200 || !record.email.contains('@') ||
-            !record.email.substringAfter('@').contains('.'))
-            return "E-mail inválido."
+        if(record.name.isBlank()) return "Nome obrigatório."
+        if(record.email.isBlank()) return "E-mail obrigatório."
         val digits=record.phone.filter(Char::isDigit)
         if(digits.length !in 10..15) return "Telefone com DDD obrigatório."
-        if(record.phone.length>40) return "Telefone muito longo."
+        // Sem divergências com os requisitos do cliente definitivo.
+        ClientRules.validateContact(Client(record.id,record.name,record.phone,record.email))
+            ?.let { return it }
         val created=runCatching { Instant.parse(record.createdAtIso) }.getOrNull()
             ?: return "Data de criação inválida."
         val changed=runCatching { Instant.parse(record.updatedAtIso) }.getOrNull()
