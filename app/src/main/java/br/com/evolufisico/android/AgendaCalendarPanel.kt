@@ -52,7 +52,8 @@ fun AgendaCalendarPanel(
     val caption = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", locale))
     Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         colors=CardDefaults.cardColors(
-            containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme))),
+            containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme)),
+            contentColor=MaterialTheme.colorScheme.onSurface),
         elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Calendário de atendimentos",style=MaterialTheme.typography.titleMedium,
