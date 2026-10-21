@@ -6,6 +6,7 @@ on:
       - alpha-39-88-beta-readiness
       - beta-2-development
       - beta-3-development
+      - beta-4-development
     paths:
       - 'app/**'
       - '.github/workflows/android-development-qa.yml'

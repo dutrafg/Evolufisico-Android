@@ -35,6 +35,35 @@ class AgendaAvailabilityTest {
             90,emptyList(),limit=1)
         assertEquals("2026-10-21T07:00",slots.single().toString())
     }
+
+    @Test fun respectsCustomStartAndEndOfWorkingDay() {
+        val target=LocalDateTime.parse("2026-10-20T17:30")
+        val found=AgendaAvailability.suggest(target,60,emptyList(),
+            limit=2,window=AgendaWindow(8,18))
+        assertEquals(listOf("2026-10-21T08:00","2026-10-21T08:15"),
+            found.map { it.toString() })
+    }
+    @Test fun skipsWeekendWhenRequested() {
+        val target=LocalDateTime.parse("2026-10-23T20:30")
+        val found=AgendaAvailability.suggest(target,60,emptyList(),
+            limit=1,window=AgendaWindow(8,18,15,true))
+        assertEquals("2026-10-26T08:00",found.single().toString())
+    }
+    @Test fun intervalOptionsAndInvalidWindows() {
+        val target=LocalDateTime.parse("2026-10-20T09:00")
+        val found=AgendaAvailability.suggest(target,30,emptyList(),
+            limit=2,window=AgendaWindow(8,18,30))
+        assertEquals(listOf("2026-10-20T09:30","2026-10-20T10:00"),
+            found.map { it.toString() })
+        assertTrue(AgendaAvailability.suggest(target,60,emptyList(),
+            window=AgendaWindow(20,8)).isEmpty())
+    }
+    @Test fun availabilityNeverCrossesMidnight() {
+        val target=LocalDateTime.parse("2026-10-20T22:30")
+        val found=AgendaAvailability.suggest(target,90,emptyList(),
+            limit=1,window=AgendaWindow(7,23))
+        assertEquals("2026-10-21T07:00",found.single().toString())
+    }
     @Test fun rejectsInvalidDurationOrRequestedBounds() {
         val target=LocalDateTime.parse("2026-10-20T12:00")
         assertTrue(AgendaAvailability.suggest(target,0,emptyList()).isEmpty())

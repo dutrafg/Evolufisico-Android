@@ -367,6 +367,8 @@ private fun AppointmentEditor(
     var repeats by remember(current?.id) {mutableStateOf("1")}
     var clientMenu by remember {mutableStateOf(false)}
     var issue by remember {mutableStateOf<String?>(null)}
+    var showSuggestions by remember(current?.id) { mutableStateOf(false) }
+    var suggestionWindow by remember(current?.id) { mutableStateOf(AgendaWindow()) }
     AlertDialog(onDismissRequest=onDismiss,
         title={Text(if(current==null)"Novo atendimento" else "Editar atendimento")},
         text={
@@ -405,28 +407,63 @@ private fun AppointmentEditor(
                         Appointment(current?.id?:"agenda-preview",clientId,
                             previewStart.toString(),previewDuration,service),
                         existing)
-                if(occupied && previewStart!=null && previewDuration!=null) {
-                    Text("Horário ocupado. Escolha uma sugestão livre:",
+                if(occupied) {
+                    Text("O horário selecionado está ocupado.",
                         color=MaterialTheme.colorScheme.error,
                         style=MaterialTheme.typography.bodySmall)
-                    val suggestions=AgendaAvailability.suggest(
-                        previewStart,previewDuration,existing,current?.id)
-                    if(suggestions.isEmpty()) {
-                        Text("Nenhum horário livre encontrado nos próximos sete dias.",
+                }
+                TextButton(onClick={showSuggestions=!showSuggestions}) {
+                    Text(if(showSuggestions) "Ocultar horários livres" else "Buscar horários livres")
+                }
+                if(showSuggestions || occupied) {
+                    Text("Horários sugeridos (sem modificar os atendimentos):",
+                        style=MaterialTheme.typography.labelMedium)
+                    Row(Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement=Arrangement.spacedBy(5.dp)) {
+                        listOf(AgendaWindow(7,22),AgendaWindow(8,18),
+                            AgendaWindow(9,21)).forEach { option ->
+                            FilterChip(selected=suggestionWindow.startHour==option.startHour,
+                                onClick={suggestionWindow=option.copy(
+                                    weekdaysOnly=suggestionWindow.weekdaysOnly)},
+                                label={Text("${option.startHour}h–${option.endHour}h")})
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+                        Checkbox(checked=suggestionWindow.weekdaysOnly,
+                            onCheckedChange={
+                                suggestionWindow=suggestionWindow.copy(weekdaysOnly=it)
+                            })
+                        Text("Somente segunda a sexta",
+                            modifier=Modifier.weight(1f),
                             style=MaterialTheme.typography.bodySmall)
-                    } else {
-                        Row(Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                            suggestions.forEach { slot ->
-                                AssistChip(onClick={
-                                    date=slot.toLocalDate().toString()
-                                    time=slot.toLocalTime().toString()
-                                    issue=null
-                                },label={Text(slot.toLocalDate().dayOfMonth.toString()+
-                                    "/"+slot.toLocalDate().monthValue+
-                                    " "+slot.toLocalTime().toString())})
+                    }
+                    if(previewStart!=null && previewDuration!=null &&
+                        previewDuration in 15..480) {
+                        val suggestions=AgendaAvailability.suggest(
+                            previewStart,previewDuration,existing,current?.id,
+                            window=suggestionWindow)
+                        if(suggestions.isEmpty()) {
+                            Text("Sem horários livres nos próximos sete dias nesta janela.",
+                                style=MaterialTheme.typography.bodySmall)
+                        } else {
+                            Row(Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement=Arrangement.spacedBy(5.dp)) {
+                                suggestions.forEach { slot ->
+                                    AssistChip(onClick={
+                                        date=slot.toLocalDate().toString()
+                                        time=slot.toLocalTime().toString()
+                                        issue=null
+                                        showSuggestions=false
+                                    },label={Text(slot.toLocalDate().dayOfMonth.toString()+
+                                        "/"+slot.toLocalDate().monthValue+
+                                        " "+slot.toLocalTime().toString())})
+                                }
                             }
                         }
+                    } else {
+                        Text("Informe uma data, hora e duração válidas para pesquisar.",
+                            style=MaterialTheme.typography.bodySmall)
                     }
                 }
                 if(current==null) {
