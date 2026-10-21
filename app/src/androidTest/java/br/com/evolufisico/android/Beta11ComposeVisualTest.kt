@@ -83,7 +83,7 @@ class Beta11ComposeVisualTest {
         }
         val labels=listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom")
         labels.forEach { rule.onNodeWithText(it).assertExists() }
-        val positions=labels.map { rule.onNodeWithText(it).getUnclippedBoundsInRoot().center.x }
+        val positions=labels.map { rule.onNodeWithText(it).getUnclippedBoundsInRoot().left }
         assertTrue("Colunas da agenda colapsadas ou invertidas: $positions",
             positions.zipWithNext().all { (left,right)->right-left>=35.dp })
         assertTrue("A grade ultrapassou seu espaço lógico",
