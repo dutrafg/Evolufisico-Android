@@ -11,6 +11,8 @@ import br.com.evolufisico.android.billing.Charge
 import br.com.evolufisico.android.billing.EncryptedChargeStore
 import br.com.evolufisico.android.data.Assessment
 import br.com.evolufisico.android.data.Client
+import br.com.evolufisico.android.data.PreRegistration
+import br.com.evolufisico.android.data.PreRegistrationStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.forms.EncryptedFormStore
@@ -44,6 +46,7 @@ class StorageIntegrationTest {
         val charges = EncryptedChargeStore(app)
         val forms = EncryptedFormStore(app)
         val operations = OperationalStore(app)
+        val drafts=PreRegistrationStore(app)
         val manager = SecureBackupManager(app)
         val initial = manager.summary()
         // Nunca apagar dados de uma instalação que já tenha registros.
@@ -79,12 +82,16 @@ class StorageIntegrationTest {
                     "Geral","Teste de registro","Observação fictícia.",true))
             )
             operations.save(op,setOf(client.id))
+            val draft=PreRegistration.create("Pessoa Provisória",
+                "prospect@example.org","(11) 98765-4321")
+            drafts.save(listOf(draft))
+            assertEquals(1,drafts.load().size)
             assertEquals(1,operations.load().appointments.size)
             assertEquals(form.answers, forms.load().first().answers)
             assertEquals(1, clients.load().size)
             val data = manager.export(password)
             val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
-            assertEquals(8, inspected.recordCount)
+            assertEquals(9, inspected.recordCount)
             // A copia verificada nao autoriza atualizar se o banco mudou depois.
             clients.save(listOf(client.copy(name="Pessoa Alterada")))
             assertFalse("Backup ficou desatualizado após modificar cliente",
@@ -93,7 +100,7 @@ class StorageIntegrationTest {
             assertEquals(inspected,manager.summary())
             // Backups JSON da Beta 11 nao precisam de senha nem do packageName original.
             val noPassword=charArrayOf()
-            assertEquals(8,
+            assertEquals(9,
                 manager.inspectBackup(ByteArrayInputStream(data), noPassword).recordCount)
             val damaged = data.clone()
             damaged[damaged.lastIndex] = (damaged.last().toInt() xor 1).toByte()
@@ -112,7 +119,7 @@ class StorageIntegrationTest {
             val oldEncrypted = br.com.evolufisico.android.backup.PortableBackupCrypto.encrypt(
                 data, password)
             val restoredOld = manager.inspectBackup(ByteArrayInputStream(oldEncrypted), password)
-            assertEquals(8, restoredOld.recordCount)
+            assertEquals(9, restoredOld.recordCount)
             val wrongPassword = "SenhaPortatilIncorreta123".toCharArray()
             try {
                 assertTrue("Backup .efbak antigo exige senha correta",
@@ -120,13 +127,15 @@ class StorageIntegrationTest {
                         manager.inspectBackup(ByteArrayInputStream(oldEncrypted), wrongPassword)
                     }.isFailure)
             } finally { wrongPassword.fill('\u0000') }
+            drafts.save(emptyList())
             operations.save(OperationsData(), emptySet())
             forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())
             clients.save(emptyList())
             val result = manager.restore(ByteArrayInputStream(data), charArrayOf())
-            assertEquals(8, result.recordCount)
+            assertEquals(9, result.recordCount)
+            assertEquals(draft,drafts.load().single())
             assertEquals("Avaliação",operations.load().services.first().name)
             val restoredAgenda=operations.load().appointments
             assertEquals(1,AgendaCalendar.active(YearMonth.now(),restoredAgenda))
@@ -149,6 +158,7 @@ class StorageIntegrationTest {
                 client.name,clients.load().first().name)
             assertEquals(1,charges.load().size)
             assertEquals(1,operations.load().appointments.size)
+            assertEquals(1,drafts.load().size)
         } finally {
             operations.save(OperationsData(), emptySet())
             forms.save(emptyList(), emptySet())
