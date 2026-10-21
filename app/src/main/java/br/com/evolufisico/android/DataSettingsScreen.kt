@@ -476,6 +476,8 @@ fun DataSettingsScreen(
         Text("Manutenção e diagnóstico",style=MaterialTheme.typography.titleLarge)
         Text("Verifique a integridade dos registros e controle o bloqueio local.",
             color=MaterialTheme.colorScheme.onSurfaceVariant)
+        BetaReadinessPanel()
+
         HorizontalDivider()
         OutlinedButton(
             enabled = !busy, onClick = {
