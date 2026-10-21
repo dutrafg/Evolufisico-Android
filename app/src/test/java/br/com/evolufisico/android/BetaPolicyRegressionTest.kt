@@ -196,4 +196,9 @@ class BetaPolicyRegressionTest {
         assertFalse(BackupStatusRules.isLate(true,-1L,1*h,0L))
     }
 
+    @Test fun alpha81ReadinessRegression() {
+        assertFalse(BetaReadiness.canRelease(BetaEvidence()))
+        assertEquals(10,BetaReadiness.criteria(BetaEvidence()).size)
+    }
+
 }
