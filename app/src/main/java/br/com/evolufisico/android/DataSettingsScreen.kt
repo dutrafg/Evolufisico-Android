@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
+import br.com.evolufisico.android.backup.BackupFileVerification
 import br.com.evolufisico.android.backup.DailyBackupScheduler
 import br.com.evolufisico.android.updates.InAppUpdatePanel
 import kotlinx.coroutines.Dispatchers
@@ -109,11 +110,18 @@ fun DataSettingsScreen(
                     try {
                         runCatching {
                             val bytes = backupManager.export(credential)
-                            context.contentResolver.openOutputStream(uri, "w")?.use { stream ->
-                                stream.write(bytes)
-                                stream.flush()
-                            } ?: throw IllegalStateException("Destino selecionado não permite gravação.")
-                            "Backup JSON salvo no local escolhido (sem senha)."
+                            try {
+                                context.contentResolver.openOutputStream(uri, "w")?.use { stream ->
+                                    stream.write(bytes)
+                                    stream.flush()
+                                } ?: error("Destino selecionado não permite gravação.")
+                                val saved=context.contentResolver.openInputStream(uri)
+                                    ?: error("O provedor salvou, mas não permite reler o arquivo.")
+                                check(BackupFileVerification.matches(saved,bytes)) {
+                                    "Backup salvo com conteúdo diferente do original. Gere outro arquivo."
+                                }
+                            } finally { bytes.fill(0) }
+                            "Backup JSON gravado e verificado por releitura (sem senha)."
                         }
                     } finally { credential.fill('\u0000') }
                 }
@@ -231,26 +239,33 @@ fun DataSettingsScreen(
                             it.uri == tree && it.isWritePermission
                         }) { "A permissão da pasta expirou. Selecione-a novamente." }
                         val bytes = backupManager.export(credential)
-                        val timestamp = LocalDateTime.now().format(
-                            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
-                        )
-                        val parent = DocumentsContract.buildDocumentUriUsingTree(
-                            tree, DocumentsContract.getTreeDocumentId(tree)
-                        )
-                        val file = DocumentsContract.createDocument(
-                            context.contentResolver, parent,
-                            "application/octet-stream",
-                            "EvoluFisico_${timestamp}.json"
-                        ) ?: error("Pasta não permite criar arquivos.")
                         try {
-                            context.contentResolver.openOutputStream(file, "w")?.use {
-                                it.write(bytes); it.flush()
-                            } ?: error("Falha ao abrir o arquivo de backup.")
-                        } catch (error: Exception) {
-                            runCatching { DocumentsContract.deleteDocument(context.contentResolver, file) }
-                            throw error
-                        }
-                        "Backup JSON criado na pasta selecionada, sem senha."
+                            val timestamp = LocalDateTime.now().format(
+                                DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
+                            )
+                            val parent = DocumentsContract.buildDocumentUriUsingTree(
+                                tree, DocumentsContract.getTreeDocumentId(tree)
+                            )
+                            val file = DocumentsContract.createDocument(
+                                context.contentResolver, parent,
+                                "application/octet-stream",
+                                "EvoluFisico_${timestamp}.json"
+                            ) ?: error("Pasta não permite criar arquivos.")
+                            try {
+                                context.contentResolver.openOutputStream(file, "w")?.use {
+                                    it.write(bytes); it.flush()
+                                } ?: error("Falha ao abrir o arquivo de backup.")
+                                val saved=context.contentResolver.openInputStream(file)
+                                    ?: error("O arquivo foi gravado, mas não pôde ser relido.")
+                                check(BackupFileVerification.matches(saved,bytes)) {
+                                    "O backup na pasta não corresponde ao arquivo original."
+                                }
+                            } catch (error: Exception) {
+                                runCatching { DocumentsContract.deleteDocument(context.contentResolver, file) }
+                                throw error
+                            }
+                        } finally { bytes.fill(0) }
+                        "Backup JSON criado e verificado na pasta selecionada (sem senha)."
                     }
                 } finally { credential.fill('\u0000') }
             }
