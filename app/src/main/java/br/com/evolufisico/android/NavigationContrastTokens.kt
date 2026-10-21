@@ -17,10 +17,14 @@ data class NavigationContrastPaint(
 object NavigationContrastTokens {
     fun forScheme(scheme:ColorScheme):NavigationContrastPaint {
         val isDark=VisualTokens.dark(scheme)
+        // O acento laranja legado fica ligeiramente abaixo de 4,5:1
+        // sobre o contêiner claro; priorizar texto legível nesses casos.
+        val selectedInk=if(contrast(scheme.onPrimaryContainer,scheme.primaryContainer)>=4.5)
+            scheme.onPrimaryContainer else scheme.onSurface
         return NavigationContrastPaint(
             background=if(isDark) Color(0xFF1D2C40) else Color(0xFFE9EFF7),
             selectedBackground=scheme.primaryContainer,
-            selectedInk=scheme.onPrimaryContainer,
+            selectedInk=selectedInk,
             inactiveInk=scheme.onSurfaceVariant
         )
     }
