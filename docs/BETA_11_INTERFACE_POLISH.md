@@ -30,6 +30,12 @@ São verificações repetidas de invariantes dos breakpoints, cor de superfície
 **Não são 100 mil etapas manuais, renders de tela, correções visuais, ou testes reais do Compose**.
 A matriz não demonstra ausência de cortes de texto, contraste WCAG ou acessibilidade TalkBack.
 
+## Smoke de UI em Compose
+- Dois testes instrumentados adicionais no emulador, com árvore semântica, ações e
+  renderização real para um cartão favorito e o calendário em um container de 320 dp.
+- A captura para memória comprova desenho de superfície; não há validação
+  visual manual, de snapshots dourados ou de densidades reais.
+
 ## Critérios de aceite ainda exigidos
 - [ ] CI build + unit tests + Android Lint no commit Beta 11.
 - [ ] Emulador Android 10 e testes instrumentados.
