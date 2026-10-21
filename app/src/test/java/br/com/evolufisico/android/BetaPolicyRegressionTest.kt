@@ -181,4 +181,9 @@ class BetaPolicyRegressionTest {
         assertTrue(BackupStatusRules.isLate(true,150*h,100*h,0L))
     }
 
+    @Test fun alpha78ReadinessRegression() {
+        val h=3_600_000L
+        assertFalse(BackupStatusRules.isLate(true,135*h,100*h,0L))
+    }
+
 }
