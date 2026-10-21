@@ -8,6 +8,10 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.unit.Density
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -32,6 +36,15 @@ import java.time.LocalDate
 class Beta11ComposeVisualTest {
     @get:Rule val rule=createComposeRule()
 
+    /** Guarda capturas reais do emulador sem usar dados pessoais. */
+    private fun saveCapture(name:String) {
+        val directory=File(InstrumentationRegistry.getInstrumentation()
+            .targetContext.getExternalFilesDir(null),"visual-qa")
+        directory.mkdirs()
+        val image=rule.onRoot().captureToImage().asAndroidBitmap()
+        File(directory,name).outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) }
+    }
+
     @Test fun favoriteTileRendersAndHasIndependentRemoveAction() {
         var removed=0
         var opened=0
@@ -53,6 +66,7 @@ class Beta11ComposeVisualTest {
         }
         val captured=rule.onRoot().captureToImage()
         assertTrue(captured.width>0&&captured.height>0)
+        saveCapture("modulo-favorito.png")
     }
 
     @Test fun calendarSevenColumnsHaveDistinctCoordinatesAtLargeFontScale() {
@@ -76,6 +90,7 @@ class Beta11ComposeVisualTest {
             positions.last()-positions.first() >= 250.dp)
         val captured=rule.onRoot().captureToImage()
         assertTrue(captured.width>0 && captured.height>0)
+        saveCapture("agenda-fonte-160-claro.png")
     }
 
     @Test fun calendarOnNarrowPhoneHasAccessibleTodayAndNavigation() {
@@ -93,5 +108,6 @@ class Beta11ComposeVisualTest {
         rule.runOnIdle { assertEquals(LocalDate.now(),chosen) }
         val captured=rule.onRoot().captureToImage()
         assertTrue(captured.width>0&&captured.height>0)
+        saveCapture("agenda-320-escuro.png")
     }
 }
