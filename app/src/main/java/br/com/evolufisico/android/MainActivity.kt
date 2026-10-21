@@ -322,6 +322,7 @@ private fun AppContent(
         }
     }
 
+    val navigationPaint=NavigationContrastTokens.forScheme(MaterialTheme.colorScheme)
     Scaffold(
         containerColor=MaterialTheme.colorScheme.background,
         topBar = {
@@ -349,7 +350,7 @@ private fun AppContent(
         },
         bottomBar = {
             if (!useRail) NavigationBar(
-                containerColor=MaterialTheme.colorScheme.surface,
+                containerColor=navigationPaint.background,
                 tonalElevation=2.dp
             ) {
                 listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
@@ -360,7 +361,11 @@ private fun AppContent(
                         icon = { Icon(section.icon, contentDescription = null) },
                         label = { Text(section.title, maxLines = 1) },
                         colors=NavigationBarItemDefaults.colors(
-                            indicatorColor=MaterialTheme.colorScheme.primaryContainer)
+                            selectedIconColor=navigationPaint.selectedInk,
+                            selectedTextColor=navigationPaint.selectedInk,
+                            unselectedIconColor=navigationPaint.inactiveInk,
+                            unselectedTextColor=navigationPaint.inactiveInk,
+                            indicatorColor=navigationPaint.selectedBackground)
                     )
                 }
             }
@@ -369,7 +374,7 @@ private fun AppContent(
     ) { insets ->
         Row(modifier = Modifier.fillMaxSize().padding(insets)) {
             if (useRail) {
-                NavigationRail(containerColor=MaterialTheme.colorScheme.surface) {
+                NavigationRail(containerColor=navigationPaint.background) {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                     listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
                         Section.BILLING, Section.MODULES, Section.SETTINGS).forEach { section ->
@@ -379,7 +384,11 @@ private fun AppContent(
                             icon = { Icon(section.icon, contentDescription = section.title) },
                             label = { Text(section.title, maxLines = 1) },
                             colors=NavigationRailItemDefaults.colors(
-                                indicatorColor=MaterialTheme.colorScheme.primaryContainer)
+                                selectedIconColor=navigationPaint.selectedInk,
+                                selectedTextColor=navigationPaint.selectedInk,
+                                unselectedIconColor=navigationPaint.inactiveInk,
+                                unselectedTextColor=navigationPaint.inactiveInk,
+                                indicatorColor=navigationPaint.selectedBackground)
                         )
                     }
                     }
