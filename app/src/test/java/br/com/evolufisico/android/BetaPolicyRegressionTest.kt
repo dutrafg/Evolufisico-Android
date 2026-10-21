@@ -27,4 +27,9 @@ class BetaPolicyRegressionTest {
         assertEquals(4,ReleasePolicy.parse("1.0.0-beta4")?.channelNumber)
     }
 
+    @Test fun alpha45ReleaseRegression() {
+        assertEquals(2,ReleasePolicy.parse("v1.0.0-rc.2")?.channel)
+        assertEquals(2,ReleasePolicy.parse("v1.0.0-rc.2")?.channelNumber)
+    }
+
 }
