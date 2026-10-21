@@ -87,6 +87,8 @@ import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientSearch
 import br.com.evolufisico.android.data.ClientRules
+import br.com.evolufisico.android.data.PreRegistration
+import br.com.evolufisico.android.data.PreRegistrationRules
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.billing.EncryptedChargeStore
@@ -293,6 +295,48 @@ private fun AppContent(
         }
     }
 
+    /** Cadastro de pré-registro idempotente: o ID do rascunho vira ID do cliente. */
+    fun completePreRegistration(draft:PreRegistration,report:(Boolean,String?)->Unit) {
+        if(saving || loading || storageError!=null) {
+            report(false,"Armazenamento ocupado ou indisponível.")
+            return
+        }
+        saving=true
+        scope.launch {
+            val outcome=withContext(Dispatchers.IO) {
+                runCatching {
+                    PreRegistrationRules.validate(draft)?.let { error(it) }
+                    val current=repository.load()
+                    val client=Client(draft.id,draft.name,draft.phone,draft.email)
+                    val existing=current.firstOrNull { it.id==draft.id }
+                    if(existing!=null) {
+                        require(existing==client) {
+                            "Já existe outro cliente com o mesmo identificador."
+                        }
+                        current
+                    } else {
+                        require(current.none { it.email.isNotBlank() &&
+                            it.email.equals(client.email,ignoreCase=true) }) {
+                            "Já existe um cliente com este e-mail."
+                        }
+                        require(ClientRules.validateContact(client)==null) {
+                            "Contato inválido para cadastro definitivo."
+                        }
+                        (current+client).also { repository.save(it) }
+                    }
+                }
+            }
+            outcome.onSuccess {
+                clients.clear()
+                clients.addAll(it)
+                report(true,null)
+            }.onFailure {
+                report(false,it.message ?: "Falha ao gravar cliente.")
+            }
+            saving=false
+        }
+    }
+
     Scaffold(
         containerColor=MaterialTheme.colorScheme.background,
         topBar = {
@@ -365,7 +409,9 @@ private fun AppContent(
             } else {
                 when (current) {
                     Section.HOME -> HomeScreen(clients.size, backupManager,
-                        favorites,::updateFavorites,onNavigate = { launchFavorite(it.name) })
+                        favorites,::updateFavorites,
+                        onCompleteDraft=::completePreRegistration,
+                        onNavigate = { launchFavorite(it.name) })
                     Section.MODULES -> ModuleDirectoryScreen(favorites,::updateFavorites) { key ->
                         clearQuickLaunch()
                         Section.entries.firstOrNull { it.name == key }?.let { current = it }
@@ -429,8 +475,10 @@ private fun AppContent(
 @Composable
 private fun HomeScreen(clientCount: Int,backupManager:SecureBackupManager,
     favoriteRoutes:Set<String>,onFavoritesChange:(Set<String>)->Unit,
+    onCompleteDraft:(PreRegistration,(Boolean,String?)->Unit)->Unit,
     onNavigate:(Section)->Unit) {
-    WorkspaceHomeScreen(clientCount,backupManager,favoriteRoutes,onFavoritesChange) { key ->
+    WorkspaceHomeScreen(clientCount,backupManager,favoriteRoutes,onFavoritesChange,
+        onCompleteDraft=onCompleteDraft) { key ->
         Section.entries.firstOrNull { it.name == key }?.let(onNavigate)
     }
 }
