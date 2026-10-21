@@ -122,4 +122,9 @@ class BetaPolicyRegressionTest {
         assertEquals(filled,WorkspaceFavorites.toggle(filled,"SERVICES"))
     }
 
+    @Test fun alpha65PolicyRegression() {
+        val before=linkedSetOf("GOALS","FORMS")
+        assertEquals(listOf("FORMS","GOALS"),WorkspaceFavorites.move(before,"FORMS",-1).toList())
+    }
+
 }
