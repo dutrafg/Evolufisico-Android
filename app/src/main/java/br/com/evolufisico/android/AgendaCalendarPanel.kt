@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -62,46 +66,71 @@ fun AgendaCalendarPanel(
                     Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês")
                 }
             }
-            Row(Modifier.fillMaxWidth()) {
-                listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom").forEach { day ->
-                    Text(day,modifier=Modifier.weight(1f),textAlign=TextAlign.Center,
-                        style=MaterialTheme.typography.labelSmall)
-                }
-            }
-            weeks.forEach { week ->
-                Row(Modifier.fillMaxWidth()) {
-                    week.forEach { cell ->
-                        if (cell == null) {
-                            Text("",modifier=Modifier.weight(1f))
-                        } else {
-                            val chosen=selected==cell.date
-                            val today=cell.date==LocalDate.now()
-                            TextButton(
-                                onClick={onSelect(if(chosen) null else cell.date)},
-                                modifier=Modifier.weight(1f).heightIn(min=44.dp),
-                                shape=RoundedCornerShape(8.dp),
-                                colors=ButtonDefaults.textButtonColors(
-                                    containerColor=if(chosen) MaterialTheme.colorScheme.primaryContainer
-                                        else Color.Transparent),
-                                contentPadding=PaddingValues(0.dp)
-                            ) {
-                                Text(
-                                    cell.date.dayOfMonth.toString()+
-                                        (if(cell.scheduled>0)" •" else ""),
-                                    color=if(chosen) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else if(today) MaterialTheme.colorScheme.tertiary
-                                        else MaterialTheme.colorScheme.onSurface,
-                                    style=if(chosen)MaterialTheme.typography.labelLarge
-                                        else MaterialTheme.typography.labelSmall,
-                                    textAlign=TextAlign.Center
-                                )
+            // Rolagem sincronizada do cabeçalho e das datas no celular estreito.
+            Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                Column(Modifier.widthIn(min=350.dp),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth()) {
+                        listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom").forEach { day ->
+                            Text(day,modifier=Modifier.weight(1f),
+                                textAlign=TextAlign.Center,
+                                style=MaterialTheme.typography.labelSmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    weeks.forEach { week ->
+                        Row(Modifier.fillMaxWidth()) {
+                            week.forEach { cell ->
+                                if(cell==null) {
+                                    Spacer(Modifier.weight(1f).height(48.dp))
+                                } else {
+                                    val chosen=selected==cell.date
+                                    val today=cell.date==LocalDate.now()
+                                    val spokenDate=cell.date.format(
+                                        DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy",locale))
+                                    val accessibleDate=buildString {
+                                        append(spokenDate)
+                                        if(today) append(", hoje")
+                                        if(chosen) append(", selecionado")
+                                        if(cell.scheduled>0) {
+                                            append(", ")
+                                            append(cell.scheduled)
+                                            append(" atendimento(s)")
+                                        }
+                                    }
+                                    TextButton(
+                                        onClick={onSelect(if(chosen) null else cell.date)},
+                                        modifier=Modifier.weight(1f).heightIn(min=48.dp)
+                                            .semantics { contentDescription=accessibleDate },
+                                        shape=RoundedCornerShape(10.dp),
+                                        colors=ButtonDefaults.textButtonColors(
+                                            containerColor=when {
+                                                chosen -> MaterialTheme.colorScheme.primaryContainer
+                                                today -> MaterialTheme.colorScheme.surfaceVariant
+                                                else -> Color.Transparent
+                                            }),
+                                        contentPadding=PaddingValues(0.dp)
+                                    ) {
+                                        Text(cell.date.dayOfMonth.toString()+
+                                            (if(cell.scheduled>0)" •" else ""),
+                                            color=when {
+                                                chosen -> MaterialTheme.colorScheme.onPrimaryContainer
+                                                today -> MaterialTheme.colorScheme.primary
+                                                else -> MaterialTheme.colorScheme.onSurface
+                                            },
+                                            style=if(chosen||today)MaterialTheme.typography.labelLarge
+                                                else MaterialTheme.typography.labelSmall,
+                                            textAlign=TextAlign.Center)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
             Text("• = atendimento agendado · "+AgendaCalendar.active(month,appointments)+
-                " ativos no mês",style=MaterialTheme.typography.bodySmall)
+                " ativos no mês",style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(selected!=null) {
                 Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                     Text("Selecionado: "+selected,

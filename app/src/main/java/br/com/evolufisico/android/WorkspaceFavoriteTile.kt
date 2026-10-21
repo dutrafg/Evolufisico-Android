@@ -1,5 +1,6 @@
 package br.com.evolufisico.android
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Star
@@ -19,27 +20,36 @@ object WorkspaceHomeModules {
 @Composable
 fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
     onOpen:()->Unit,onRemove:()->Unit) {
-    Card(modifier=modifier.heightIn(min=168.dp),onClick=onOpen,
+    val accent=VisualTokens.metric(
+        VisualTokens.metricIndexForRoute(entry.route),
+        VisualTokens.dark(MaterialTheme.colorScheme))
+    Card(modifier=modifier.heightIn(min=196.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         elevation=CardDefaults.cardElevation(defaultElevation=1.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement=Arrangement.spacedBy(10.dp)) {
+            verticalArrangement=Arrangement.spacedBy(9.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Text(entry.title,modifier=Modifier.weight(1f),
-                    style=MaterialTheme.typography.titleSmall,
-                    fontWeight=FontWeight.SemiBold,maxLines=2,
-                    overflow=TextOverflow.Ellipsis)
-                IconButton(onClick=onRemove) {
+                Box(Modifier.size(44.dp).background(accent.background,RoundedCornerShape(12.dp)),
+                    contentAlignment=Alignment.Center) {
+                    Icon(WorkspaceModuleArtwork.icon(entry.route),contentDescription=null,
+                        tint=accent.ink,modifier=Modifier.size(24.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick=onRemove,modifier=Modifier.size(48.dp)) {
                     Icon(Icons.Outlined.Star,
-                        contentDescription="Desfavoritar "+entry.title+" e devolver ao catálogo",
+                        contentDescription="Remover "+entry.title+" dos favoritos",
                         tint=MaterialTheme.colorScheme.primary)
                 }
             }
+            Text(entry.title,style=MaterialTheme.typography.titleSmall,
+                fontWeight=FontWeight.SemiBold,maxLines=2,
+                overflow=TextOverflow.Ellipsis)
             Text(entry.subtitle,style=MaterialTheme.typography.bodySmall,
                 maxLines=2,overflow=TextOverflow.Ellipsis,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.End) {
                 Text(QuickLaunchRules.label(entry.route),
                     style=MaterialTheme.typography.labelMedium,
                     maxLines=2,overflow=TextOverflow.Ellipsis,

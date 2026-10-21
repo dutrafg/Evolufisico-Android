@@ -81,6 +81,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientSearch
@@ -297,9 +298,10 @@ private fun AppContent(
             CenterAlignedTopAppBar(
                 title = { Text(if (current == Section.HOME) "EvoluFísico" else current.title,
                     fontWeight = FontWeight.Bold,
-                    color=MaterialTheme.colorScheme.primary) },
+                    color=MaterialTheme.colorScheme.primary,
+                    maxLines=1,overflow=TextOverflow.Ellipsis) },
                 colors=TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor=MaterialTheme.colorScheme.background),
+                    containerColor=MaterialTheme.colorScheme.surface),
                 navigationIcon = {
                     if(current!=Section.HOME) IconButton(onClick=::goBack) {
                         Icon(Icons.Outlined.ArrowBack,contentDescription="Voltar")

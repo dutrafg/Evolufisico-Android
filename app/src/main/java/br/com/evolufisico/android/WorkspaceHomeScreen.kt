@@ -290,16 +290,35 @@ fun WorkspaceHomeScreen(
                 fontWeight=FontWeight.SemiBold)
         }
         item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),onClick={onNavigate("CLIENTS")}) {
-                    Icon(Icons.Outlined.People,contentDescription=null)
-                    Spacer(Modifier.size(6.dp))
-                    Text("Clientes")
+            if(screenWidthDp<360) {
+                Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Button(modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),
+                        onClick={onNavigate("CLIENTS")}) {
+                        Icon(Icons.Outlined.People,contentDescription=null)
+                        Spacer(Modifier.size(6.dp))
+                        Text("Clientes")
+                    }
+                    Button(modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),
+                        onClick={onNavigate("AGENDA")}) {
+                        Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
+                        Spacer(Modifier.size(6.dp))
+                        Text("Agenda")
+                    }
                 }
-                Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),onClick={onNavigate("AGENDA")}) {
-                    Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
-                    Spacer(Modifier.size(6.dp))
-                    Text("Agenda")
+            } else {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),
+                        onClick={onNavigate("CLIENTS")}) {
+                        Icon(Icons.Outlined.People,contentDescription=null)
+                        Spacer(Modifier.size(6.dp))
+                        Text("Clientes")
+                    }
+                    Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),
+                        onClick={onNavigate("AGENDA")}) {
+                        Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
+                        Spacer(Modifier.size(6.dp))
+                        Text("Agenda")
+                    }
                 }
             }
         }

@@ -212,18 +212,7 @@ private fun ModuleTile(
     onOpen:()->Unit,onFavorite:()->Unit,canFavorite:Boolean,
     onUp:(()->Unit)?=null,onDown:(()->Unit)?=null
 ) {
-    val icon=when(module.route) {
-        "ASSESSMENTS" -> Icons.Outlined.Assignment
-        "FORMS" -> Icons.Outlined.Description
-        "EVOLUTION","TRENDS" -> Icons.Outlined.Insights
-        "GOALS" -> Icons.Outlined.Flag
-        "NOTES" -> Icons.Outlined.NoteAlt
-        "SERVICES" -> Icons.Outlined.FitnessCenter
-        "INSIGHTS" -> Icons.Outlined.QueryStats
-        "SEARCH" -> Icons.Outlined.Search
-        "REPORTS" -> Icons.Outlined.Summarize
-        else -> Icons.Outlined.Groups
-    }
+    val icon=WorkspaceModuleArtwork.icon(module.route)
     Card(modifier=modifier.heightIn(min=176.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         elevation=CardDefaults.cardElevation(defaultElevation=1.dp),
@@ -256,13 +245,13 @@ private fun ModuleTile(
             if(onUp!=null||onDown!=null) {
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
                     IconButton(onClick={onUp?:{}},enabled=onUp!=null,
-                        modifier=Modifier.size(30.dp)) {
-                        Icon(Icons.Outlined.ArrowUpward,contentDescription="Subir favorito",
+                        modifier=Modifier.size(48.dp)) {
+                        Icon(Icons.Outlined.ArrowUpward,contentDescription="Mover favorito para cima",
                             modifier=Modifier.size(18.dp))
                     }
                     IconButton(onClick={onDown?:{}},enabled=onDown!=null,
-                        modifier=Modifier.size(30.dp)) {
-                        Icon(Icons.Outlined.ArrowDownward,contentDescription="Descer favorito",
+                        modifier=Modifier.size(48.dp)) {
+                        Icon(Icons.Outlined.ArrowDownward,contentDescription="Mover favorito para baixo",
                             modifier=Modifier.size(18.dp))
                     }
                 }

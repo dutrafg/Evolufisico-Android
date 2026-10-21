@@ -263,7 +263,8 @@ fun DataSettingsScreen(
     Column(
         modifier=Modifier.widthIn(max=VisualTokens.contentMaxWidthDp.dp)
             .fillMaxWidth().fillMaxHeight()
-            .verticalScroll(rememberScrollState()).padding(20.dp),
+            .verticalScroll(rememberScrollState()).padding(VisualLayout.edgePaddingDp(
+                LocalConfiguration.current.screenWidthDp).dp),
         verticalArrangement=Arrangement.spacedBy(18.dp)
     ) {
         Text("Gerencie o ambiente, proteja seus dados e execute a manutenção.",
@@ -280,9 +281,23 @@ fun DataSettingsScreen(
         HorizontalDivider()
         if (settingsPage=="geral") {
             Text("Geral", style = MaterialTheme.typography.titleLarge)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Modo escuro", style = MaterialTheme.typography.titleMedium)
-                Switch(checked = darkMode, onCheckedChange = onDarkModeChange)
+            Card(modifier=Modifier.fillMaxWidth(),
+                shape=androidx.compose.foundation.shape.RoundedCornerShape(
+                    VisualTokens.cardRadiusDp.dp),
+                colors=androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor=MaterialTheme.colorScheme.surface)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement=Arrangement.SpaceBetween,
+                    verticalAlignment=Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                        Text("Modo escuro", style=MaterialTheme.typography.titleMedium)
+                        Text("Ajusta o contraste de toda a interface.",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.size(12.dp))
+                    Switch(checked=darkMode,onCheckedChange=onDarkModeChange)
+                }
             }
             Text("Paleta de cores",style=MaterialTheme.typography.titleMedium)
             Text("Escolha entre 10 cores. A preferência é salva automaticamente.",

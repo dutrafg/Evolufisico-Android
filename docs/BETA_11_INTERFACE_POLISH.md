@@ -15,6 +15,16 @@
 - Resumo por cliente, Indicadores, Comparativos e Busca global também usam largura centrada e margens adaptativas.
 - Novos testes de regressão para telas estreitas e matriz de **100.000 combinações lógicas** (1000 larguras × 10 paletas × 2 temas × 5 escalas de fonte).
 
+## Continuação: navegação e acessibilidade
+- Calendário com sete células de pelo menos 48 dp e rolagem horizontal conjunta
+  no caso de telas pequenas; o TalkBack anuncia data, hoje, seleção e atendimentos.
+- O dia atual recebe fundo distinto, sem se confundir com o dia selecionado.
+- Atalhos de Clientes e Agenda ficam em coluna em telas estreitas.
+- Favoritos exibem pictogramas e fundos coerentes com os do catálogo;
+  controles de favoritos e de reordenação têm áreas de toque de 48 dp.
+- Configurações com cartão dedicado ao modo escuro e margens adaptativas.
+- Barra superior com título truncado e superfície uniforme.
+
 ## Alcance da matriz automatizada
 São verificações repetidas de invariantes dos breakpoints, cor de superfície e seleções.
 **Não são 100 mil etapas manuais, renders de tela, correções visuais, ou testes reais do Compose**.
