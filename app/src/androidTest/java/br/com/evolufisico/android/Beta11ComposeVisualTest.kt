@@ -9,9 +9,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import android.graphics.Bitmap
+import android.content.ContentValues
+import android.provider.MediaStore
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.platform.app.InstrumentationRegistry
-import java.io.File
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -36,13 +37,32 @@ import java.time.LocalDate
 class Beta11ComposeVisualTest {
     @get:Rule val rule=createComposeRule()
 
-    /** Guarda capturas reais do emulador sem usar dados pessoais. */
+    /** MediaStore mantém os PNGs após o Gradle desinstalar o APK de testes. */
     private fun saveCapture(name:String) {
-        val directory=File(InstrumentationRegistry.getInstrumentation()
-            .targetContext.getExternalFilesDir(null),"visual-qa")
-        directory.mkdirs()
-        val image=rule.onRoot().captureToImage().asAndroidBitmap()
-        File(directory,name).outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) }
+        val resolver=InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+        val values=ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME,name)
+            put(MediaStore.Images.Media.MIME_TYPE,"image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/EvoluFisico-Beta11-QA")
+            put(MediaStore.Images.Media.IS_PENDING,1)
+        }
+        val uri=resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values)
+            ?: error("Não foi possível criar imagem de QA.")
+        try {
+            val image=rule.onRoot().captureToImage().asAndroidBitmap()
+            resolver.openOutputStream(uri,"w")?.use { out ->
+                check(image.compress(Bitmap.CompressFormat.PNG,100,out)) {
+                    "Falha ao codificar captura de QA."
+                }
+            } ?: error("Não foi possível gravar captura de QA.")
+            val ready=ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING,0) }
+            check(resolver.update(uri,ready,null,null)>0) {
+                "Não foi possível finalizar captura de QA."
+            }
+        } catch(error:Exception) {
+            resolver.delete(uri,null,null)
+            throw error
+        }
     }
 
     @Test fun favoriteTileRendersAndHasIndependentRemoveAction() {
