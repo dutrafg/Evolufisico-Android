@@ -12,8 +12,8 @@ android {
         applicationId = "br.com.evolufisico.android"
         minSdk = 29 // Android 10+
         targetSdk = 35
-        versionCode = 131
-        versionName = "26.0.0-alpha.26"
+        versionCode = 132
+        versionName = "27.0.0-alpha.27"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -30,7 +30,7 @@ android {
     buildTypes {
         debug {
             // APK de homologação paralelo: mantém intacto o aplicativo oficial.
-            applicationIdSuffix = ".alpha26"
+            applicationIdSuffix = ".alpha27"
             versionNameSuffix = "-preview"
         }
         release {

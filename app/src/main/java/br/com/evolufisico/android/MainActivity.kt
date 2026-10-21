@@ -89,24 +89,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
-private val brandBlue = Color(0xFF195AA2)
-private val lightScheme = lightColorScheme(
-    primary=brandBlue,onPrimary=Color.White,
-    secondary=Color(0xFF43688F),onSecondary=Color.White,
-    background=Color(0xFFF7F9FC),onBackground=Color(0xFF162238),
-    surface=Color.White,onSurface=Color(0xFF162238),
-    surfaceVariant=Color(0xFFE9EFF7),onSurfaceVariant=Color(0xFF50617A),
-    outline=Color(0xFFBBCADA),outlineVariant=Color(0xFFE0E7F0),
-    primaryContainer=Color(0xFFE4F0FC),onPrimaryContainer=Color(0xFF183D6E)
-)
-private val darkScheme = darkColorScheme(
-    primary=Color(0xFFAACDFF),onPrimary=Color(0xFF063665),
-    background=Color(0xFF101825),onBackground=Color(0xFFE7ECF5),
-    surface=Color(0xFF172335),onSurface=Color(0xFFE7ECF5),
-    surfaceVariant=Color(0xFF253449),onSurfaceVariant=Color(0xFFBBC9DC),
-    outline=Color(0xFF708298),outlineVariant=Color(0xFF3D4A5E),
-    primaryContainer=Color(0xFF17406D),onPrimaryContainer=Color(0xFFD2E4FF)
-)
 private val corporateShapes=Shapes(
     extraSmall=RoundedCornerShape(6.dp),
     small=RoundedCornerShape(10.dp),
@@ -156,8 +138,11 @@ class MainActivity : ComponentActivity() {
         val themePrefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
         setContent {
             var darkMode by remember { mutableStateOf(themePrefs.getBoolean("dark_mode", false)) }
+            var paletteId by remember {
+                mutableStateOf(themePrefs.getString("palette_color", "azul") ?: "azul")
+            }
             MaterialTheme(
-                colorScheme=if(darkMode) darkScheme else lightScheme,
+                colorScheme=CorporatePalettes.scheme(paletteId,darkMode),
                 shapes=corporateShapes
             ) {
                 if (!session.unlocked) {
@@ -178,6 +163,11 @@ class MainActivity : ComponentActivity() {
                     onDarkModeChange = {
                         darkMode = it
                         themePrefs.edit().putBoolean("dark_mode", it).apply()
+                    },
+                    paletteId=paletteId,
+                    onPaletteChange={
+                        paletteId=it
+                        themePrefs.edit().putString("palette_color",it).apply()
                     }
                 )
                 }
@@ -202,7 +192,9 @@ private fun AppContent(
     onDocumentFlow: (Boolean) -> Unit,
     onLock: () -> Unit,
     darkMode: Boolean,
-    onDarkModeChange: (Boolean) -> Unit
+    onDarkModeChange: (Boolean) -> Unit,
+    paletteId:String,
+    onPaletteChange:(String)->Unit
 ) {
     var current by remember { mutableStateOf(Section.HOME) }
     val appContext=LocalContext.current
@@ -368,7 +360,8 @@ private fun AppContent(
                     Section.EVOLUTION -> EvolutionScreen(clients.toList(), assessmentRepository, onDocumentFlow)
                     Section.BILLING -> BillingScreen(clients.toList(), chargeRepository, operationalRepository, onDocumentFlow)
                     Section.SETTINGS -> DataSettingsScreen(
-                        darkMode, onDarkModeChange, backupManager, onDocumentFlow, onLock
+                        darkMode, onDarkModeChange, paletteId,onPaletteChange,
+                        backupManager,onDocumentFlow,onLock
                     ) { snapshot ->
                         clients.clear()
                         clients.addAll(snapshot.clients)

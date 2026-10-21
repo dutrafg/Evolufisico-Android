@@ -7,6 +7,17 @@ import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +60,8 @@ import java.time.format.DateTimeFormatter
 fun DataSettingsScreen(
     darkMode: Boolean,
     onDarkModeChange: (Boolean) -> Unit,
+    paletteId:String,
+    onPaletteChange:(String)->Unit,
     backupManager: SecureBackupManager,
     onDocumentFlow: (Boolean) -> Unit,
     onLock: () -> Unit,
@@ -63,7 +76,7 @@ fun DataSettingsScreen(
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirmation by remember { mutableStateOf(false) }
-    var privacyOpen by remember { mutableStateOf(false) }
+    var settingsPage by remember { mutableStateOf("geral") }
     val dailyScheduler = remember(context) { DailyBackupScheduler(context.applicationContext) }
     var daily by remember { mutableStateOf(dailyScheduler.state()) }
     var preferredHour by remember { mutableStateOf(daily.hour) }
@@ -246,19 +259,54 @@ fun DataSettingsScreen(
         }
     }
 
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        modifier=Modifier.widthIn(max=920.dp).fillMaxWidth().fillMaxHeight()
+            .verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement=Arrangement.spacedBy(14.dp)
     ) {
-        if (!privacyOpen) {
-            Text("Configurações", style = MaterialTheme.typography.headlineSmall)
-            Text("Preferências", style = MaterialTheme.typography.titleLarge)
+        Text("Configurações",style=MaterialTheme.typography.headlineSmall)
+        Text("Gerencie o ambiente, proteja seus dados e execute a manutenção.",
+            style=MaterialTheme.typography.bodyMedium,
+            color=MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            listOf("geral" to "Geral","dados" to "Dados e privacidade",
+                "manutencao" to "Manutenção").forEach { (id,label) ->
+                FilterChip(selected=settingsPage==id,onClick={settingsPage=id},
+                    label={Text(label)})
+            }
+        }
+        HorizontalDivider()
+        if (settingsPage=="geral") {
+            Text("Geral", style = MaterialTheme.typography.titleLarge)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Modo escuro", style = MaterialTheme.typography.titleMedium)
                 Switch(checked = darkMode, onCheckedChange = onDarkModeChange)
             }
+            Text("Paleta de cores",style=MaterialTheme.typography.titleMedium)
+            Text("Escolha entre 10 cores. A preferência é salva automaticamente.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
+            val colorColumns=if(LocalConfiguration.current.screenWidthDp>=700) 5 else 2
+            CorporatePalettes.options.chunked(colorColumns).forEach { paletteRow ->
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    paletteRow.forEach { palette ->
+                        FilterChip(
+                            selected=paletteId==palette.id,
+                            onClick={onPaletteChange(palette.id)},
+                            modifier=Modifier.weight(1f),
+                            label={Text(palette.label,maxLines=1)},
+                            leadingIcon={
+                                Box(Modifier.size(16.dp).background(palette.bright,CircleShape))
+                            }
+                        )
+                    }
+                    repeat(colorColumns-paletteRow.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
             HorizontalDivider()
-            Card(onClick = { privacyOpen = true }, modifier = Modifier.fillMaxWidth()) {
+            Card(onClick = { settingsPage="dados" }, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Dados e Privacidade", style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary)
@@ -276,8 +324,8 @@ fun DataSettingsScreen(
             Text("Alpha 2 · ciclo de desenvolvimento",
                 style = MaterialTheme.typography.bodySmall)
         } else {
-        TextButton(onClick = { privacyOpen = false }) { Text("← Voltar às configurações") }
-        Text("Dados e Privacidade", style = MaterialTheme.typography.headlineSmall)
+        if(settingsPage=="dados") {
+        Text("Dados e privacidade",style=MaterialTheme.typography.titleLarge)
         Text("Armazenamento local", style = MaterialTheme.typography.titleLarge)
         Text("Versão alpha: clientes, avaliações, formulários e cobranças são salvos em " +
             "JSON local legível. Novos backups JSON não usam senha. Evite dados sensíveis reais.",
@@ -424,6 +472,11 @@ fun DataSettingsScreen(
         ) { Text("Restaurar backup .json ou .efbak") }
         if (busy) Text("Processando arquivo. Não feche o aplicativo.")
         message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        }
+        if(settingsPage=="manutencao") {
+        Text("Manutenção e diagnóstico",style=MaterialTheme.typography.titleLarge)
+        Text("Verifique a integridade dos registros e controle o bloqueio local.",
+            color=MaterialTheme.colorScheme.onSurfaceVariant)
         HorizontalDivider()
         OutlinedButton(
             enabled = !busy, onClick = {
@@ -452,7 +505,7 @@ fun DataSettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedButton(enabled = !busy, onClick = onLock,
             modifier = Modifier.fillMaxWidth()) { Text("Bloquear aplicativo agora") }
-        Text("Alpha 2 · Dados e Privacidade", style = MaterialTheme.typography.bodySmall)
+        Text("Manutenção · EvoluFísico Android",style=MaterialTheme.typography.bodySmall)
         Text(
             "Backup automático usa WorkManager e JSON sem senha durante a fase alpha. " +
             "Não existe sincronização própria com nuvem ou garantia de execução no minuto exato.",
@@ -460,6 +513,8 @@ fun DataSettingsScreen(
             style = MaterialTheme.typography.bodySmall
         )
         }
+        }
+    }
     }
     if (showRestoreConfirmation) {
         AlertDialog(
