@@ -70,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -204,6 +205,17 @@ private fun AppContent(
     onDarkModeChange: (Boolean) -> Unit
 ) {
     var current by remember { mutableStateOf(Section.HOME) }
+    val appContext=LocalContext.current
+    val shortcutPrefs=remember(appContext) {
+        appContext.getSharedPreferences("module_shortcuts",android.content.Context.MODE_PRIVATE)
+    }
+    var favorites by remember(shortcutPrefs) {
+        mutableStateOf(WorkspaceFavorites.parse(shortcutPrefs.getString("routes","").orEmpty()))
+    }
+    fun updateFavorites(next:Set<String>) {
+        favorites=next
+        shortcutPrefs.edit().putString("routes",WorkspaceFavorites.serialize(next)).apply()
+    }
     val clients = remember { mutableStateListOf<Client>() }
     var loading by remember { mutableStateOf(true) }
     var storageError by remember { mutableStateOf<String?>(null) }
@@ -288,10 +300,8 @@ private fun AppContent(
             if (!useRail) NavigationBar(
                 containerColor=MaterialTheme.colorScheme.surface
             ) {
-                Section.entries.filter {
-                    it in listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
-                        Section.BILLING, Section.MODULES)
-                }.forEach { section ->
+                listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
+                    Section.BILLING, Section.MODULES).forEach { section ->
                     NavigationBarItem(
                         selected = WorkspaceNavigation.bottomSelection(current.name)==section.name,
                         onClick = { current = section },
@@ -307,10 +317,8 @@ private fun AppContent(
             if (useRail) {
                 NavigationRail(containerColor=MaterialTheme.colorScheme.surface) {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Section.entries.filter { it in listOf(
-                        Section.HOME, Section.CLIENTS, Section.AGENDA, Section.BILLING,
-                        Section.MODULES, Section.SETTINGS
-                    ) }.forEach { section ->
+                    listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
+                        Section.BILLING, Section.MODULES, Section.SETTINGS).forEach { section ->
                         NavigationRailItem(
                             selected = current == section,
                             onClick = { current = section },
@@ -328,8 +336,9 @@ private fun AppContent(
                 CenterMessage(storageError ?: "Erro ao acessar dados")
             } else {
                 when (current) {
-                    Section.HOME -> HomeScreen(clients.size, backupManager, onNavigate = { current = it })
-                    Section.MODULES -> ModuleDirectoryScreen { key ->
+                    Section.HOME -> HomeScreen(clients.size, backupManager,
+                        favorites,::updateFavorites,onNavigate = { current = it })
+                    Section.MODULES -> ModuleDirectoryScreen(favorites,::updateFavorites) { key ->
                         Section.entries.firstOrNull { it.name == key }?.let { current = it }
                     }
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, backupManager,
@@ -373,8 +382,10 @@ private fun AppContent(
 }
 
 @Composable
-private fun HomeScreen(clientCount: Int, backupManager: SecureBackupManager, onNavigate: (Section) -> Unit) {
-    WorkspaceHomeScreen(clientCount, backupManager) { key ->
+private fun HomeScreen(clientCount: Int,backupManager:SecureBackupManager,
+    favoriteRoutes:Set<String>,onFavoritesChange:(Set<String>)->Unit,
+    onNavigate:(Section)->Unit) {
+    WorkspaceHomeScreen(clientCount,backupManager,favoriteRoutes,onFavoritesChange) { key ->
         Section.entries.firstOrNull { it.name == key }?.let(onNavigate)
     }
 }

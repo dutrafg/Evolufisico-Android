@@ -81,20 +81,19 @@ object WorkspaceGrid {
     fun columns(screenWidthDp:Int):Int = when {
         screenWidthDp<360 -> 1
         screenWidthDp<700 -> 2
-        else -> 3
+        screenWidthDp<1000 -> 3
+        else -> 4
     }
 }
 
 @Composable
-fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
+fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)->Unit,
+    onNavigate:(String)->Unit) {
     var search by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Todos") }
     val context=LocalContext.current
     val prefs=remember(context) {
         context.getSharedPreferences("module_shortcuts",android.content.Context.MODE_PRIVATE)
-    }
-    var favorites by remember(prefs) {
-        mutableStateOf(WorkspaceFavorites.parse(prefs.getString("routes","").orEmpty()))
     }
     var recents by remember(prefs) {
         mutableStateOf(WorkspaceRecents.parse(prefs.getString("recent_routes","").orEmpty()))
@@ -104,10 +103,7 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
         prefs.edit().putString("recent_routes",WorkspaceRecents.serialize(recents)).apply()
         onNavigate(route)
     }
-    fun saveFavorites(updated:Set<String>) {
-        favorites=updated
-        prefs.edit().putString("routes",WorkspaceFavorites.serialize(updated)).apply()
-    }
+    fun saveFavorites(updated:Set<String>) { onFavoritesChange(updated) }
     fun toggle(route:String) { saveFavorites(WorkspaceFavorites.toggle(favorites,route)) }
     fun move(route:String,offset:Int) {
         saveFavorites(WorkspaceFavorites.move(favorites,route,offset))
@@ -164,7 +160,9 @@ fun ModuleDirectoryScreen(onNavigate:(String)->Unit) {
             }
         }
         WorkspaceModules.categories.forEach { group ->
-            val entries=filtered.filter { it.category==group }
+            val entries=filtered.filter {
+                it.category==group && it !in featured && it !in recent
+            }
             if(entries.isNotEmpty()) {
                 item { ModuleHeading(group,entries.size) }
                 items(entries.chunked(columns).size) { index ->

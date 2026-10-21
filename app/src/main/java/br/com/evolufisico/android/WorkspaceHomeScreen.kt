@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Today
@@ -39,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -114,6 +117,7 @@ object WorkspaceDisplay {
 @Composable
 fun WorkspaceHomeScreen(
     clientCount:Int, backupManager:SecureBackupManager,
+    favoriteRoutes:Set<String>,onFavoritesChange:(Set<String>)->Unit,
     onNavigate:(String)->Unit
 ) {
     var metrics by remember { mutableStateOf<WorkspaceMetrics?>(null) }
@@ -136,31 +140,37 @@ fun WorkspaceHomeScreen(
     ) {
         item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text("Área de trabalho",style=MaterialTheme.typography.headlineSmall,
                         fontWeight=FontWeight.Bold)
                     Text("Aqui está o resumo do seu dia.",
                         color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                OutlinedButton(onClick={refresh++},enabled=!loading) {
-                    Text("Atualizar")
+                IconButton(onClick={refresh++},enabled=!loading) {
+                    Icon(Icons.Outlined.Refresh,contentDescription="Atualizar indicadores")
                 }
             }
         }
-        item {
+        val largeLayout=LocalConfiguration.current.screenWidthDp>=840
+        if(largeLayout) item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),
-                    Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
-                WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),
-                    Modifier.weight(1f),onClick={onNavigate("AGENDA")})
+                WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
+                WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
+                WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
+                WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.weight(1f),onClick={onNavigate("BILLING")})
             }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),
-                    Modifier.weight(1f),onClick={onNavigate("AGENDA")})
-                WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),
-                    Modifier.weight(1f),onClick={onNavigate("BILLING")})
+        } else {
+            item {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
+                    WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
+                }
+            }
+            item {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
+                    WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.weight(1f),onClick={onNavigate("BILLING")})
+                }
             }
         }
         if (loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -214,6 +224,31 @@ fun WorkspaceHomeScreen(
                         }
                     }
 
+                }
+            }
+        }
+        if(favoriteRoutes.isNotEmpty()) {
+            item {
+                Text("Meus módulos",style=MaterialTheme.typography.titleMedium,
+                    fontWeight=FontWeight.SemiBold)
+                Text("Retire a estrela para devolver o módulo ao catálogo.",
+                    style=MaterialTheme.typography.bodySmall,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            val chunks=WorkspaceHomeModules.selected(favoriteRoutes)
+                .chunked(WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp))
+            items(chunks.size) { index ->
+                val group=chunks[index]
+                val columns=WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    group.forEach { entry ->
+                        WorkspaceFavoriteTile(entry,Modifier.weight(1f),
+                            onOpen={onNavigate(entry.route)},
+                            onRemove={
+                                onFavoritesChange(WorkspaceFavorites.toggle(favoriteRoutes,entry.route))
+                            })
+                    }
+                    repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

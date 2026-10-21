@@ -7,7 +7,7 @@ class WorkspaceGridTest {
   assertEquals(2,WorkspaceGrid.columns(360))
   assertEquals(2,WorkspaceGrid.columns(699))
   assertEquals(3,WorkspaceGrid.columns(700))
-  assertEquals(3,WorkspaceGrid.columns(1200))
+  assertEquals(4,WorkspaceGrid.columns(1200))
  }
  @Test fun catalogStillContainsAllUniqueRoutes() {
   assertEquals(11,WorkspaceModules.all.map{it.route}.distinct().size)

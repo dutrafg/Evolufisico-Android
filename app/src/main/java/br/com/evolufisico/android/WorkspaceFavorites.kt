@@ -1,6 +1,6 @@
 package br.com.evolufisico.android
 
-/** No máximo quatro atalhos pessoais no diretório, nunca na tela inicial. */
+/** Até quatro favoritos sincronizados entre Início e Módulos. */
 object WorkspaceFavorites {
     private const val maxItems=4
     private val valid get()=WorkspaceModules.all.map { it.route }.toSet()
