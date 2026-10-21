@@ -41,6 +41,22 @@ class AssessmentRulesTest {
         assertNull(AssessmentRules.waistHipRatio(null, 100.0))
         assertNull(AssessmentRules.waistHipRatio(90.0, 0.0))
     }
+    @Test fun extraPerimetryMustBeFiniteAndWithinLimits() {
+        val base=item()
+        assertNull(AssessmentRules.validate(base.copy(chestCm=105.0,abdomenCm=89.0,
+            calfCm=39.0,forearmCm=27.0),clients))
+        assertTrue(AssessmentRules.validate(base.copy(calfCm=Double.NaN),clients)
+            ?.contains("panturrilha")==true)
+        assertTrue(AssessmentRules.validate(base.copy(abdomenCm=350.0),clients)
+            ?.contains("abdômen")==true)
+    }
+    @Test fun oldRecordConstructorKeepsOptionalMeasurementsNull() {
+        val record=item()
+        assertNull(record.chestCm)
+        assertNull(record.abdomenCm)
+        assertNull(record.calfCm)
+        assertNull(record.forearmCm)
+    }
     @Test fun parseBrazilianDecimal() {
         assertEquals(71.5, AssessmentRules.parseNumber("71,5", true)!!, 0.001)
         assertTrue(AssessmentRules.parseNumber("1,2,3", true)!!.isNaN())

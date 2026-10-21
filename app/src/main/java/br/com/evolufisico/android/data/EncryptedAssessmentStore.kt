@@ -36,6 +36,10 @@ class EncryptedAssessmentStore(context: android.content.Context) {
         .put("armCm", a.armCm ?: JSONObject.NULL).put("thighCm", a.thighCm ?: JSONObject.NULL)
         .put("healthHistory", a.healthHistory).put("dailyHabits", a.dailyHabits)
         .put("trainingExperience", a.trainingExperience)
+        .put("chestCm",a.chestCm?:JSONObject.NULL)
+        .put("abdomenCm",a.abdomenCm?:JSONObject.NULL)
+        .put("calfCm",a.calfCm?:JSONObject.NULL)
+        .put("forearmCm",a.forearmCm?:JSONObject.NULL)
 
     private fun fromJson(j: JSONObject): Assessment = Assessment(
         id = j.getString("id"), clientId = j.getString("clientId"),
@@ -47,7 +51,9 @@ class EncryptedAssessmentStore(context: android.content.Context) {
         armCm = optional(j, "armCm"), thighCm = optional(j, "thighCm"),
         healthHistory = j.optString("healthHistory", ""),
         dailyHabits = j.optString("dailyHabits", ""),
-        trainingExperience = j.optString("trainingExperience", "")
+        trainingExperience = j.optString("trainingExperience", ""),
+        chestCm=optional(j,"chestCm"),abdomenCm=optional(j,"abdomenCm"),
+        calfCm=optional(j,"calfCm"),forearmCm=optional(j,"forearmCm")
     )
 
     private fun optional(j: JSONObject, field: String): Double? =

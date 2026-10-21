@@ -163,7 +163,10 @@ fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
                                 Text("Anamnese: ${record.limitations}")
                             }
                             listOf("Cintura" to record.waistCm, "Quadril" to record.hipCm,
-                                "Braço" to record.armCm, "Coxa" to record.thighCm)
+                                "Braço" to record.armCm, "Coxa" to record.thighCm,
+                                "Tórax" to record.chestCm, "Abdômen" to record.abdomenCm,
+                                "Panturrilha" to record.calfCm,
+                                "Antebraço" to record.forearmCm)
                                 .filter { it.second != null }
                                 .forEach { (label, value) ->
                                     Text("$label: ${number(value!!)} cm",
@@ -258,6 +261,10 @@ private fun AssessmentEditor(
     var hip by remember(existing?.id) { mutableStateOf(existing?.hipCm?.toString() ?: "") }
     var arm by remember(existing?.id) { mutableStateOf(existing?.armCm?.toString() ?: "") }
     var thigh by remember(existing?.id) { mutableStateOf(existing?.thighCm?.toString() ?: "") }
+    var chest by remember(existing?.id) { mutableStateOf(existing?.chestCm?.toString() ?: "") }
+    var abdomen by remember(existing?.id) { mutableStateOf(existing?.abdomenCm?.toString() ?: "") }
+    var calf by remember(existing?.id) { mutableStateOf(existing?.calfCm?.toString() ?: "") }
+    var forearm by remember(existing?.id) { mutableStateOf(existing?.forearmCm?.toString() ?: "") }
     var validationError by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
 
@@ -276,7 +283,11 @@ private fun AssessmentEditor(
             waistCm = AssessmentRules.parseNumber(waist, false),
             hipCm = AssessmentRules.parseNumber(hip, false),
             armCm = AssessmentRules.parseNumber(arm, false),
-            thighCm = AssessmentRules.parseNumber(thigh, false)
+            thighCm = AssessmentRules.parseNumber(thigh, false),
+            chestCm=AssessmentRules.parseNumber(chest,false),
+            abdomenCm=AssessmentRules.parseNumber(abdomen,false),
+            calfCm=AssessmentRules.parseNumber(calf,false),
+            forearmCm=AssessmentRules.parseNumber(forearm,false)
         )
     }
 
@@ -324,6 +335,10 @@ private fun AssessmentEditor(
                     NumberField("Quadril (cm)", hip, { hip = it })
                     NumberField("Braço (cm)", arm, { arm = it })
                     NumberField("Coxa (cm)", thigh, { thigh = it })
+                    NumberField("Tórax (cm)", chest, { chest = it })
+                    NumberField("Abdômen (cm)", abdomen, { abdomen = it })
+                    NumberField("Panturrilha (cm)", calf, { calf = it })
+                    NumberField("Antebraço (cm)", forearm, { forearm = it })
                     val p = AssessmentRules.parseNumber(weight, true)
                     val h = AssessmentRules.parseNumber(height, true)
                     if (p != null && h != null && p.isFinite() && h.isFinite() && p > 0 && h > 0) {

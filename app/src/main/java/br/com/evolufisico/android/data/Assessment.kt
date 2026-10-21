@@ -21,7 +21,11 @@ data class Assessment(
     val thighCm: Double?,
     val healthHistory: String = "",
     val dailyHabits: String = "",
-    val trainingExperience: String = ""
+    val trainingExperience: String = "",
+    val chestCm:Double?=null,
+    val abdomenCm:Double?=null,
+    val calfCm:Double?=null,
+    val forearmCm:Double?=null
 ) {
     companion object {
         fun new(
@@ -63,7 +67,9 @@ object AssessmentRules {
         if (!record.heightCm.isFinite() || record.heightCm !in 50.0..250.0)
             return "Informe uma altura entre 50 e 250 cm."
         for ((label, value) in listOf("cintura" to record.waistCm, "quadril" to record.hipCm,
-            "braço" to record.armCm, "coxa" to record.thighCm)) {
+            "braço" to record.armCm, "coxa" to record.thighCm,
+            "tórax" to record.chestCm, "abdômen" to record.abdomenCm,
+            "panturrilha" to record.calfCm, "antebraço" to record.forearmCm)) {
             if (value != null && (!value.isFinite() || value !in 10.0..300.0))
                 return "A medida de $label deve estar entre 10 e 300 cm."
         }

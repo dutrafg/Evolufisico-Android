@@ -100,7 +100,11 @@ class SecureBackupManager(context: Context) {
                         .put("thighCm", a.thighCm ?: JSONObject.NULL)
                         .put("healthHistory", a.healthHistory)
                         .put("dailyHabits", a.dailyHabits)
-                        .put("trainingExperience", a.trainingExperience))
+                        .put("trainingExperience", a.trainingExperience)
+                        .put("chestCm",a.chestCm?:JSONObject.NULL)
+                        .put("abdomenCm",a.abdomenCm?:JSONObject.NULL)
+                        .put("calfCm",a.calfCm?:JSONObject.NULL)
+                        .put("forearmCm",a.forearmCm?:JSONObject.NULL))
                 }
             })
             .put("charges", ChargeJson.toArray(snapshot.charges))
@@ -221,7 +225,9 @@ class SecureBackupManager(context: Context) {
                 j.getDouble("heightCm"), opt("waistCm"), opt("hipCm"),
                 opt("armCm"), opt("thighCm"),
                 j.optString("healthHistory", ""), j.optString("dailyHabits", ""),
-                j.optString("trainingExperience", ""))
+                j.optString("trainingExperience", ""),
+                opt("chestCm"),opt("abdomenCm"),
+                opt("calfCm"),opt("forearmCm"))
         }
         val forms = if (root.has("forms") && !root.isNull("forms"))
             FormsJson.fromArray(root.getJSONArray("forms")) else emptyList()
