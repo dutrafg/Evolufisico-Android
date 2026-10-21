@@ -33,6 +33,14 @@ android {
             applicationIdSuffix = ".beta11"
             versionNameSuffix = "-preview"
         }
+        create("qa") {
+            // Instalação paralela segura: preserva a Beta 11 já instalada.
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            applicationIdSuffix = ".beta11test"
+            versionNameSuffix = "-qa"
+            isDebuggable = true
+        }
         release {
             signingConfigs.findByName("distribution")?.let { signingConfig = it }
             isMinifyEnabled = true
