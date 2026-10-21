@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
@@ -224,15 +225,22 @@ private fun ModuleTile(
         "REPORTS" -> Icons.Outlined.Summarize
         else -> Icons.Outlined.Groups
     }
-    Card(modifier=modifier.heightIn(min=160.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=166.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         elevation=CardDefaults.cardElevation(defaultElevation=2.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Icon(icon,contentDescription=null,tint=MaterialTheme.colorScheme.primary,
-                    modifier=Modifier.size(24.dp))
+                val swatch=VisualTokens.metric(
+                    listOf("ASSESSMENTS","FORMS","EVOLUTION","GOALS")
+                        .indexOf(module.route).coerceAtLeast(0),
+                    VisualTokens.dark(MaterialTheme.colorScheme))
+                Box(Modifier.size(44.dp).background(swatch.background,
+                    RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
+                    Icon(icon,contentDescription=null,tint=swatch.ink,
+                        modifier=Modifier.size(24.dp))
+                }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick=onFavorite,enabled=canFavorite,
                     modifier=Modifier.size(40.dp)) {
@@ -242,7 +250,7 @@ private fun ModuleTile(
                             else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Text(module.title,style=MaterialTheme.typography.titleSmall,
+            Text(module.title,style=MaterialTheme.typography.titleMedium,
                 fontWeight=FontWeight.SemiBold,maxLines=2,overflow=TextOverflow.Ellipsis)
             Text(module.subtitle,style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant,

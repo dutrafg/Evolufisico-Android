@@ -278,16 +278,17 @@ fun WorkspaceHomeScreen(
             }
         }
         item {
-            Text("Acesso rápido",style=MaterialTheme.typography.titleMedium)
+            Text("Acesso rápido",style=MaterialTheme.typography.titleMedium,
+                fontWeight=FontWeight.SemiBold)
         }
         item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                Button(modifier=Modifier.weight(1f),onClick={onNavigate("CLIENTS")}) {
+                Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),onClick={onNavigate("CLIENTS")}) {
                     Icon(Icons.Outlined.People,contentDescription=null)
                     Spacer(Modifier.size(6.dp))
                     Text("Clientes")
                 }
-                Button(modifier=Modifier.weight(1f),onClick={onNavigate("AGENDA")}) {
+                Button(modifier=Modifier.weight(1f).heightIn(min=48.dp),onClick={onNavigate("AGENDA")}) {
                     Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
                     Spacer(Modifier.size(6.dp))
                     Text("Agenda")
