@@ -153,13 +153,15 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
                     containerColor=VisualTokens.metric(3,
                         VisualTokens.dark(MaterialTheme.colorScheme)).background),
                 elevation=androidx.compose.material3.CardDefaults.cardElevation(defaultElevation=1.dp)) {
-                Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     Text("A receber",style=MaterialTheme.typography.titleSmall,
                         color=VisualTokens.metric(3,
                             VisualTokens.dark(MaterialTheme.colorScheme)).ink)
                     Text(reais(ChargeRules.total(charges,false)),
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        fontWeight = FontWeight.SemiBold,
+                        color = VisualTokens.metric(3,
+                            VisualTokens.dark(MaterialTheme.colorScheme)).ink)
                     Text("Recebido: ${reais(ChargeRules.total(charges,true))}")
                     val month = java.time.YearMonth.now()
                     Text("Competência: " + month.monthValue.toString().padStart(2,'0') + "/" + month.year,
