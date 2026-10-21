@@ -1,6 +1,8 @@
 package br.com.evolufisico.android
 
 import android.app.TimePickerDialog
+import android.Manifest
+import android.os.Build
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -50,6 +52,7 @@ import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
 import br.com.evolufisico.android.backup.BackupFileVerification
 import br.com.evolufisico.android.backup.DailyBackupScheduler
+import br.com.evolufisico.android.agenda.AgendaReminderScheduler
 import br.com.evolufisico.android.updates.InAppUpdatePanel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -84,6 +87,17 @@ fun DataSettingsScreen(
     var preferredMinute by remember { mutableStateOf(daily.minute) }
     var localRecords by remember { mutableStateOf<Int?>(null) }
     var localDataProblem by remember { mutableStateOf<String?>(null) }
+    val reminderScheduler=remember(context) { AgendaReminderScheduler(context.applicationContext) }
+    var remindersEnabled by remember { mutableStateOf(reminderScheduler.isEnabled()) }
+    var reminderIssue by remember { mutableStateOf<String?>(null) }
+    val reminderPermission=rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()) { granted ->
+        if(granted) {
+            runCatching { reminderScheduler.setEnabled(true) }
+                .onSuccess { remindersEnabled=true;reminderIssue=null }
+                .onFailure { reminderIssue=it.message ?: "Falha ao ativar lembretes." }
+        } else reminderIssue="Autorize as notificações do EvoluFísico no Android."
+    }
 
     LaunchedEffect(backupManager) {
         val outcome = withContext(Dispatchers.IO) { runCatching { backupManager.summary() } }
@@ -314,6 +328,41 @@ fun DataSettingsScreen(
                     Switch(checked=darkMode,onCheckedChange=onDarkModeChange)
                 }
             }
+            Card(modifier=Modifier.fillMaxWidth(),
+                shape=androidx.compose.foundation.shape.RoundedCornerShape(
+                    VisualTokens.cardRadiusDp.dp)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement=Arrangement.SpaceBetween,
+                    verticalAlignment=Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                        Text("Avisos da Agenda",style=MaterialTheme.typography.titleMedium)
+                        Text("Lembretes aproximados na hora anterior aos atendimentos. " +
+                            "Não exibimos o nome dos clientes nas notificações.",
+                            style=MaterialTheme.typography.bodySmall,
+                            color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.size(12.dp))
+                    Switch(checked=remindersEnabled,onCheckedChange={enabled ->
+                        if(enabled && Build.VERSION.SDK_INT>=33 &&
+                            !reminderScheduler.hasPermission()) {
+                            reminderPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            runCatching { reminderScheduler.setEnabled(enabled) }
+                                .onSuccess { remindersEnabled=enabled;reminderIssue=null }
+                                .onFailure {
+                                    reminderIssue=it.localizedMessage ?: "Falha no agendamento."
+                                }
+                        }
+                    })
+                }
+            }
+            reminderIssue?.let {
+                Text(it,style=MaterialTheme.typography.bodySmall,
+                    color=MaterialTheme.colorScheme.error)
+            }
+            Text("O Android pode atrasar avisos em modo economia de bateria.",
+                style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Paleta de cores",style=MaterialTheme.typography.titleMedium)
             Text("Escolha entre 10 cores. A preferência é salva automaticamente.",
                 style=MaterialTheme.typography.bodySmall,
