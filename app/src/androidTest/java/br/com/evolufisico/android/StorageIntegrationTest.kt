@@ -85,6 +85,12 @@ class StorageIntegrationTest {
             val data = manager.export(password)
             val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
             assertEquals(8, inspected.recordCount)
+            // A copia verificada nao autoriza atualizar se o banco mudou depois.
+            clients.save(listOf(client.copy(name="Pessoa Alterada")))
+            assertFalse("Backup ficou desatualizado após modificar cliente",
+                inspected == manager.summary())
+            clients.save(listOf(client))
+            assertEquals(inspected,manager.summary())
             // Backups JSON da Beta 11 nao precisam de senha nem do packageName original.
             val noPassword=charArrayOf()
             assertEquals(8,
