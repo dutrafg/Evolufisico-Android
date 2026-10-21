@@ -39,7 +39,8 @@ import java.time.Instant
 
 /** Pré-cadastro Android: rascunho separado do cliente, sem criar avaliação clínica. */
 @Composable
-fun PreRegistrationPanel(onOpenClients:()->Unit) {
+fun PreRegistrationPanel(onOpenClients:()->Unit,
+    onCompleteDraft:(PreRegistration,(Boolean,String?)->Unit)->Unit) {
     val context=LocalContext.current
     val store=remember(context) { PreRegistrationStore(context.applicationContext) }
     val scope=rememberCoroutineScope()
@@ -52,6 +53,8 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
     var editing by remember { mutableStateOf<PreRegistration?>(null) }
     var openEditor by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<PreRegistration?>(null) }
+    var confirmComplete by remember { mutableStateOf<PreRegistration?>(null) }
+    var completing by remember { mutableStateOf(false) }
 
     LaunchedEffect(store) {
         withContext(Dispatchers.IO) { runCatching { store.load() } }
@@ -104,17 +107,20 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
                     Text(item.name,style=MaterialTheme.typography.titleSmall)
                     Text(item.email,style=MaterialTheme.typography.bodySmall)
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick={editing=item;openEditor=true},enabled=!busy) {
-                            Text("Editar")
-                        }
-                        TextButton(onClick={confirmRemove=item},enabled=!busy) {
-                            Text("Excluir")
-                        }
+                        TextButton(onClick={editing=item;openEditor=true},
+                            enabled=!busy&&!completing) { Text("Editar") }
+                        TextButton(onClick={confirmRemove=item},
+                            enabled=!busy&&!completing) { Text("Excluir") }
+                    }
+                    OutlinedButton(onClick={confirmComplete=item},
+                        enabled=!busy&&!completing,
+                        modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                        Text("Cadastrar como cliente")
                     }
                 }
             }
-            Text("Conclua o cadastro na área Clientes. O rascunho permanece aqui " +
-                "até você confirmar sua exclusão.",
+            Text("Ao cadastrar como cliente, o rascunho só sai da fila após a " +
+                "gravação confirmada. A avaliação física continua separada.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick=onOpenClients,modifier=Modifier.fillMaxWidth()
@@ -144,6 +150,27 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
                 }
             }
         )
+    }
+    confirmComplete?.let { item ->
+        AlertDialog(onDismissRequest={if(!completing) confirmComplete=null},
+            title={Text("Cadastrar este cliente?")},
+            text={Text("Os dados serão adicionados a Clientes. O pré-cadastro " +
+                "será removido somente após a confirmação da gravação. " +
+                "Nenhuma avaliação será criada automaticamente.")},
+            confirmButton={
+                Button(enabled=!completing&&!busy,onClick={
+                    completing=true
+                    confirmComplete=null
+                    onCompleteDraft(item) { success,error ->
+                        completing=false
+                        if(success) write({ list->list.filterNot { it.id==item.id } },
+                            "Cliente registrado. Pré-cadastro concluído.")
+                        else problem=error ?: "Não foi possível cadastrar o cliente."
+                    }
+                }) { Text("Confirmar cadastro") }
+            },
+            dismissButton={TextButton(onClick={confirmComplete=null},
+                enabled=!completing){Text("Cancelar")})
     }
     confirmRemove?.let { item ->
         AlertDialog(onDismissRequest={confirmRemove=null},
