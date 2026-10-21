@@ -232,4 +232,10 @@ class BetaPolicyRegressionTest {
         assertTrue(BetaReadiness.pending(e).any { it.code=="restore" })
     }
 
+    @Test fun alpha87ReleaseGateRegression() {
+        val e=BetaEvidence(physicalAndroidTest=true)
+        assertTrue(BetaReadiness.pending(e).any { it.code=="tablet" })
+        assertTrue(BetaReadiness.pending(e).any { it.code=="security" })
+    }
+
 }
