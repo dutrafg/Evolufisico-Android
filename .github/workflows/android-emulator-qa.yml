@@ -39,15 +39,8 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: |
-            set +e
-            gradle --no-daemon :app:connectedDebugAndroidTest
-            result=$?
-            if [ "$GITHUB_REF_NAME" = "beta-11-interface-polish" ]; then
-              mkdir -p app/build/visual-qa
-              adb pull /sdcard/Android/data/br.com.evolufisico.android.beta11/files/visual-qa/. app/build/visual-qa/ || true
-            fi
-            exit "$result"
+          # O runner executa cada linha como um shell separado: usar comando unico.
+          script: bash -c 'gradle --no-daemon :app:connectedDebugAndroidTest; result=$?; mkdir -p app/build/visual-qa; adb pull /sdcard/Android/data/br.com.evolufisico.android.beta11/files/visual-qa/. app/build/visual-qa/ || true; exit "$result"'
       - name: Upload Beta 11 visual captures and instrumentation reports
         if: always() && github.ref == 'refs/heads/beta-11-interface-polish'
         uses: actions/upload-artifact@v4
