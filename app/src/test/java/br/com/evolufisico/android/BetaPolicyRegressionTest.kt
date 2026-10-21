@@ -107,4 +107,8 @@ class BetaPolicyRegressionTest {
         assertFalse(UpdatePolicy.sameSigningCertificate(emptyList(),listOf("a".toByteArray())))
     }
 
+    @Test fun alpha62PolicyRegression() {
+        assertEquals(setOf("GOALS","FORMS"),WorkspaceFavorites.parse("GOALS,FORMS,GOALS"))
+    }
+
 }
