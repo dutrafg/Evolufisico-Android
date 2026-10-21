@@ -3,6 +3,8 @@ package br.com.evolufisico.android.backup
 /** Sem diagnósticos clínicos ou dados do cliente; somente metadados de execução. */
 object BackupStatusRules {
     private const val HOUR = 3_600_000L
+    /** WorkManager: no maximo duas novas tentativas antes da proxima janela diaria. */
+    fun retryAfterFailure(runAttemptCount:Int):Boolean=runAttemptCount in 0..1
     fun isLate(
         active: Boolean,
         nowMillis: Long,
