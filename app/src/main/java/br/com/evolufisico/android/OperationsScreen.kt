@@ -68,7 +68,8 @@ fun OperationsScreen(
     if (loading) { OperationNotice("Carregando dados locais...");return }
     if (fatal!=null) { OperationNotice(fatal!!);return }
     when(tab) {
-        OperationsTab.AGENDA -> AppointmentsModule(clients,data.appointments,data.services,busy,message,onDocumentFlow) {
+        OperationsTab.AGENDA -> AppointmentsModule(clients,data.appointments,data.services,
+            busy,message,onDocumentFlow,quickCreateId,onQuickConsumed) {
             persist(data.copy(appointments=it))
         }
         OperationsTab.GOALS -> GoalsModule(clients,data.goals,busy,message,
@@ -96,6 +97,7 @@ fun OperationNotice(msg:String) {
 private fun AppointmentsModule(
     clients:List<Client>, all:List<Appointment>, services:List<ServiceItem>,
     busy:Boolean,message:String?,onDocumentFlow:(Boolean)->Unit,
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={},
     save:(List<Appointment>)->Unit
 ) {
     var search by remember { mutableStateOf("") }
@@ -108,6 +110,12 @@ private fun AppointmentsModule(
     var remove by remember { mutableStateOf<Appointment?>(null) }
     var duplicate by remember { mutableStateOf<Appointment?>(null) }
     var transition by remember { mutableStateOf<Pair<Appointment,String>?>(null) }
+    LaunchedEffect(quickCreateId,busy,clients.size) {
+        if(quickCreateId>0 && !busy) {
+            if(clients.isNotEmpty()) { editing=null;editingOpen=true }
+            onQuickConsumed()
+        }
+    }
     val name=clients.associate{it.id to it.name}
     val context=LocalContext.current
     val scope=rememberCoroutineScope()

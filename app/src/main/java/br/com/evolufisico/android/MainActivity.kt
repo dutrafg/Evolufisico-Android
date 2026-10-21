@@ -353,8 +353,10 @@ private fun AppContent(
                     Section.FORMS -> FormsScreen(clients.toList(),formRepository,onDocumentFlow,
                         quickCreateId=quickLaunch?.takeIf { it.route=="FORMS" }?.id?:0,
                         onQuickConsumed=::clearQuickLaunch)
-                    Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository,
-                        OperationsTab.AGENDA, onDocumentFlow)
+                    Section.AGENDA -> OperationsScreen(clients.toList(),operationalRepository,
+                        OperationsTab.AGENDA,onDocumentFlow,
+                        quickCreateId=quickLaunch?.takeIf { it.route=="AGENDA" }?.id?:0,
+                        onQuickConsumed=::clearQuickLaunch)
                     Section.GOALS -> OperationsScreen(clients.toList(),operationalRepository,OperationsTab.GOALS,
                         quickCreateId=quickLaunch?.takeIf { it.route=="GOALS" }?.id?:0,
                         onQuickConsumed=::clearQuickLaunch)
