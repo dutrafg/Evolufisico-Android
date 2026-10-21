@@ -9,6 +9,9 @@ import br.com.evolufisico.android.data.Assessment
 import br.com.evolufisico.android.data.AssessmentRules
 import br.com.evolufisico.android.data.Client
 import br.com.evolufisico.android.data.ClientRules
+import br.com.evolufisico.android.data.PreRegistration
+import br.com.evolufisico.android.data.PreRegistrationRules
+import br.com.evolufisico.android.data.PreRegistrationStore
 import br.com.evolufisico.android.data.EncryptedAssessmentStore
 import br.com.evolufisico.android.data.EncryptedClientStore
 import br.com.evolufisico.android.forms.EncryptedFormStore
@@ -30,11 +33,12 @@ data class BackupSnapshot(
     val assessments: List<Assessment>,
     val charges: List<Charge>,
     val forms: List<FormResponse> = emptyList(),
-    val operations: OperationsData = OperationsData()
+    val operations: OperationsData = OperationsData(),
+    val preRegistrations: List<PreRegistration> = emptyList()
 ) {
     val recordCount: Int get() = clients.size + assessments.size + charges.size + forms.size +
         operations.appointments.size + operations.goals.size +
-        operations.services.size + operations.notes.size
+        operations.services.size + operations.notes.size + preRegistrations.size
 }
 
 /**
@@ -49,6 +53,7 @@ class SecureBackupManager(context: Context) {
     private val chargeStore = EncryptedChargeStore(context.applicationContext)
     private val formStore = EncryptedFormStore(context.applicationContext)
     private val operationsStore = OperationalStore(context.applicationContext)
+    private val preregStore = PreRegistrationStore(context.applicationContext)
 
     /**
      * Se o processo morreu no meio da restauração, limpa os dados parciais.
@@ -62,13 +67,15 @@ class SecureBackupManager(context: Context) {
         if(state=="EF_RESTORE_V1_COMMITTED") {
             // Crash apos todos os saves: nunca remover dados ja consolidados.
             validate(BackupSnapshot(clientStore.load(),assessmentStore.load(),
-                chargeStore.load(),formStore.load(),operationsStore.load()))
+                chargeStore.load(),formStore.load(),operationsStore.load(),
+                preregStore.load()))
             check(journal.delete()) { "Restauração íntegra; marcador não pôde ser removido." }
             return
         }
         require(state=="EF_RESTORE_V1") {
             "Estado de restauração inesperado. Dados preservados para recuperação."
         }
+        preregStore.save(emptyList())
         operationsStore.save(OperationsData(),emptySet())
         formStore.save(emptyList(), emptySet())
         chargeStore.save(emptyList(), emptySet())
@@ -82,7 +89,7 @@ class SecureBackupManager(context: Context) {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
         val snapshot = BackupSnapshot(
             clientStore.load(), assessmentStore.load(), chargeStore.load(),
-            formStore.load(), operationsStore.load()
+            formStore.load(), operationsStore.load(), preregStore.load()
         )
         validate(snapshot)
         val json = JSONObject()
@@ -118,6 +125,7 @@ class SecureBackupManager(context: Context) {
             .put("charges", ChargeJson.toArray(snapshot.charges))
             .put("forms", FormsJson.toArray(snapshot.forms))
             .put("operations", OperationalStore.encode(snapshot.operations))
+            .put("preRegistrations",PreRegistrationStore.toArray(snapshot.preRegistrations))
         return json.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -160,7 +168,7 @@ class SecureBackupManager(context: Context) {
         val snapshot = inspectBackup(input, password)
         require(clientStore.load().isEmpty() && assessmentStore.load().isEmpty()
             && chargeStore.load().isEmpty() && formStore.load().isEmpty() &&
-            operationsStore.load() == OperationsData()) {
+            operationsStore.load() == OperationsData() && preregStore.load().isEmpty()) {
             "Restauração permitida apenas numa base vazia. Nenhum dado foi sobrescrito."
         }
         FileOutputStream(journal).use { out ->
@@ -173,6 +181,7 @@ class SecureBackupManager(context: Context) {
             chargeStore.save(snapshot.charges, snapshot.clients.map { it.id }.toSet())
             formStore.save(snapshot.forms, snapshot.clients.map { it.id }.toSet())
             operationsStore.save(snapshot.operations, snapshot.clients.map { it.id }.toSet())
+            preregStore.save(snapshot.preRegistrations)
             // Marca commit de forma sincronizada. Se cair antes de apagar o diário,
             // a inicialização seguinte valida e conserva os dados restaurados.
             FileOutputStream(journal).use { out ->
@@ -187,6 +196,7 @@ class SecureBackupManager(context: Context) {
                     "Dados restaurados; reabra o app para concluir a recuperação.",error)
             }
             val failures = listOf(
+                runCatching { preregStore.save(emptyList()) },
                 runCatching { operationsStore.save(OperationsData(), emptySet()) },
                 runCatching { formStore.save(emptyList(), emptySet()) },
                 runCatching { chargeStore.save(emptyList(), emptySet()) },
@@ -216,7 +226,8 @@ class SecureBackupManager(context: Context) {
     fun summary(): BackupSnapshot {
         check(!journal.exists()) { "Recuperação de restauração pendente." }
         return BackupSnapshot(clientStore.load(), assessmentStore.load(), chargeStore.load(),
-            formStore.load(), operationsStore.load()).also { validate(it) }
+            formStore.load(), operationsStore.load(),
+            preregStore.load()).also { validate(it) }
     }
 
     private fun parse(plaintext: String): BackupSnapshot {
@@ -252,8 +263,11 @@ class SecureBackupManager(context: Context) {
             FormsJson.fromArray(root.getJSONArray("forms")) else emptyList()
         val ops = if (root.has("operations") && !root.isNull("operations"))
             OperationalStore.decode(root.getJSONObject("operations")) else OperationsData()
+        val preregs=if(root.has("preRegistrations") && !root.isNull("preRegistrations"))
+            PreRegistrationStore.parseArray(root.getJSONArray("preRegistrations"))
+            else emptyList()
         return BackupSnapshot(clients, assessments,
-            ChargeJson.fromArray(root.getJSONArray("charges")), forms, ops)
+            ChargeJson.fromArray(root.getJSONArray("charges")), forms, ops, preregs)
     }
 
     private fun validate(snapshot: BackupSnapshot) {
@@ -279,5 +293,6 @@ class SecureBackupManager(context: Context) {
             "Formulários inválidos no backup."
         }
         OperationalStore.validate(snapshot.operations, ids)
+        PreRegistrationRules.validateAll(snapshot.preRegistrations)
     }
 }
