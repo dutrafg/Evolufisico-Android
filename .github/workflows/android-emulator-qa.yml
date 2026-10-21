@@ -39,4 +39,22 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: gradle --no-daemon :app:connectedDebugAndroidTest
+          script: |
+            set +e
+            gradle --no-daemon :app:connectedDebugAndroidTest
+            result=$?
+            if [ "$GITHUB_REF_NAME" = "beta-11-interface-polish" ]; then
+              mkdir -p app/build/visual-qa
+              adb pull /sdcard/Android/data/br.com.evolufisico.android.beta11/files/visual-qa/. app/build/visual-qa/ || true
+            fi
+            exit "$result"
+      - name: Upload Beta 11 visual captures and instrumentation reports
+        if: always() && github.ref == 'refs/heads/beta-11-interface-polish'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Evolufisico-Beta11-QA-Visual
+          path: |
+            app/build/visual-qa/
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
