@@ -47,6 +47,7 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
     var loading by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
+    var fatal by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<PreRegistration?>(null) }
     var openEditor by remember { mutableStateOf(false) }
@@ -54,12 +55,12 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
 
     LaunchedEffect(store) {
         withContext(Dispatchers.IO) { runCatching { store.load() } }
-            .onSuccess { items=it;problem=null }
-            .onFailure { problem="Falha ao ler os pré-cadastros. Os arquivos foram preservados." }
+            .onSuccess { items=it;problem=null;fatal=false }
+            .onFailure { fatal=true;problem="Falha ao ler os pré-cadastros. Os arquivos foram preservados." }
         loading=false
     }
     fun write(next:(List<PreRegistration>)->List<PreRegistration>,success:String) {
-        if(busy || loading || problem!=null) return
+        if(busy || loading || fatal) return
         busy=true
         scope.launch {
             val result=withContext(Dispatchers.IO) {
@@ -85,14 +86,14 @@ fun PreRegistrationPanel(onOpenClients:()->Unit) {
                         color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Button(onClick={editing=null;openEditor=true},
-                    enabled=!busy && !loading && problem==null,
+                    enabled=!busy && !loading && !fatal,
                     modifier=Modifier.heightIn(min=48.dp)) { Text("Novo") }
             }
             if(loading) Text("Consultando pré-cadastros…")
             problem?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             info?.let { Text(it,color=MaterialTheme.colorScheme.primary,
                 style=MaterialTheme.typography.bodySmall) }
-            if(!loading && problem==null && items.isEmpty()) {
+            if(!loading && !fatal && items.isEmpty()) {
                 Text("Nenhum pré-cadastro aguardando atendimento.",
                     style=MaterialTheme.typography.bodySmall,
                     color=MaterialTheme.colorScheme.onSurfaceVariant)
