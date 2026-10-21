@@ -207,4 +207,13 @@ class BetaPolicyRegressionTest {
         assertEquals(9,BetaReadiness.pending(e).size)
     }
 
+    @Test fun alpha83ReleaseGateRegression() {
+        val e=BetaEvidence(encryptedLocalData=true,protectedPortableBackups=true,
+            testedRestoreRoundTrip=true,testedInPlaceUpgrade=true,
+            physicalAndroidTest=true,physicalTabletTest=true,
+            accessibilityReview=true,securityAudit=true,successfulCi=true)
+        assertFalse(BetaReadiness.canRelease(e))
+        assertEquals("signing",BetaReadiness.pending(e).single().code)
+    }
+
 }
