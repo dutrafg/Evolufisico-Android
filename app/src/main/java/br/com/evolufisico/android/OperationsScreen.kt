@@ -23,6 +23,7 @@ import br.com.evolufisico.android.agenda.AgendaIcs
 import br.com.evolufisico.android.agenda.AgendaCsv
 import br.com.evolufisico.android.agenda.AgendaPulse
 import br.com.evolufisico.android.agenda.AgendaActions
+import br.com.evolufisico.android.agenda.AgendaAvailability
 import br.com.evolufisico.android.agenda.AgendaFilters
 import br.com.evolufisico.android.agenda.AppointmentShareText
 import kotlinx.coroutines.Dispatchers
@@ -394,6 +395,40 @@ private fun AppointmentEditor(
                 }
                 OutlinedTextField(service,{service=it.take(120)},label={Text("Serviço")},singleLine=true)
                 OutlinedTextField(note,{note=it.take(500)},label={Text("Observações")},minLines=2)
+                val previewStart=runCatching {
+                    LocalDateTime.parse("${date}T${time}")
+                }.getOrNull()
+                val previewDuration=mins.toIntOrNull()
+                val occupied=previewStart!=null && previewDuration!=null &&
+                    previewDuration in 15..480 && current?.status!="Cancelado" &&
+                    OperationalRules.conflict(
+                        Appointment(current?.id?:"agenda-preview",clientId,
+                            previewStart.toString(),previewDuration,service),
+                        existing)
+                if(occupied && previewStart!=null && previewDuration!=null) {
+                    Text("Horário ocupado. Escolha uma sugestão livre:",
+                        color=MaterialTheme.colorScheme.error,
+                        style=MaterialTheme.typography.bodySmall)
+                    val suggestions=AgendaAvailability.suggest(
+                        previewStart,previewDuration,existing,current?.id)
+                    if(suggestions.isEmpty()) {
+                        Text("Nenhum horário livre encontrado nos próximos sete dias.",
+                            style=MaterialTheme.typography.bodySmall)
+                    } else {
+                        Row(Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                            suggestions.forEach { slot ->
+                                AssistChip(onClick={
+                                    date=slot.toLocalDate().toString()
+                                    time=slot.toLocalTime().toString()
+                                    issue=null
+                                },label={Text(slot.toLocalDate().dayOfMonth.toString()+
+                                    "/"+slot.toLocalDate().monthValue+
+                                    " "+slot.toLocalTime().toString())})
+                            }
+                        }
+                    }
+                }
                 if(current==null) {
                     OutlinedTextField(repeats,{repeats=it.take(2)},
                         label={Text("Repetir semanalmente (1 a 12 atendimentos)")},
