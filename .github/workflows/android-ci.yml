@@ -34,6 +34,17 @@ jobs:
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;35.0.0'
       - name: Build APK and unit tests
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
+      - name: Build isolated Beta 11 QA APK
+        run: gradle --no-daemon :app:assembleQa
+      - name: Check QA package identity and APK integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/qa/app-qa.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" |
+            grep -F "name='br.com.evolufisico.android.beta11test'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
       - name: Compile Android instrumentation tests
         run: gradle --no-daemon :app:assembleDebugAndroidTest
       - name: Android Lint
@@ -67,6 +78,12 @@ jobs:
           rm -f "$RUNNER_TEMP/evolufisico-ci-throwaway.p12" \
             app/build/outputs/apk/release/app-release.apk
           echo "::notice::CI signing smoke passed. No private distribution key was used."
+      - name: Upload isolated Beta 11 QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Evolufisico-Beta11-QA-PARALELO
+          path: app/build/outputs/apk/qa/app-qa.apk
+          if-no-files-found: error
       - name: Upload tested debug APK (NOT UPDATEABLE)
         uses: actions/upload-artifact@v4
         with:
