@@ -90,6 +90,12 @@ fun ClientOverviewDialog(
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Ficha do cliente", style = MaterialTheme.typography.titleLarge)
                 Text(client.name, color = MaterialTheme.colorScheme.primary)
+                if(client.phone.isNotBlank()) Text("Telefone: "+client.phone,
+                    style=MaterialTheme.typography.bodySmall)
+                if(client.email.isNotBlank()) Text("E-mail: "+client.email,
+                    style=MaterialTheme.typography.bodySmall)
+                if(client.birthDateIso.isNotBlank()) Text("Nascimento: "+client.birthDateIso,
+                    style=MaterialTheme.typography.bodySmall)
                 Column(Modifier.heightIn(max = 475.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (loading) Text("Carregando histórico local…")

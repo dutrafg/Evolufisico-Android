@@ -63,6 +63,10 @@ object ClientDossierPdf {
         }
         try {
             startPage()
+            if(client.phone.isNotBlank()) line("Telefone: "+client.phone)
+            if(client.email.isNotBlank()) line("E-mail: "+client.email)
+            if(client.birthDateIso.isNotBlank()) line("Nascimento: "+client.birthDateIso)
+            y += 10f
             val evaluations = data.assessments.filter { it.clientId == client.id }
                 .sortedByDescending { it.dateIso }
             val forms = data.forms.filter { it.clientId == client.id }
