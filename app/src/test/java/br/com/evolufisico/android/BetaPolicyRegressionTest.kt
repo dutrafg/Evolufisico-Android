@@ -47,4 +47,9 @@ class BetaPolicyRegressionTest {
         assertNull(ReleasePolicy.parse("1.2.3-alpha.99999999999999"))
     }
 
+    @Test fun alpha49ReleaseRegression() {
+        assertNull(ReleasePolicy.parse("1.2.3-gamma"))
+        assertNull(ReleasePolicy.parse("1.2.3 beta.1"))
+    }
+
 }
