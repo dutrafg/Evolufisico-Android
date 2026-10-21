@@ -9,6 +9,16 @@ class WorkspaceLayoutRulesTest {
         assertEquals(2,WorkspaceLayoutRules.gridColumns(360))
         assertEquals(2,WorkspaceLayoutRules.gridColumns(699))
     }
+    @Test fun accessibilityFontScaleReducesColumnsBeforeCardsClip() {
+        assertEquals(2,WorkspaceLayoutRules.gridColumns(360,1f))
+        assertEquals(1,WorkspaceLayoutRules.gridColumns(360,1.5f))
+        assertEquals(1,WorkspaceLayoutRules.gridColumns(414,2f))
+        assertEquals(1,WorkspaceLayoutRules.metricColumns(360,1.5f))
+        assertTrue(WorkspaceLayoutRules.gridColumns(1200,2f)>=2)
+        assertEquals(1,WorkspaceLayoutRules.gridColumns(320,Float.NaN))
+        assertTrue(WorkspaceLayoutRules.minimumTileDp(2f)>WorkspaceLayoutRules.minimumTileDp(1f))
+    }
+
     @Test fun tabletAccountsForNavigationRailWidth() {
         assertEquals(3,WorkspaceLayoutRules.gridColumns(840))
         assertEquals(3,WorkspaceLayoutRules.gridColumns(1079))
