@@ -82,7 +82,15 @@ class AgendaReminderWorker(ctx:Context, params:WorkerParameters):CoroutineWorker
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .build()
-                NotificationManagerCompat.from(app).notify(7117,note)
+                // Permissão pode ser revogada entre a leitura das preferências e o aviso.
+                if(Build.VERSION.SDK_INT>=33 &&
+                    ContextCompat.checkSelfPermission(app,Manifest.permission.POST_NOTIFICATIONS)!=
+                        PackageManager.PERMISSION_GRANTED) return@runCatching Result.success()
+                try {
+                    NotificationManagerCompat.from(app).notify(7117,note)
+                } catch(_:SecurityException) {
+                    return@runCatching Result.success()
+                }
                 // Inclui somente registros ainda existentes; restringe crescimento.
                 val valid=appointments.asSequence().filter { a ->
                     runCatching {
