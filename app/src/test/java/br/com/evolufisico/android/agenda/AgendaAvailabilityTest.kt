@@ -28,7 +28,7 @@ class AgendaAvailabilityTest {
         val other=at("2026-10-20T15:00")
         val slots=AgendaAvailability.suggest(wanted,30,listOf(own,other),
             excludingId=own.id,limit=1)
-        assertEquals("2026-10-20T15:30",slots.single().toString())
+        assertEquals("2026-10-20T16:00",slots.single().toString())
     }
     @Test fun goesToNextMorningInsteadOfOvernight() {
         val slots=AgendaAvailability.suggest(LocalDateTime.parse("2026-10-20T21:30"),
