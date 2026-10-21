@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
@@ -34,7 +36,10 @@ fun GlobalSearchScreen(manager:SecureBackupManager, onOpen:(String)->Unit) {
     val results=remember(snapshot,query,kind) {
         snapshot?.let { GlobalSearch.search(it,query,kind) } ?: emptyList()
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding=PaddingValues(16.dp),
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    LazyColumn(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(
+            LocalConfiguration.current.screenWidthDp).dp,vertical=20.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("Busca global",style=MaterialTheme.typography.headlineSmall)
@@ -63,7 +68,7 @@ fun GlobalSearchScreen(manager:SecureBackupManager, onOpen:(String)->Unit) {
         }
         items(results,key={it.kind.name+":"+it.id}) { result ->
             Card(onClick={onOpen(result.kind.section)},modifier=Modifier.fillMaxWidth(),
-                shape=RoundedCornerShape(12.dp)) {
+                shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp)) {
                 Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
                     Text(result.kind.label,color=MaterialTheme.colorScheme.primary,
                         style=MaterialTheme.typography.labelMedium)
@@ -74,5 +79,6 @@ fun GlobalSearchScreen(manager:SecureBackupManager, onOpen:(String)->Unit) {
                 }
             }
         }
+    }
     }
 }

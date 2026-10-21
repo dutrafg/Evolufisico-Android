@@ -12,6 +12,7 @@
 - Tipografia com linhas mais legíveis, cantos e alturas ajustados.
 - Lista de clientes ocupa apenas a área rolável remanescente, sem empurrar o restante do layout.
 - Avaliações, Formulários, Evolução e Relatórios agora centralizam o conteúdo em janelas amplas; Cobranças e Agenda usam espaçamento responsivo.
+- Resumo por cliente, Indicadores, Comparativos e Busca global também usam largura centrada e margens adaptativas.
 - Novos testes de regressão para telas estreitas e matriz de **100.000 combinações lógicas** (1000 larguras × 10 paletas × 2 temas × 5 escalas de fonte).
 
 ## Alcance da matriz automatizada

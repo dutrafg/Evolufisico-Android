@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.BackupSnapshot
 import br.com.evolufisico.android.backup.SecureBackupManager
@@ -41,8 +43,11 @@ fun TrendsScreen(clients:List<Client>,manager:SecureBackupManager) {
         runCatching{MonthlyTrends.collect(it,period,months,selectedClient)}.getOrDefault(emptyList())
     }.orEmpty()
     val maxValue=history.maxOfOrNull{maxOf(it.billedCents,it.receivedCents)}?.coerceAtLeast(1L)?:1L
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(
-        modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
+        modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(
+            LocalConfiguration.current.screenWidthDp).dp,vertical=20.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
     ) {
         item {
@@ -116,5 +121,6 @@ fun TrendsScreen(clients:List<Client>,manager:SecureBackupManager) {
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
     }
 }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.backup.SecureBackupManager
 import br.com.evolufisico.android.insights.InsightKind
@@ -45,7 +47,10 @@ fun InsightsScreen(
     }
     val money=NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
     val visible=summary?.alerts?.filter{selected==null||it.kind==selected}.orEmpty()
-    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    LazyColumn(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(
+            LocalConfiguration.current.screenWidthDp).dp,vertical=20.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("Pendências e indicadores",style=MaterialTheme.typography.titleLarge)
@@ -110,5 +115,6 @@ fun InsightsScreen(
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
     }
 }
