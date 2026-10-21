@@ -335,7 +335,7 @@ fun WorkspaceHomeScreen(
                         onClick={onNavigate("AGENDA")}) {
                         Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
                         Spacer(Modifier.size(6.dp))
-                        Text("Agenda")
+                        Text("Agendar rápido")
                     }
                 }
             } else {
@@ -350,7 +350,7 @@ fun WorkspaceHomeScreen(
                         onClick={onNavigate("AGENDA")}) {
                         Icon(Icons.Outlined.CalendarMonth,contentDescription=null)
                         Spacer(Modifier.size(6.dp))
-                        Text("Agenda")
+                        Text("Agendar rápido")
                     }
                 }
             }
