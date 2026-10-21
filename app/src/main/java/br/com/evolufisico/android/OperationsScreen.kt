@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.data.Client
@@ -175,8 +176,10 @@ private fun AppointmentsModule(
             }
         }
     }
-    LazyColumn(contentPadding=PaddingValues(16.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp),modifier=Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    LazyColumn(contentPadding=PaddingValues(20.dp),
+        verticalArrangement=Arrangement.spacedBy(18.dp),
+        modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)) {
         item {
             Text("Agenda de atendimentos",style=MaterialTheme.typography.titleLarge)
             Text("Agendamentos locais vinculados ao cliente.",
@@ -259,7 +262,9 @@ private fun AppointmentsModule(
         }
         if(visible.isEmpty()) item { Text("Não há agendamentos nesta seleção.") }
         items(visible,key={it.id}) { a ->
-            Card(shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()) {
+            Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                modifier=Modifier.fillMaxWidth(),
+                elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
                 Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     Text(name[a.clientId]?:"Cliente indisponível",style=MaterialTheme.typography.titleMedium)
                     Text(a.startIso.replace('T',' ') + " · "+a.durationMinutes+" min")
@@ -302,6 +307,7 @@ private fun AppointmentsModule(
                 }
             }
         }
+    }
     }
     duplicate?.let { a ->
         AlertDialog(onDismissRequest={duplicate=null},

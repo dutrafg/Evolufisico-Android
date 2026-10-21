@@ -3,6 +3,10 @@ package br.com.evolufisico.android
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 /** Tokens da identidade visual: cores dos indicadores independentes do acento selecionado.
  * A paleta escura conserva distinção sem impor fundos claros à noite. */
@@ -30,3 +34,15 @@ object VisualTokens {
     }
     fun panel(dark:Boolean)=if(dark)Color(0xFF28313D) else Color(0xFFF0ECF3)
 }
+
+val CorporateTypography=Typography(
+    headlineMedium=TextStyle(fontSize=26.sp,lineHeight=32.sp,fontWeight=FontWeight.Bold),
+    headlineSmall=TextStyle(fontSize=23.sp,lineHeight=30.sp,fontWeight=FontWeight.SemiBold),
+    titleLarge=TextStyle(fontSize=21.sp,lineHeight=28.sp,fontWeight=FontWeight.SemiBold),
+    titleMedium=TextStyle(fontSize=17.sp,lineHeight=24.sp,fontWeight=FontWeight.SemiBold),
+    titleSmall=TextStyle(fontSize=15.sp,lineHeight=22.sp,fontWeight=FontWeight.SemiBold),
+    bodyLarge=TextStyle(fontSize=16.sp,lineHeight=24.sp),
+    bodyMedium=TextStyle(fontSize=14.sp,lineHeight=21.sp),
+    bodySmall=TextStyle(fontSize=12.sp,lineHeight=18.sp),
+    labelLarge=TextStyle(fontSize=14.sp,lineHeight=20.sp,fontWeight=FontWeight.Medium)
+)

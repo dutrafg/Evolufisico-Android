@@ -40,6 +40,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -145,7 +148,8 @@ class MainActivity : ComponentActivity() {
             }
             MaterialTheme(
                 colorScheme=CorporatePalettes.scheme(paletteId,darkMode),
-                shapes=corporateShapes
+                shapes=corporateShapes,
+                typography=CorporateTypography
             ) {
                 if (!session.unlocked) {
                     DeviceGateScreen(session.message,
@@ -284,11 +288,14 @@ private fun AppContent(
     }
 
     Scaffold(
+        containerColor=MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(if (current == Section.HOME) "EvoluFísico" else current.title,
                     fontWeight = FontWeight.Bold,
                     color=MaterialTheme.colorScheme.primary) },
+                colors=TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor=MaterialTheme.colorScheme.background),
                 navigationIcon = {
                     if(current!=Section.HOME) IconButton(onClick=::goBack) {
                         Icon(Icons.Outlined.ArrowBack,contentDescription="Voltar")
@@ -306,7 +313,8 @@ private fun AppContent(
         },
         bottomBar = {
             if (!useRail) NavigationBar(
-                containerColor=MaterialTheme.colorScheme.surface
+                containerColor=MaterialTheme.colorScheme.surface,
+                tonalElevation=2.dp
             ) {
                 listOf(Section.HOME, Section.CLIENTS, Section.AGENDA,
                     Section.BILLING, Section.MODULES).forEach { section ->
@@ -314,7 +322,9 @@ private fun AppContent(
                         selected = WorkspaceNavigation.bottomSelection(current.name)==section.name,
                         onClick = { clearQuickLaunch(); current = section },
                         icon = { Icon(section.icon, contentDescription = null) },
-                        label = { Text(section.title, maxLines = 1) }
+                        label = { Text(section.title, maxLines = 1) },
+                        colors=NavigationBarItemDefaults.colors(
+                            indicatorColor=MaterialTheme.colorScheme.primaryContainer)
                     )
                 }
             }
@@ -331,13 +341,16 @@ private fun AppContent(
                             selected = current == section,
                             onClick = { clearQuickLaunch(); current = section },
                             icon = { Icon(section.icon, contentDescription = section.title) },
-                            label = { Text(section.title, maxLines = 1) }
+                            label = { Text(section.title, maxLines = 1) },
+                            colors=NavigationRailItemDefaults.colors(
+                                indicatorColor=MaterialTheme.colorScheme.primaryContainer)
                         )
                     }
                     }
                 }
             }
-            Surface(modifier = Modifier.weight(1f).fillMaxSize()) {
+            Surface(modifier = Modifier.weight(1f).fillMaxSize(),
+                color=MaterialTheme.colorScheme.background) {
             if (loading) {
                 CenterMessage("Abrindo dados locais...")
             } else if (storageError != null) {

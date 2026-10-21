@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -31,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,15 +133,20 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
             }
         }
     }
-    LazyColumn(modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    LazyColumn(modifier = Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
             Text("Recebimentos vinculados ao cliente", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
+            Card(shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors=androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme))),
+                elevation=androidx.compose.material3.CardDefaults.cardElevation(defaultElevation=1.dp)) {
+                Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                     Text("A receber", style = MaterialTheme.typography.labelLarge)
                     Text(reais(ChargeRules.total(charges,false)),
                         style = MaterialTheme.typography.headlineMedium,
@@ -208,7 +215,9 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
         }
         if (visible.isEmpty()) item { Text("Nenhuma cobrança nesta categoria.") }
         items(visible, key = { it.id }) { charge ->
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                elevation=androidx.compose.material3.CardDefaults.cardElevation(defaultElevation=1.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(clientNames[charge.clientId] ?: "Cliente não encontrado",
                         style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -242,6 +251,7 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
                 }
             }
         }
+    }
     }
     if (editor) ChargeEditor(clients, services, editing, onDismiss = { editor = false }, onSave = {
         val next = if (editing == null) charges + it else

@@ -45,9 +45,11 @@ fun AgendaCalendarPanel(
     val weeks = remember(month, appointments) { AgendaCalendar.weeks(month, appointments) }
     val locale = Locale.forLanguageTag("pt-BR")
     val caption = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", locale))
-    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),
-        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+        colors=CardDefaults.cardColors(
+            containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme))),
+        elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Calendário de atendimentos",style=MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                 IconButton(onClick={month=month.minusMonths(1)}) {
