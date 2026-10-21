@@ -50,13 +50,14 @@ fun AgendaCalendarPanel(
             containerColor=VisualTokens.panel(VisualTokens.dark(MaterialTheme.colorScheme))),
         elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Calendário de atendimentos",style=MaterialTheme.typography.titleMedium)
+            Text("Calendário de atendimentos",style=MaterialTheme.typography.titleMedium,
+                color=MaterialTheme.colorScheme.onSurface)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                 IconButton(onClick={month=month.minusMonths(1)}) {
                     Icon(Icons.Outlined.ChevronLeft,contentDescription="Mês anterior")
                 }
-                Text(caption,modifier=Modifier.weight(1f).padding(top=12.dp),
-                    textAlign=TextAlign.Center,style=MaterialTheme.typography.labelMedium)
+                Text(caption,modifier=Modifier.weight(1f).padding(top=10.dp),
+                    textAlign=TextAlign.Center,style=MaterialTheme.typography.titleSmall)
                 IconButton(onClick={month=month.plusMonths(1)}) {
                     Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês")
                 }

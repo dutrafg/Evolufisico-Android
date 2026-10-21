@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
@@ -452,9 +454,9 @@ private fun ClientsScreen(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text("${clients.size} cadastro(s)", style = MaterialTheme.typography.titleMedium)
-            Button(enabled = !saving, onClick = { editing = null; editorOpen = true }) { Text("Novo cliente") }
+            Button(enabled = !saving,onClick={editing=null;editorOpen=true},
+                modifier=Modifier.heightIn(min=48.dp)) { Text("+ Novo cliente") }
         }
-        Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = query, onValueChange = { query = it.take(100) },
             label = { Text("Buscar por nome, telefone ou e-mail") },
             modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -479,7 +481,21 @@ private fun ClientsScreen(
                         shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
                         elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
                         Column(Modifier.padding(16.dp)) {
-                            Text(client.name, style = MaterialTheme.typography.titleMedium)
+                            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                                horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.heightIn(min=44.dp).widthIn(min=44.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer,
+                                        CircleShape),contentAlignment=Alignment.Center) {
+                                    Text(WorkspaceDisplay.initials(client.name),
+                                        color=MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight=FontWeight.Bold)
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(client.name,style=MaterialTheme.typography.titleMedium)
+                                    Text("Cadastro individual",style=MaterialTheme.typography.bodySmall,
+                                        color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
                             if(client.phone.isNotBlank()) {
                                 Text("Telefone: "+client.phone,
                                     style=MaterialTheme.typography.bodySmall,
