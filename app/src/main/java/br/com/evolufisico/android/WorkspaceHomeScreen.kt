@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
@@ -140,9 +141,10 @@ fun WorkspaceHomeScreen(
         loading=false
     }
     val screenWidthDp=LocalConfiguration.current.screenWidthDp
-    val metricColumns=WorkspaceLayoutRules.metricColumns(screenWidthDp)
+    val fontScale=LocalDensity.current.fontScale
+    val metricColumns=WorkspaceLayoutRules.metricColumns(screenWidthDp,fontScale)
     val largeLayout=metricColumns==4
-    val favoriteColumns=WorkspaceLayoutRules.gridColumns(screenWidthDp)
+    val favoriteColumns=WorkspaceLayoutRules.gridColumns(screenWidthDp,fontScale)
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(
         modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
@@ -292,7 +294,7 @@ fun WorkspaceHomeScreen(
                 fontWeight=FontWeight.SemiBold)
         }
         item {
-            if(screenWidthDp<360) {
+            if(screenWidthDp<360 || fontScale>=1.5f && screenWidthDp<520) {
                 Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                     Button(modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),
                         onClick={onNavigate("CLIENTS")}) {
