@@ -5,6 +5,8 @@ class QuickLaunchRulesTest {
  @Test fun favoriteOpensEditorsOnlyOnSupportedRoutes() {
   assertTrue(QuickLaunchRules.supportsCreate("ASSESSMENTS"))
   assertTrue(QuickLaunchRules.supportsCreate("FORMS"))
+  assertTrue(QuickLaunchRules.supportsCreate("GOALS"))
+  assertEquals("Nova meta",QuickLaunchRules.label("GOALS"))
   assertFalse(QuickLaunchRules.supportsCreate("REPORTS"))
   assertEquals("Nova avaliação",QuickLaunchRules.label("ASSESSMENTS"))
   assertEquals("Novo formulário",QuickLaunchRules.label("FORMS"))

@@ -355,7 +355,9 @@ private fun AppContent(
                         onQuickConsumed=::clearQuickLaunch)
                     Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository,
                         OperationsTab.AGENDA, onDocumentFlow)
-                    Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)
+                    Section.GOALS -> OperationsScreen(clients.toList(),operationalRepository,OperationsTab.GOALS,
+                        quickCreateId=quickLaunch?.takeIf { it.route=="GOALS" }?.id?:0,
+                        onQuickConsumed=::clearQuickLaunch)
                     Section.SERVICES -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.SERVICES)
                     Section.REPORTS -> ReportsScreen(clients.toList(), backupManager, onDocumentFlow)
                     Section.INSIGHTS -> InsightsScreen(backupManager,

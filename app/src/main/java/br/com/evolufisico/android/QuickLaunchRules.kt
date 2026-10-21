@@ -5,7 +5,8 @@ data class QuickLaunch(val route:String,val id:Int)
 object QuickLaunchRules {
     private val createActions=mapOf(
         "ASSESSMENTS" to "Nova avaliação",
-        "FORMS" to "Novo formulário"
+        "FORMS" to "Novo formulário",
+        "GOALS" to "Nova meta"
     )
     fun supportsCreate(route:String):Boolean=route in createActions
     fun label(route:String):String=createActions[route]?:"Abrir função"

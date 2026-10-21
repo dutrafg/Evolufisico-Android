@@ -36,7 +36,8 @@ enum class OperationsTab { AGENDA, GOALS, SERVICES, NOTES }
 @Composable
 fun OperationsScreen(
     clients: List<Client>, store: OperationalStore, tab: OperationsTab,
-    onDocumentFlow: (Boolean) -> Unit = {}
+    onDocumentFlow: (Boolean) -> Unit = {},
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={}
 ) {
     var data by remember(store) { mutableStateOf(OperationsData()) }
     var loading by remember(store) { mutableStateOf(true) }
@@ -70,7 +71,8 @@ fun OperationsScreen(
         OperationsTab.AGENDA -> AppointmentsModule(clients,data.appointments,data.services,busy,message,onDocumentFlow) {
             persist(data.copy(appointments=it))
         }
-        OperationsTab.GOALS -> GoalsModule(clients,data.goals,busy,message) {
+        OperationsTab.GOALS -> GoalsModule(clients,data.goals,busy,message,
+            quickCreateId,onQuickConsumed) {
             persist(data.copy(goals=it))
         }
         OperationsTab.SERVICES -> ServicesModule(data.services,busy,message) {

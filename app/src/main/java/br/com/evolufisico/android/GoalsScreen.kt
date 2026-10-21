@@ -18,6 +18,7 @@ import java.util.Locale
 
 @Composable
 fun GoalsModule(clients:List<Client>,all:List<ClientGoal>,busy:Boolean,message:String?,
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={},
     save:(List<ClientGoal>)->Unit) {
     var selected by remember { mutableStateOf(clients.firstOrNull()?.id.orEmpty()) }
     var choose by remember { mutableStateOf(false) }
@@ -25,6 +26,12 @@ fun GoalsModule(clients:List<Client>,all:List<ClientGoal>,busy:Boolean,message:S
     var editing by remember { mutableStateOf<ClientGoal?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<ClientGoal?>(null) }
+    LaunchedEffect(quickCreateId,busy,clients.size) {
+        if(quickCreateId>0 && !busy) {
+            if(clients.isNotEmpty()) { editing=null;showEditor=true }
+            onQuickConsumed()
+        }
+    }
     LaunchedEffect(clients) {
         if(clients.isNotEmpty() && clients.none{it.id==selected}) selected=clients.first().id
     }
