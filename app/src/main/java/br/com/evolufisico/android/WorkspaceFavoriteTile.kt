@@ -19,12 +19,12 @@ object WorkspaceHomeModules {
 @Composable
 fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
     onOpen:()->Unit,onRemove:()->Unit) {
-    Card(modifier=modifier.heightIn(min=155.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=168.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
-        elevation=CardDefaults.cardElevation(defaultElevation=2.dp),
+        elevation=CardDefaults.cardElevation(defaultElevation=1.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement=Arrangement.spacedBy(12.dp)) {
+            verticalArrangement=Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Text(entry.title,modifier=Modifier.weight(1f),
                     style=MaterialTheme.typography.titleSmall,

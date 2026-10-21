@@ -12,10 +12,10 @@ import androidx.compose.ui.unit.sp
  * A paleta escura conserva distinção sem impor fundos claros à noite. */
 data class MetricPaint(val background:Color,val ink:Color)
 object VisualTokens {
-    const val contentMaxWidthDp=1100
-    const val phoneGutterDp=18
+    const val contentMaxWidthDp=1440
+    const val phoneGutterDp=16
     const val tabletGutterDp=24
-    const val cardRadiusDp=18
+    const val cardRadiusDp=16
     fun dark(scheme:ColorScheme)=scheme.background.luminance()<0.4f
     fun metric(position:Int,dark:Boolean):MetricPaint {
         val light=listOf(
@@ -32,17 +32,24 @@ object VisualTokens {
         )
         return (if(dark)night else light)[position.coerceIn(0,3)]
     }
-    fun panel(dark:Boolean)=if(dark)Color(0xFF28313D) else Color(0xFFF0ECF3)
+    fun panel(dark:Boolean)=if(dark)Color(0xFF1D2C40) else Color(0xFFECF3FB)
+    /** Identidade por módulo; evita reutilizar a mesma cor para quase todo o catálogo. */
+    fun metricIndexForRoute(route:String):Int=when(route) {
+        "CLIENTS","ASSESSMENTS","CLIENT_SUMMARY","SEARCH" -> 0
+        "FORMS","GOALS","SERVICES","NOTES" -> 1
+        "AGENDA","EVOLUTION","TRENDS" -> 2
+        else -> 3
+    }
 }
 
 val CorporateTypography=Typography(
-    headlineMedium=TextStyle(fontSize=26.sp,lineHeight=32.sp,fontWeight=FontWeight.Bold),
+    headlineMedium=TextStyle(fontSize=26.sp,lineHeight=34.sp,fontWeight=FontWeight.Bold),
     headlineSmall=TextStyle(fontSize=23.sp,lineHeight=30.sp,fontWeight=FontWeight.SemiBold),
     titleLarge=TextStyle(fontSize=21.sp,lineHeight=28.sp,fontWeight=FontWeight.SemiBold),
-    titleMedium=TextStyle(fontSize=17.sp,lineHeight=24.sp,fontWeight=FontWeight.SemiBold),
+    titleMedium=TextStyle(fontSize=17.sp,lineHeight=25.sp,fontWeight=FontWeight.SemiBold),
     titleSmall=TextStyle(fontSize=15.sp,lineHeight=22.sp,fontWeight=FontWeight.SemiBold),
     bodyLarge=TextStyle(fontSize=16.sp,lineHeight=24.sp),
-    bodyMedium=TextStyle(fontSize=14.sp,lineHeight=21.sp),
+    bodyMedium=TextStyle(fontSize=14.sp,lineHeight=22.sp),
     bodySmall=TextStyle(fontSize=12.sp,lineHeight=18.sp),
     labelLarge=TextStyle(fontSize=14.sp,lineHeight=20.sp,fontWeight=FontWeight.Medium)
 )

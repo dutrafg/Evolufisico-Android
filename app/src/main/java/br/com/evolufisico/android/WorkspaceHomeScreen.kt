@@ -138,12 +138,13 @@ fun WorkspaceHomeScreen(
         loading=false
     }
     val screenWidthDp=LocalConfiguration.current.screenWidthDp
-    val largeLayout=WorkspaceLayoutRules.metricColumns(screenWidthDp)==4
+    val metricColumns=WorkspaceLayoutRules.metricColumns(screenWidthDp)
+    val largeLayout=metricColumns==4
     val favoriteColumns=WorkspaceLayoutRules.gridColumns(screenWidthDp)
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(
         modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
-        contentPadding=PaddingValues(horizontal=20.dp,vertical=24.dp),
+        contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(screenWidthDp).dp,vertical=24.dp),
         verticalArrangement=Arrangement.spacedBy(18.dp)
     ) {
         item {
@@ -160,7 +161,14 @@ fun WorkspaceHomeScreen(
                 }
             }
         }
-        if(largeLayout) item {
+        if(metricColumns==1) item {
+            Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.fillMaxWidth(),onClick={onNavigate("CLIENTS")})
+                WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.fillMaxWidth(),onClick={onNavigate("AGENDA")})
+                WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.fillMaxWidth(),onClick={onNavigate("AGENDA")})
+                WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.fillMaxWidth(),onClick={onNavigate("BILLING")})
+            }
+        } else if(largeLayout) item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                 WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
                 WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
@@ -185,8 +193,9 @@ fun WorkspaceHomeScreen(
         metrics?.let { value ->
             val attention=WorkspaceAttention.actions(value)
             if(attention.isNotEmpty()) item {
-                Card(shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
+                Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),modifier=Modifier.fillMaxWidth(),
+                    colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
                         Text("Acompanhar hoje",style=MaterialTheme.typography.titleMedium)
                         attention.forEach { action ->
                             TextButton(onClick={onNavigate(action.route)}) {
@@ -273,7 +282,6 @@ fun WorkspaceHomeScreen(
                                 onFavoritesChange(WorkspaceFavorites.toggle(favoriteRoutes,entry.route))
                             })
                     }
-                    repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
@@ -312,10 +320,10 @@ private fun WorkspaceMetric(
         else -> 3
     }
     val metric=VisualTokens.metric(index,VisualTokens.dark(MaterialTheme.colorScheme))
-    Card(onClick=onClick,modifier=modifier.heightIn(min=148.dp),
+    Card(onClick=onClick,modifier=modifier.heightIn(min=144.dp),
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         colors=CardDefaults.cardColors(containerColor=metric.background),
-        elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
+        elevation=CardDefaults.cardElevation(defaultElevation=0.dp)) {
         Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
             val icon=when(label) {
                 "Clientes" -> Icons.Outlined.People

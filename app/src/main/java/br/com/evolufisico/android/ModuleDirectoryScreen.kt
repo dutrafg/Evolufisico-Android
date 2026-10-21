@@ -121,12 +121,12 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
 
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
-        contentPadding=PaddingValues(horizontal=20.dp,vertical=22.dp),
+        contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=22.dp),
         verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item {
             Text("Encontre suas ferramentas por área.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Marque até 4 favoritos e organize a ordem pelas setas.",
+            Text("Marque até 4 favoritos. Eles aparecem na Área de trabalho.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(value=search,onValueChange={search=it.take(80)},
@@ -203,7 +203,6 @@ private fun ModuleGridRow(
                 onUp=moveUp?.let { { it(module.route) } },
                 onDown=moveDown?.let { { it(module.route) } })
         }
-        repeat(columns-entries.size) { Spacer(Modifier.weight(1f)) }
     }
 }
 
@@ -225,16 +224,15 @@ private fun ModuleTile(
         "REPORTS" -> Icons.Outlined.Summarize
         else -> Icons.Outlined.Groups
     }
-    Card(modifier=modifier.heightIn(min=166.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=176.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
-        elevation=CardDefaults.cardElevation(defaultElevation=2.dp),
+        elevation=CardDefaults.cardElevation(defaultElevation=1.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 val swatch=VisualTokens.metric(
-                    listOf("ASSESSMENTS","FORMS","EVOLUTION","GOALS")
-                        .indexOf(module.route).coerceAtLeast(0),
+                    VisualTokens.metricIndexForRoute(module.route),
                     VisualTokens.dark(MaterialTheme.colorScheme))
                 Box(Modifier.size(44.dp).background(swatch.background,
                     RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
@@ -243,7 +241,7 @@ private fun ModuleTile(
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick=onFavorite,enabled=canFavorite,
-                    modifier=Modifier.size(40.dp)) {
+                    modifier=Modifier.size(48.dp)) {
                     Icon(if(favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
                         contentDescription=if(favorite) "Remover dos favoritos" else "Favoritar",
                         tint=if(favorite) MaterialTheme.colorScheme.primary

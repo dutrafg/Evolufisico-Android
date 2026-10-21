@@ -103,7 +103,7 @@ private val corporateShapes=Shapes(
     small=RoundedCornerShape(10.dp),
     medium=RoundedCornerShape(12.dp),
     large=RoundedCornerShape(16.dp),
-    extraLarge=RoundedCornerShape(20.dp)
+    extraLarge=RoundedCornerShape(18.dp)
 )
 
 private enum class Section(val title: String, val icon: ImageVector) {
@@ -449,7 +449,7 @@ private fun ClientsScreen(
         .let { if (descending) it.reversed() else it }
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     Column(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)
-        .padding(horizontal=20.dp,vertical=24.dp),
+        .padding(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=24.dp),
         verticalArrangement=Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween) {
@@ -475,11 +475,11 @@ private fun ClientsScreen(
         } else if (visibleClients.isEmpty()) {
             Text("Nenhum cliente corresponde à busca.")
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(modifier=Modifier.weight(1f),verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(visibleClients, key = { it.id }) { client ->
                     Card(modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
-                        elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
+                        elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
                         Column(Modifier.padding(16.dp)) {
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                                 horizontalArrangement=Arrangement.spacedBy(12.dp)) {
