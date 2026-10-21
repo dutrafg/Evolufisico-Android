@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.android.agenda.AgendaCalendar
@@ -136,10 +137,28 @@ fun AgendaCalendarPanel(
                 " ativos no mês",style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(selected!=null) {
-                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                    Text("Selecionado: "+selected,
-                        modifier=Modifier.weight(1f),style=MaterialTheme.typography.bodySmall)
-                    OutlinedButton(onClick={onSelect(null)}){Text("Limpar dia")}
+                val selectedLabel="Dia selecionado: "+selected.format(
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy",locale))
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val narrow=maxWidth<340.dp || LocalDensity.current.fontScale>=1.5f
+                    if(narrow) {
+                        Column(Modifier.fillMaxWidth(),
+                            verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                            Text(selectedLabel,style=MaterialTheme.typography.bodySmall)
+                            OutlinedButton(onClick={onSelect(null)},
+                                modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                                Text("Limpar dia")
+                            }
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(),
+                            horizontalArrangement=Arrangement.spacedBy(8.dp),
+                            verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(selectedLabel,modifier=Modifier.weight(1f),
+                                style=MaterialTheme.typography.bodySmall)
+                            OutlinedButton(onClick={onSelect(null)}){Text("Limpar dia")}
+                        }
+                    }
                 }
             }
             OutlinedButton(
