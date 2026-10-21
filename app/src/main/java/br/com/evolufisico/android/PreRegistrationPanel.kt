@@ -169,8 +169,11 @@ fun PreRegistrationPanel(onOpenClients:()->Unit,
                     }
                 }) { Text("Confirmar cadastro") }
             },
-            dismissButton={TextButton(onClick={confirmComplete=null},
-                enabled=!completing){Text("Cancelar")})
+            dismissButton={
+                TextButton(onClick={confirmComplete=null},
+                    enabled=!completing) { Text("Cancelar") }
+            }
+        )
     }
     confirmRemove?.let { item ->
         AlertDialog(onDismissRequest={confirmRemove=null},
@@ -183,7 +186,10 @@ fun PreRegistrationPanel(onOpenClients:()->Unit,
                         "Pré-cadastro excluído.")
                 }) { Text("Excluir rascunho") }
             },
-            dismissButton={TextButton(onClick={confirmRemove=null}){Text("Cancelar")})
+            dismissButton={
+                TextButton(onClick={confirmRemove=null}) { Text("Cancelar") }
+            }
+        )
     }
 }
 
