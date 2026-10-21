@@ -336,3 +336,14 @@
 - [ ] Testar atualização in-place em aparelho físico com mesmo package/signature e versionCode maior
 - [ ] Concluir migração para criptografia e backups protegidos antes de Beta com dados reais
 - [ ] Validar no smartphone e tablet físico
+
+
+## Candidata Beta 2 — assinatura e atualização
+
+- [x] Diferenciar causas de falha de atualização sem apagar dados
+- [x] Comparar exatamente todos os certificados para APKs multiassinados
+- [x] Testes unitários específicos de package, downgrade e assinatura incompatível
+- [ ] Revisar resultado final do CI e emulador da Beta 2
+- [ ] Instalar release assinado pela MESMA chave da versão anterior em smartphone físico
+- [ ] Executar upgrade preservando dados e validar backup/restauração
+- [ ] Corrigir falta de proteção de dados e backups para Beta com dados reais

@@ -316,3 +316,13 @@ Detalhes em `docs/ALPHAS_16_A_20_100_ETAPAS.md`.
 - [ ] Homologar todos os checkpoints da matriz de 1100 tarefas planejadas
 - [ ] Testar todos os editores em um dispositivo e tablet real
 - [ ] Assinar release definitivo e testar atualização in-place com backup.
+
+
+## Beta 2 candidata — 100 verificações
+
+- [x] Checagem explícita de pacote, versionCode e conjunto de assinaturas
+- [x] Mensagens de erro de atualização mais claras e testes unitários novos
+- [ ] Concluir 100 checkpoints de `docs/BETA_2_100_ETAPAS.md`
+- [ ] Reunir chave original de assinatura e configurar GitHub Secrets
+- [ ] Confirmar testes em CI, emulador, smartphone e tablet
+- [ ] Testar atualização de release no mesmo identificador sem perda de dados

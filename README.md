@@ -294,3 +294,12 @@ As Alphas 39–88 adicionaram testes incrementais de regras de release, atualiza
 O arquivo `app/src/main/java/br/com/evolufisico/android/BetaReadiness.kt` registra dez requisitos de prontidão. A versão de desenvolvimento é `88.0.0-alpha.88` (versionCode 193), com pacote debug próprio.
 
 Para **atualização instalando um APK por cima**: mantenha o mesmo `applicationId`, a mesma chave de assinatura de release e aumente estritamente o `versionCode`. Nunca distribua um APK com a chave temporária do CI. O workflow assinado necessita dos secrets `EF_KEYSTORE_BASE64`, `EF_KEYSTORE_PASSWORD`, `EF_KEY_ALIAS`, `EF_KEY_PASSWORD` e da variável `EF_SIGNING_CERT_SHA256` (SHA-256 do certificado). O novo build compara também `versionCode` e a identidade da última release.
+
+
+## Beta 2 experimental — atualização por APK
+
+- Código de teste: `88.0.0-beta.2` (`versionCode=195`, instalação isolada `.beta2`).
+- `UpdateCompatibility` diferencia pacote incompatível, mesma versão/downgrade, ausência de assinatura e assinatura diferente.
+- `UpdatePolicy.sameSigningCertificate` exige o conjunto completo dos certificados. O Android ainda executa sua própria validação.
+- APK debug temporário não atualiza instalações anteriores; para distribuir APK que substitua app existente, o repositório precisa da **chave de release original** e deve compilar a versão *release* sem sufixo de aplicativo.
+- O plano de 100 etapas e respectivas evidências está em `docs/BETA_2_100_ETAPAS.md`.
