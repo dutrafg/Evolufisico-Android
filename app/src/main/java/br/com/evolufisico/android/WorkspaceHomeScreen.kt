@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -169,7 +171,7 @@ fun WorkspaceHomeScreen(
                 WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.fillMaxWidth(),onClick={onNavigate("BILLING")})
             }
         } else if(largeLayout) item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                 WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
                 WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
                 WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
@@ -177,13 +179,13 @@ fun WorkspaceHomeScreen(
             }
         } else {
             item {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                     WorkspaceMetric("Clientes",(metrics?.clients?:clientCount).toString(),Modifier.weight(1f),onClick={onNavigate("CLIENTS")})
                     WorkspaceMetric("Hoje",(metrics?.appointmentsToday?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
                 }
             }
             item {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                     WorkspaceMetric("Agenda pendente",(metrics?.overdueAppointments?:0).toString(),Modifier.weight(1f),onClick={onNavigate("AGENDA")})
                     WorkspaceMetric("Cobranças pendentes",(metrics?.pendingCharges?:0).toString(),Modifier.weight(1f),onClick={onNavigate("BILLING")})
                 }
@@ -339,7 +341,7 @@ private fun WorkspaceMetric(
         else -> 3
     }
     val metric=VisualTokens.metric(index,VisualTokens.dark(MaterialTheme.colorScheme))
-    Card(onClick=onClick,modifier=modifier.heightIn(min=144.dp),
+    Card(onClick=onClick,modifier=modifier.fillMaxHeight().heightIn(min=144.dp),
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         colors=CardDefaults.cardColors(containerColor=metric.background),
         elevation=CardDefaults.cardElevation(defaultElevation=0.dp)) {
