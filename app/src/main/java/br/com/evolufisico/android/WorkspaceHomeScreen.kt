@@ -3,6 +3,8 @@ package br.com.evolufisico.android
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -137,14 +140,17 @@ fun WorkspaceHomeScreen(
     val screenWidthDp=LocalConfiguration.current.screenWidthDp
     val largeLayout=WorkspaceLayoutRules.metricColumns(screenWidthDp)==4
     val favoriteColumns=WorkspaceLayoutRules.gridColumns(screenWidthDp)
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(
-        contentPadding=PaddingValues(horizontal=16.dp,vertical=18.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)
+        modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding=PaddingValues(horizontal=20.dp,vertical=24.dp),
+        verticalArrangement=Arrangement.spacedBy(18.dp)
     ) {
         item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+                verticalAlignment=Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Área de trabalho",style=MaterialTheme.typography.headlineSmall,
+                    Text("Área de trabalho",style=MaterialTheme.typography.headlineMedium,
                         fontWeight=FontWeight.Bold)
                     Text("Aqui está o resumo do seu dia.",
                         color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -195,8 +201,12 @@ fun WorkspaceHomeScreen(
             Text(issue,color=MaterialTheme.colorScheme.error)
         } }
         item {
-            Card(shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            val surfaceDark=VisualTokens.dark(MaterialTheme.colorScheme)
+            Card(shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+                modifier=Modifier.fillMaxWidth(),
+                colors=CardDefaults.cardColors(containerColor=VisualTokens.panel(surfaceDark)),
+                elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
+                Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                         Text("Próximos atendimentos",style=MaterialTheme.typography.titleMedium,
                             fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
@@ -204,6 +214,7 @@ fun WorkspaceHomeScreen(
                     }
                     val next=metrics?.next.orEmpty()
                     if(next.isEmpty()) {
+                        Spacer(Modifier.height(4.dp))
                         Text(if(loading) "Consultando agenda…" else "Nenhum atendimento futuro agendado.",
                             color=MaterialTheme.colorScheme.onSurfaceVariant)
                     } else next.forEachIndexed { i,a ->
@@ -285,6 +296,7 @@ fun WorkspaceHomeScreen(
         }
 
     }
+    }
 }
 
 @Composable
@@ -292,33 +304,31 @@ private fun WorkspaceMetric(
     label:String, value:String, modifier:Modifier=Modifier,
     onClick:()->Unit
 ) {
-    val palette=when(label) {
-        "Clientes" -> MaterialTheme.colorScheme.primaryContainer to
-            MaterialTheme.colorScheme.onPrimaryContainer
-        "Hoje" -> MaterialTheme.colorScheme.secondaryContainer to
-            MaterialTheme.colorScheme.onSecondaryContainer
-        "Agenda pendente" -> MaterialTheme.colorScheme.tertiaryContainer to
-            MaterialTheme.colorScheme.onTertiaryContainer
-        else -> MaterialTheme.colorScheme.errorContainer to
-            MaterialTheme.colorScheme.onErrorContainer
+    val index=when(label) {
+        "Clientes" -> 0
+        "Hoje" -> 1
+        "Agenda pendente" -> 2
+        else -> 3
     }
-    Card(onClick=onClick,modifier=modifier.heightIn(min=112.dp),
-        shape=RoundedCornerShape(12.dp),
-        colors=CardDefaults.cardColors(containerColor=palette.first)) {
-        Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+    val metric=VisualTokens.metric(index,VisualTokens.dark(MaterialTheme.colorScheme))
+    Card(onClick=onClick,modifier=modifier.heightIn(min=148.dp),
+        shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+        colors=CardDefaults.cardColors(containerColor=metric.background),
+        elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
+        Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
             val icon=when(label) {
                 "Clientes" -> Icons.Outlined.People
                 "Hoje" -> Icons.Outlined.Today
                 "Agenda pendente" -> Icons.Outlined.Schedule
                 else -> Icons.Outlined.Payments
             }
-            Icon(icon,contentDescription=null,tint=palette.second,
-                modifier=Modifier.size(19.dp))
-            Text(label,style=MaterialTheme.typography.labelMedium,color=palette.second,
+            Icon(icon,contentDescription=null,tint=metric.ink,
+                modifier=Modifier.size(23.dp))
+            Text(label,style=MaterialTheme.typography.titleSmall,color=metric.ink,
                 maxLines=2)
             Spacer(Modifier.height(3.dp))
-            Text(value,style=MaterialTheme.typography.headlineMedium,
-                fontWeight=FontWeight.Bold,color=palette.second)
+            Text(value,style=MaterialTheme.typography.headlineLarge,
+                fontWeight=FontWeight.Bold,color=metric.ink)
         }
     }
 }

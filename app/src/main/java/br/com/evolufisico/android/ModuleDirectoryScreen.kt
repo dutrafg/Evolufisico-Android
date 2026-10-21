@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.horizontalScroll
@@ -117,9 +119,10 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
         WorkspaceModules.all.firstOrNull{it.route==id}
     }.filterNot { it in featured } else emptyList()
 
-    LazyColumn(modifier=Modifier.fillMaxSize(),
-        contentPadding=PaddingValues(horizontal=16.dp,vertical=16.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)) {
+    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
+    LazyColumn(modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
+        contentPadding=PaddingValues(horizontal=20.dp,vertical=22.dp),
+        verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item {
             Text("Encontre suas ferramentas por área.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -173,6 +176,7 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+    }
 }
 
 @Composable
@@ -221,11 +225,12 @@ private fun ModuleTile(
         "REPORTS" -> Icons.Outlined.Summarize
         else -> Icons.Outlined.Groups
     }
-    Card(modifier=modifier.heightIn(min=150.dp),onClick=onOpen,
-        shape=androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    Card(modifier=modifier.heightIn(min=160.dp),onClick=onOpen,
+        shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
+        elevation=CardDefaults.cardElevation(defaultElevation=2.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement=Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Icon(icon,contentDescription=null,tint=MaterialTheme.colorScheme.primary,
                     modifier=Modifier.size(24.dp))

@@ -35,7 +35,10 @@ object CorporatePalettes {
             surface=Color(0xFF172335),onSurface=Color(0xFFE7ECF5),
             surfaceVariant=Color(0xFF253449),onSurfaceVariant=Color(0xFFBBC9DC),
             outline=Color(0xFF708298),outlineVariant=Color(0xFF3D4A5E),
-            primaryContainer=Color(0xFF273C51),onPrimaryContainer=selected.bright
+            primaryContainer=Color(0xFF273C51),onPrimaryContainer=selected.bright,
+            secondaryContainer=Color(0xFF1F4237),onSecondaryContainer=Color(0xFFC0F0D9),
+            tertiaryContainer=Color(0xFF4A3B22),onTertiaryContainer=Color(0xFFFFE0A6),
+            errorContainer=Color(0xFF522E3C),onErrorContainer=Color(0xFFFFC0D2)
         ) else lightColorScheme(
             primary=selected.deep,onPrimary=Color.White,
             secondary=selected.deep,onSecondary=Color.White,
@@ -43,7 +46,10 @@ object CorporatePalettes {
             surface=Color.White,onSurface=Color(0xFF162238),
             surfaceVariant=Color(0xFFE9EFF7),onSurfaceVariant=Color(0xFF50617A),
             outline=Color(0xFFBBCADA),outlineVariant=Color(0xFFE0E7F0),
-            primaryContainer=Color(0xFFE4EDF7),onPrimaryContainer=selected.deep
+            primaryContainer=Color(0xFFE4EDF7),onPrimaryContainer=selected.deep,
+            secondaryContainer=Color(0xFFE3F5EC),onSecondaryContainer=Color(0xFF126D50),
+            tertiaryContainer=Color(0xFFFFF2DB),onTertiaryContainer=Color(0xFF895900),
+            errorContainer=Color(0xFFFBE8EE),onErrorContainer=Color(0xFF943552)
         )
     }
 }
