@@ -19,9 +19,9 @@ jobs:
   signed-release:
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    # Releases da branch Beta podem usar a MESMA identidade permanente que a main.
+    # Branches Beta podem usar a MESMA identidade permanente que a main.
     # Somente execução manual, com chave secreta e certificado fixado validados.
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta-11-interface-polish'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/beta-')
     env:
       TAG: ${{ inputs.tag }}
       PINNED_SHA256: ${{ vars.EF_SIGNING_CERT_SHA256 }}
