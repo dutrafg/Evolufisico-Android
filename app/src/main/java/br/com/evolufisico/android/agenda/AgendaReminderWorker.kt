@@ -89,8 +89,10 @@ class AgendaReminderWorker(ctx:Context, params:WorkerParameters):CoroutineWorker
                         !LocalDateTime.parse(a.startIso).isBefore(LocalDateTime.now().minusDays(1))
                     }.getOrDefault(false)
                 }.map(AgendaReminderRules::key).toSet()
-                val keys=((existing intersect valid)+upcoming.map(AgendaReminderRules::key))
-                    .take(1000).toSet()
+                // Os avisos recém-enviados têm prioridade mesmo se o histórico
+                // antigo contiver mais de mil registros.
+                val keys=(upcoming.map(AgendaReminderRules::key)+
+                    (existing intersect valid)).take(1000).toSet()
                 check(prefs.edit().putStringSet("notified",keys).commit()) {
                     "Não foi possível registrar o lembrete enviado."
                 }
