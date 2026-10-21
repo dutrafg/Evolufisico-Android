@@ -237,6 +237,9 @@ fun WorkspaceHomeScreen(
                 }
             }
         }
+        item {
+            PreRegistrationPanel(onOpenClients={onNavigate("CLIENTS")})
+        }
         error?.let { issue -> item {
             Text(issue,color=MaterialTheme.colorScheme.error)
         } }
