@@ -364,7 +364,8 @@ fun DataSettingsScreen(
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Paleta de cores",style=MaterialTheme.typography.titleMedium)
-            Text("Escolha entre 10 cores. A preferência é salva automaticamente.",
+            Text("Escolha entre 15 cores, incluindo cinco tons fortes do Desktop. " +
+                "Sua preferência é salva automaticamente.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             val screenDp=LocalConfiguration.current.screenWidthDp
