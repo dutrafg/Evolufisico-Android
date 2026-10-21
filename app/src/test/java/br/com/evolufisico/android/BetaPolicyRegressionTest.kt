@@ -111,4 +111,10 @@ class BetaPolicyRegressionTest {
         assertEquals(setOf("GOALS","FORMS"),WorkspaceFavorites.parse("GOALS,FORMS,GOALS"))
     }
 
+    @Test fun alpha63PolicyRegression() {
+        val selected=WorkspaceFavorites.toggle(emptySet(),"GOALS")
+        assertEquals(setOf("GOALS"),selected)
+        assertTrue(WorkspaceFavorites.toggle(selected,"GOALS").isEmpty())
+    }
+
 }
