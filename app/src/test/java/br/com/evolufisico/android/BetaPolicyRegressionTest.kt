@@ -61,4 +61,8 @@ class BetaPolicyRegressionTest {
         assertTrue(UpdatePolicy.validReleaseUrl("https://github.com/dutrafg/Evolufisico-Android/releases/download/v1.0.0/official.apk"))
     }
 
+    @Test fun alpha52UpdateUrlRegression() {
+        assertFalse(UpdatePolicy.validReleaseUrl("http://github.com/dutrafg/Evolufisico-Android/releases/download/v1.0.0/app.apk"))
+    }
+
 }
