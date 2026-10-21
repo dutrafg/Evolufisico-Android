@@ -97,7 +97,9 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                                 local.assessments.toSet() == backup.assessments.toSet() &&
                                 local.forms.toSet() == backup.forms.toSet() &&
                                 local.charges.toSet() == backup.charges.toSet() &&
-                                local.operations == backup.operations) {
+                                local.operations == backup.operations &&
+                                local.preRegistrations.toSet() ==
+                                    backup.preRegistrations.toSet()) {
                                 "O backup é válido, mas não contém exatamente o estado atual " +
                                     "dos dados. Faça um novo backup antes de atualizar."
                             }
