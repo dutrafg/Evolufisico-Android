@@ -151,7 +151,9 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
                 modifier = Modifier.fillMaxWidth(),
                 colors=androidx.compose.material3.CardDefaults.cardColors(
                     containerColor=VisualTokens.metric(3,
-                        VisualTokens.dark(MaterialTheme.colorScheme)).background),
+                        VisualTokens.dark(MaterialTheme.colorScheme)).background,
+                    contentColor=VisualTokens.metric(3,
+                        VisualTokens.dark(MaterialTheme.colorScheme)).ink),
                 elevation=androidx.compose.material3.CardDefaults.cardElevation(defaultElevation=1.dp)) {
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     Text("A receber",style=MaterialTheme.typography.titleSmall,
