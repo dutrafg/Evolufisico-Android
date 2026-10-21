@@ -7,6 +7,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronLeft
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -36,14 +45,19 @@ fun AgendaCalendarPanel(
     val weeks = remember(month, appointments) { AgendaCalendar.weeks(month, appointments) }
     val locale = Locale.forLanguageTag("pt-BR")
     val caption = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", locale))
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),
+        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Calendário de atendimentos",style=MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                TextButton(onClick={month=month.minusMonths(1)}) { Text("‹ Anterior") }
+                IconButton(onClick={month=month.minusMonths(1)}) {
+                    Icon(Icons.Outlined.ChevronLeft,contentDescription="Mês anterior")
+                }
                 Text(caption,modifier=Modifier.weight(1f).padding(top=12.dp),
                     textAlign=TextAlign.Center,style=MaterialTheme.typography.labelMedium)
-                TextButton(onClick={month=month.plusMonths(1)}) { Text("Próximo ›") }
+                IconButton(onClick={month=month.plusMonths(1)}) {
+                    Icon(Icons.Outlined.ChevronRight,contentDescription="Próximo mês")
+                }
             }
             Row(Modifier.fillMaxWidth()) {
                 listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom").forEach { day ->
@@ -61,13 +75,17 @@ fun AgendaCalendarPanel(
                             val today=cell.date==LocalDate.now()
                             TextButton(
                                 onClick={onSelect(if(chosen) null else cell.date)},
-                                modifier=Modifier.weight(1f).padding(0.dp),
-                                contentPadding=androidx.compose.foundation.layout.PaddingValues(0.dp)
+                                modifier=Modifier.weight(1f).heightIn(min=44.dp),
+                                shape=RoundedCornerShape(8.dp),
+                                colors=ButtonDefaults.textButtonColors(
+                                    containerColor=if(chosen) MaterialTheme.colorScheme.primaryContainer
+                                        else Color.Transparent),
+                                contentPadding=PaddingValues(0.dp)
                             ) {
                                 Text(
                                     cell.date.dayOfMonth.toString()+
                                         (if(cell.scheduled>0)" •" else ""),
-                                    color=if(chosen) MaterialTheme.colorScheme.primary
+                                    color=if(chosen) MaterialTheme.colorScheme.onPrimaryContainer
                                         else if(today) MaterialTheme.colorScheme.tertiary
                                         else MaterialTheme.colorScheme.onSurface,
                                     style=if(chosen)MaterialTheme.typography.labelLarge
