@@ -303,7 +303,14 @@ fun DataSettingsScreen(
             Text("Escolha entre 10 cores. A preferência é salva automaticamente.",
                 style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
-            val colorColumns=if(LocalConfiguration.current.screenWidthDp>=700) 5 else 2
+            val screenDp=LocalConfiguration.current.screenWidthDp
+            val scale=androidx.compose.ui.platform.LocalDensity.current.fontScale
+            val colorColumns=when {
+                screenDp<360 || scale>=1.45f && screenDp<700 -> 1
+                screenDp>=840 && scale<=1.2f -> 5
+                screenDp>=700 -> 3
+                else -> 2
+            }
             CorporatePalettes.options.chunked(colorColumns).forEach { paletteRow ->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                     paletteRow.forEach { palette ->
