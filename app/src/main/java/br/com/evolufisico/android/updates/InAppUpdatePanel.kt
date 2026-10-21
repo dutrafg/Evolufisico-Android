@@ -79,7 +79,7 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
         backupReport = null
         val credential = backupPassword.toCharArray()
         backupPassword = ""
-        if (uri != null && credential.size >= 10) {
+        if (uri != null) {
             checking = true
             scope.launch {
                 val validation = withContext(Dispatchers.IO) {
@@ -216,18 +216,18 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                 backupReport = null
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Senha do arquivo .efbak (mínimo 10 caracteres)") },
+            label = { Text("Senha, se o backup .efbak for criptografado") },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
         OutlinedButton(
-            enabled = !checking && backupPassword.length >= 10,
+            enabled = !checking,
             modifier = Modifier.fillMaxWidth(),
             onClick = {
                 onDocumentFlow(true)
                 backupPicker.launch(arrayOf("*/*"))
             }
-        ) { Text("Selecionar e verificar backup antes de atualizar") }
+        ) { Text("Verificar backup JSON ou .efbak") }
         backupReport?.let {
             Text(it, color = if (backupVerified) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.error,
@@ -238,9 +238,10 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
             onClick = { confirmInstall = true }) {
             Text("Instalar atualização verificada")
         }
-        Text("O instalador só será liberado após verificar um backup portátil .efbak " +
-            "que corresponda aos registros atuais. Ainda é obrigatório usar uma assinatura " +
-            "compatível no APK. Não desinstale sem uma migração planejada.",
+        Text("O instalador só será liberado após verificar um backup JSON novo " +
+            "ou .efbak criptografado antigo, que corresponda aos registros atuais. " +
+            "Backups JSON não exigem senha; arquivos antigos exigem a senha original. " +
+            "A assinatura do APK também deve ser compatível. Não desinstale sem migrar os dados.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (checking) Text("Verificando o arquivo, assinatura e versão...")
