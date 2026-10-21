@@ -11,7 +11,7 @@ data class ReleaseTag(
 }
 
 object ReleasePolicy {
-    private val pattern = Regex("""^v?(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(\d*))?$""")
+    private val pattern = Regex("""^v?(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:[.-]?(\d+))?)?(?:-preview)?$""")
     fun parse(text: String): ReleaseTag? {
         val match = pattern.matchEntire(text) ?: return null
         return runCatching {

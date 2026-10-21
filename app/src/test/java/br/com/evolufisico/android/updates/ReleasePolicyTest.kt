@@ -14,6 +14,15 @@ class ReleasePolicyTest {
         assertNull(ReleasePolicy.parse("v999999999999.0.0"))
     }
 
+    @Test fun parsesAndroidAlphaPreviewAndVersionOrdering() {
+        val installed=ReleasePolicy.parse("38.0.0-alpha.38-preview")
+        assertNotNull(installed)
+        assertEquals(0,installed!!.channel)
+        assertEquals(38,installed.channelNumber)
+        assertFalse(ReleasePolicy.newer("38.0.0-alpha.38","38.0.0-alpha.38-preview"))
+        assertTrue(ReleasePolicy.newer("38.0.0-beta.1","38.0.0-alpha.38-preview"))
+        assertNotNull(ReleasePolicy.parse("v39.0.0-rc2"))
+    }
     @Test fun fingerprintMustBeSingleHexLine() {
         assertEquals("A".repeat(64), ReleasePolicy.readFingerprint("a".repeat(64)+"\n"))
         assertNull(ReleasePolicy.readFingerprint("a".repeat(65)))
