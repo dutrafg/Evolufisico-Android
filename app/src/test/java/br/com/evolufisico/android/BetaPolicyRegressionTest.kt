@@ -145,4 +145,8 @@ class BetaPolicyRegressionTest {
             WorkspaceRecents.parse("GOALS,FORMS,NOTES,REPORTS"))
     }
 
+    @Test fun alpha70LocalDataRegression() {
+        assertEquals("GOALS,FORMS",WorkspaceRecents.serialize(listOf("GOALS","UNKNOWN","FORMS")))
+    }
+
 }
