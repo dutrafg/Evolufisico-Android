@@ -135,8 +135,8 @@ fun WorkspaceHomeScreen(
         loading=false
     }
     val screenWidthDp=LocalConfiguration.current.screenWidthDp
-    val largeLayout=screenWidthDp>=840
-    val favoriteColumns=WorkspaceGrid.columns(screenWidthDp)
+    val largeLayout=WorkspaceLayoutRules.metricColumns(screenWidthDp)==4
+    val favoriteColumns=WorkspaceLayoutRules.gridColumns(screenWidthDp)
     LazyColumn(
         contentPadding=PaddingValues(horizontal=16.dp,vertical=18.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)
@@ -210,10 +210,12 @@ fun WorkspaceHomeScreen(
                         if(i>0) HorizontalDivider()
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                             horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.size(38.dp).background(Color(0xFFE9F2FD),CircleShape),
+                            Box(Modifier.size(38.dp).background(
+                                MaterialTheme.colorScheme.primaryContainer,CircleShape),
                                 contentAlignment=Alignment.Center) {
                                 Text(WorkspaceDisplay.initials(a.clientName),
-                                    color=Color(0xFF17589A),fontWeight=FontWeight.Bold)
+                                    color=MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight=FontWeight.Bold)
                             }
                             Column(Modifier.weight(1f)) {
                                 Text(a.clientName,style=MaterialTheme.typography.titleSmall)
@@ -229,14 +231,24 @@ fun WorkspaceHomeScreen(
                 }
             }
         }
-        if(favoriteRoutes.isNotEmpty()) {
-            item {
-                Text("Meus módulos",style=MaterialTheme.typography.titleMedium,
+        item {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                Text("Meus módulos",modifier=Modifier.weight(1f),
+                    style=MaterialTheme.typography.titleMedium,
                     fontWeight=FontWeight.SemiBold)
-                Text("Retire a estrela para devolver o módulo ao catálogo.",
+                TextButton(onClick={onNavigate("MODULES")}) { Text("Personalizar") }
+            }
+            if(favoriteRoutes.isEmpty()) {
+                Text("Abra Módulos e marque a estrela nas suas funções mais usadas.",
+                    style=MaterialTheme.typography.bodySmall,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("Toque no cartão para abrir a função ou remova a estrela para ocultá-la.",
                     style=MaterialTheme.typography.bodySmall,
                     color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
+        if(favoriteRoutes.isNotEmpty()) {
             val chunks=WorkspaceHomeModules.selected(favoriteRoutes)
                 .chunked(favoriteColumns)
             items(chunks.size) { index ->
@@ -283,9 +295,12 @@ private fun WorkspaceMetric(
     val palette=when(label) {
         "Clientes" -> MaterialTheme.colorScheme.primaryContainer to
             MaterialTheme.colorScheme.onPrimaryContainer
-        "Hoje" -> Color(0xFFE5F5ED) to Color(0xFF156B46)
-        "Agenda pendente" -> Color(0xFFFFF2DC) to Color(0xFF94600A)
-        else -> Color(0xFFFCE9F0) to Color(0xFF9C2D4A)
+        "Hoje" -> MaterialTheme.colorScheme.secondaryContainer to
+            MaterialTheme.colorScheme.onSecondaryContainer
+        "Agenda pendente" -> MaterialTheme.colorScheme.tertiaryContainer to
+            MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.errorContainer to
+            MaterialTheme.colorScheme.onErrorContainer
     }
     Card(onClick=onClick,modifier=modifier.heightIn(min=112.dp),
         shape=RoundedCornerShape(12.dp),

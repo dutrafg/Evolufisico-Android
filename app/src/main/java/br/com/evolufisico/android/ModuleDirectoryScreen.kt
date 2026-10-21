@@ -108,7 +108,7 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
     fun move(route:String,offset:Int) {
         saveFavorites(WorkspaceFavorites.move(favorites,route,offset))
     }
-    val columns=WorkspaceGrid.columns(LocalConfiguration.current.screenWidthDp)
+    val columns=WorkspaceLayoutRules.gridColumns(LocalConfiguration.current.screenWidthDp)
     val filtered=WorkspaceModules.filter(search,category)
     val featured=if(search.isBlank()&&category=="Todos") favorites.mapNotNull { id ->
         WorkspaceModules.all.firstOrNull { it.route==id }
@@ -151,9 +151,9 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
                 ModuleGridRow(recent.chunked(columns)[index],columns,favorites,::navigate,::toggle)
             }
         }
-        if(filtered.isNotEmpty()) {
+        if(filtered.any { it !in featured && it !in recent }) {
             item {
-                Text("Todos os módulos",style=MaterialTheme.typography.titleMedium,
+                Text("Outros módulos",style=MaterialTheme.typography.titleMedium,
                     fontWeight=FontWeight.Bold)
             }
         }
@@ -234,7 +234,7 @@ private fun ModuleTile(
                     modifier=Modifier.size(40.dp)) {
                     Icon(if(favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
                         contentDescription=if(favorite) "Remover dos favoritos" else "Favoritar",
-                        tint=if(favorite) Color(0xFFE5A100)
+                        tint=if(favorite) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
