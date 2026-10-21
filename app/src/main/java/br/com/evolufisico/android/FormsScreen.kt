@@ -156,7 +156,6 @@ fun FormsScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Formulários", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text("Modelos e respostas individuais vinculados ao perfil do cliente.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

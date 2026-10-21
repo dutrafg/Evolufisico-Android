@@ -265,7 +265,6 @@ fun DataSettingsScreen(
             .verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement=Arrangement.spacedBy(14.dp)
     ) {
-        Text("Configurações",style=MaterialTheme.typography.headlineSmall)
         Text("Gerencie o ambiente, proteja seus dados e execute a manutenção.",
             style=MaterialTheme.typography.bodyMedium,
             color=MaterialTheme.colorScheme.onSurfaceVariant)

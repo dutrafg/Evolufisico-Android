@@ -135,8 +135,6 @@ fun BillingScreen(clients: List<Client>, store: EncryptedChargeStore,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Cobranças", style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold)
             Text("Recebimentos vinculados ao cliente", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {

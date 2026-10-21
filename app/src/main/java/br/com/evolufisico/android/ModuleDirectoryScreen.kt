@@ -121,8 +121,6 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
         contentPadding=PaddingValues(horizontal=16.dp,vertical=16.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Módulos",style=MaterialTheme.typography.headlineSmall,
-                fontWeight=FontWeight.Bold)
             Text("Encontre suas ferramentas por área.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Marque até 4 favoritos e organize a ordem pelas setas.",
