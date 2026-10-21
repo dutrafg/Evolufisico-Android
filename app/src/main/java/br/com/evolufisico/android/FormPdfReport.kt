@@ -44,24 +44,46 @@ object FormPdfReport {
             y = 146f
         }
         fun writeText(value: String, paint: Paint) {
-            val c = page!!.canvas
-            // Respeita largura da página, inclusive respostas longas.
-            val words = value.split(Regex("\\s+"))
-            var line = ""
-            for (word in words) {
-                val candidate = if (line.isEmpty()) word else line + " " + word
-                if (paint.measureText(candidate) > 506f && line.isNotEmpty()) {
-                    if (y > 750f) start()
-                    page!!.canvas.drawText(line,44f,y,paint)
-                    y += 17f
-                    line = word
-                } else line = candidate
+            // Respeita margem direita inclusive sem espaços e com Unicode.
+            val maxWidth=506f
+            fun drawLine(text:String) {
+                if(text.isEmpty()) return
+                if(y>750f) start()
+                page!!.canvas.drawText(text,44f,y,paint)
+                y+=17f
             }
-            if (line.isNotEmpty()) {
-                if (y > 750f) start()
-                page!!.canvas.drawText(line,44f,y,paint)
-                y += 17f
+            var line=""
+            for(word in value.split(Regex("\\s+"))) {
+                if(word.isEmpty()) continue
+                var part=""
+                // Iteração por code points: nunca cortar pares UTF-16 de emojis.
+                val count=word.codePointCount(0,word.length)
+                var position=0
+                repeat(count) {
+                    val codePoint=word.codePointAt(position)
+                    position+=Character.charCount(codePoint)
+                    val addition=String(Character.toChars(codePoint))
+                    if(paint.measureText(part+addition)>maxWidth && part.isNotEmpty()) {
+                        val candidate=if(line.isEmpty()) part else "$line $part"
+                        if(paint.measureText(candidate)>maxWidth && line.isNotEmpty()) {
+                            drawLine(line)
+                            line=""
+                        }
+                        if(line.isNotEmpty()) { drawLine(line);line="" }
+                        drawLine(part)
+                        part=""
+                    }
+                    part+=addition
+                }
+                if(part.isNotEmpty()) {
+                    val combined=if(line.isEmpty()) part else "$line $part"
+                    if(paint.measureText(combined)>maxWidth && line.isNotEmpty()) {
+                        drawLine(line)
+                        line=part
+                    } else line=combined
+                }
             }
+            drawLine(line)
         }
         try {
             start()
