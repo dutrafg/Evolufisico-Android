@@ -452,7 +452,10 @@ private fun ClientsScreen(
         .let { if (descending) it.reversed() else it }
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     Column(Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp)
-        .padding(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=24.dp),
+        .padding(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=24.dp)
+        // Sem resultados não há LazyColumn; permitir rolagem com fonte grande.
+        .then(if(visibleClients.isEmpty()) Modifier.verticalScroll(rememberScrollState())
+            else Modifier),
         verticalArrangement=Arrangement.spacedBy(14.dp)) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             if (maxWidth < 420.dp) {
