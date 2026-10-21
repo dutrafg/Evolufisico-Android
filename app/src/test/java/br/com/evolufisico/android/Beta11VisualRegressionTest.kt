@@ -12,14 +12,26 @@ class Beta11VisualRegressionTest {
             for(palette in CorporatePalettes.options) {
                 for(dark in listOf(false,true)) {
                     for(fontScale in fontScales) {
-                        val columns=WorkspaceLayoutRules.gridColumns(width)
-                        val metrics=WorkspaceLayoutRules.metricColumns(width)
-                        val available=WorkspaceLayoutRules.contentWidthDp(width)
+                        val columns=WorkspaceLayoutRules.gridColumns(width,fontScale)
+                        val metrics=WorkspaceLayoutRules.metricColumns(width,fontScale)
+                        val available=WorkspaceLayoutRules.usableWidthDp(width)
+                        val minimum=WorkspaceLayoutRules.minimumTileDp(fontScale)
                         assertTrue(columns in 1..4)
                         assertTrue(metrics in listOf(1,2,4))
-                        assertTrue(available>=0)
+                        assertTrue(available>0)
                         assertTrue(VisualLayout.edgePaddingDp(width)>=16)
-                        assertTrue(fontScale>=1f)
+                        if(columns>1) {
+                            val cell=(available-10*(columns-1))/columns
+                            assertTrue("Módulos estreitos em $width dp / fonte $fontScale: $cell dp",
+                                cell>=minimum)
+                        }
+                        if(metrics>1) {
+                            val cell=(available-10*(metrics-1))/metrics
+                            assertTrue("Indicadores estreitos em $width dp / fonte $fontScale",
+                                cell>=minimum)
+                        }
+                        assertTrue(columns<=WorkspaceLayoutRules.gridColumns(width,1f))
+                        assertTrue(metrics<=WorkspaceLayoutRules.metricColumns(width,1f))
                         assertNotEquals(CorporatePalettes.scheme(palette.id,dark).onSurface,
                                         CorporatePalettes.scheme(palette.id,dark).surface)
                         tested++
