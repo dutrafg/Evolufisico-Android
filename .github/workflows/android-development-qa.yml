@@ -9,6 +9,10 @@ on:
       - beta-4-development
       - beta-5-development
       - beta-6-visual-redesign
+      - beta-7-mockup-core
+      - beta-8-mockup-modules
+      - beta-9-mockup-polish
+      - beta-10-parity-review
     paths:
       - 'app/**'
       - '.github/workflows/android-development-qa.yml'
