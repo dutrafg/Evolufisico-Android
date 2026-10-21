@@ -132,4 +132,8 @@ class BetaPolicyRegressionTest {
         assertEquals(setOf("GOALS"),WorkspaceFavorites.parse("INVALID,GOALS"))
     }
 
+    @Test fun alpha67LocalDataRegression() {
+        assertEquals(listOf("GOALS"),WorkspaceRecents.open(emptyList(),"GOALS"))
+    }
+
 }
