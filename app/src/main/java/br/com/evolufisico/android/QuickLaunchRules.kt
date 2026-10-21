@@ -7,7 +7,8 @@ object QuickLaunchRules {
         "ASSESSMENTS" to "Nova avaliação",
         "FORMS" to "Novo formulário",
         "GOALS" to "Nova meta",
-        "NOTES" to "Nova anotação"
+        "NOTES" to "Nova anotação",
+        "SERVICES" to "Novo serviço"
     )
     fun supportsCreate(route:String):Boolean=route in createActions
     fun label(route:String):String=createActions[route]?:"Abrir função"

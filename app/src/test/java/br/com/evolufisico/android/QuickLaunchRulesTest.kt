@@ -7,6 +7,8 @@ class QuickLaunchRulesTest {
   assertTrue(QuickLaunchRules.supportsCreate("FORMS"))
   assertTrue(QuickLaunchRules.supportsCreate("GOALS"))
   assertTrue(QuickLaunchRules.supportsCreate("NOTES"))
+  assertTrue(QuickLaunchRules.supportsCreate("SERVICES"))
+  assertEquals("Novo serviço",QuickLaunchRules.label("SERVICES"))
   assertEquals("Nova anotação",QuickLaunchRules.label("NOTES"))
   assertEquals("Nova meta",QuickLaunchRules.label("GOALS"))
   assertFalse(QuickLaunchRules.supportsCreate("REPORTS"))

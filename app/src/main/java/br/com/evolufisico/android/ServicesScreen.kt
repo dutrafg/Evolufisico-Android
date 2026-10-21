@@ -15,12 +15,20 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun ServicesModule(all:List<ServiceItem>,busy:Boolean,message:String?,save:(List<ServiceItem>)->Unit) {
+fun ServicesModule(all:List<ServiceItem>,busy:Boolean,message:String?,
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={},
+    save:(List<ServiceItem>)->Unit) {
     var search by remember{mutableStateOf("")}
     var enabledOnly by remember{mutableStateOf(true)}
     var editing by remember{mutableStateOf<ServiceItem?>(null)}
     var showEditor by remember{mutableStateOf(false)}
     var removing by remember{mutableStateOf<ServiceItem?>(null)}
+    LaunchedEffect(quickCreateId,busy) {
+        if(quickCreateId>0 && !busy) {
+            editing=null;showEditor=true
+            onQuickConsumed()
+        }
+    }
     val money=NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
     val visible=all.filter{(!enabledOnly||it.enabled)&&it.name.contains(search,true)}
         .sortedBy{it.name.lowercase()}
