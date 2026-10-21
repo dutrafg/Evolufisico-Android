@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import br.com.evolufisico.android.backup.SecureBackupManager
+import br.com.evolufisico.android.backup.BackupSnapshot
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,6 +44,7 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     var backupPassword by remember { mutableStateOf("") }
     var backupVerified by remember { mutableStateOf(false) }
+    var verifiedSnapshot by remember { mutableStateOf<BackupSnapshot?>(null) }
     var backupReport by remember { mutableStateOf<String?>(null) }
     var confirmInstall by remember { mutableStateOf(false) }
 
@@ -76,6 +78,7 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
     ) { uri ->
         onDocumentFlow(false)
         backupVerified = false
+        verifiedSnapshot = null
         backupReport = null
         val credential = backupPassword.toCharArray()
         backupPassword = ""
@@ -98,15 +101,17 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                                 "O backup é válido, mas não contém exatamente o estado atual " +
                                     "dos dados. Faça um novo backup antes de atualizar."
                             }
-                            backup.recordCount
+                            backup
                         }
                     } finally { credential.fill('\u0000') }
                 }
                 validation.onSuccess {
+                    verifiedSnapshot = it
                     backupVerified = true
-                    backupReport = "Backup .efbak verificado: $it registro(s), " +
+                    backupReport = "Backup verificado: ${it.recordCount} registro(s), " +
                         "incluindo o estado atual do aparelho."
                 }.onFailure {
+                    verifiedSnapshot = null
                     backupVerified = false
                     backupReport = it.localizedMessage ?: "Falha ao verificar o backup."
                 }
@@ -214,6 +219,7 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
             onValueChange = {
                 backupPassword = it.take(128)
                 backupVerified = false
+                verifiedSnapshot = null
                 backupReport = null
             },
             modifier = Modifier.fillMaxWidth(),
@@ -235,7 +241,8 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                 style = MaterialTheme.typography.bodySmall)
         }
         Button(modifier = Modifier.fillMaxWidth(),
-            enabled = !checking && selectedApk != null && backupVerified,
+            enabled = !checking && selectedApk != null && backupVerified &&
+                verifiedSnapshot != null,
             onClick = { confirmInstall = true }) {
             Text("Instalar atualização verificada")
         }
@@ -264,16 +271,32 @@ fun InAppUpdatePanel(onDocumentFlow: (Boolean) -> Unit) {
                 Button(onClick = {
                     confirmInstall = false
                     val file = selectedApk ?: return@Button
-                    val validation = runCatching { service.validate(file) }
-                    validation.onFailure {
-                        message = "Instalação bloqueada: ${it.message}"
-                    }.onSuccess {
-                        if (!service.installAllowed()) {
-                            message = "Autorize a instalação desta fonte no Android e tente novamente."
-                            unknownSources.launch(service.unknownSourcesSettings())
-                        } else {
-                            runCatching { context.startActivity(service.installerIntent(file)) }
-                                .onFailure { message = "Não foi possível abrir o instalador: ${it.message}" }
+                    val snapshot = verifiedSnapshot ?: return@Button
+                    checking = true
+                    scope.launch {
+                        val validation = withContext(Dispatchers.IO) {
+                            runCatching {
+                                check(SecureBackupManager(context.applicationContext).summary() == snapshot) {
+                                    "Os dados mudaram após a verificação do backup. " +
+                                        "Exporte e confira um novo arquivo antes de atualizar."
+                                }
+                                service.validate(file)
+                            }
+                        }
+                        checking = false
+                        validation.onFailure {
+                            backupVerified = false
+                            verifiedSnapshot = null
+                            backupReport = null
+                            message = "Instalação bloqueada: ${it.message}"
+                        }.onSuccess {
+                            if (!service.installAllowed()) {
+                                message = "Autorize a instalação desta fonte no Android e tente novamente."
+                                unknownSources.launch(service.unknownSourcesSettings())
+                            } else {
+                                runCatching { context.startActivity(service.installerIntent(file)) }
+                                    .onFailure { message = "Não foi possível abrir o instalador: ${it.message}" }
+                            }
                         }
                     }
                 }) { Text("Continuar") }
