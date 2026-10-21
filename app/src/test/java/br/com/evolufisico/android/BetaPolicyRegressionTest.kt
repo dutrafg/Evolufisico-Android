@@ -238,4 +238,10 @@ class BetaPolicyRegressionTest {
         assertTrue(BetaReadiness.pending(e).any { it.code=="security" })
     }
 
+    @Test fun alpha88ReleaseGateRegression() {
+        val e=BetaEvidence(true,true,true,true,true,true,true,true,true,true)
+        assertTrue(BetaReadiness.canRelease(e))
+        assertTrue(BetaReadiness.pending(e).isEmpty())
+    }
+
 }
