@@ -22,6 +22,18 @@ object UpdatePolicy {
             uri.rawQuery == null && uri.rawFragment == null
     }
 
+    /** Metadados assinados do mesmo lançamento (nunca outro host ou arquivo arbitrário). */
+    fun validReleaseMetadataUrl(text: String): Boolean {
+        val suffixes=listOf(
+            "Evolufisico-Android-release.apk.sha256",
+            "Evolufisico-Android-release.cert.sha256"
+        )
+        return suffixes.any { suffix ->
+            validReleaseUrl(text.removeSuffix(".sha256")) &&
+                text.endsWith("/"+suffix)
+        }
+    }
+
     fun isUpgrade(currentVersion: Long, candidateVersion: Long): Boolean =
         currentVersion >= 0 && candidateVersion > currentVersion
 
