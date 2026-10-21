@@ -11,9 +11,9 @@ Os itens são produzidos pelo gerador em `scripts/generate_beta_roadmap.py`, sob
 
 ## Aceite mínimo
 
-- [ ] CI Beta 10 compilação, unitários e Lint aprovados
-- [ ] Emulador Android 10 da Beta 10 aprovado
-- [ ] APK Beta 10 baixado, extraído e integridade validada
+- [x] CI Beta 10 compilação, unitários e Lint aprovados
+- [x] Emulador Android 10 da Beta 10 aprovado
+- [x] APK Beta 10 baixado, extraído e integridade validada
 - [ ] Homologação manual em celular e tablet real (pendente)
 - [ ] Backup/restauração real testado (pendente)
 - [ ] Paridade web-Android completa (pendente)
