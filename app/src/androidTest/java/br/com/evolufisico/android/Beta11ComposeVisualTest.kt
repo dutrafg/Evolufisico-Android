@@ -2,6 +2,10 @@ package br.com.evolufisico.android
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.Density
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.captureToImage
@@ -49,6 +53,29 @@ class Beta11ComposeVisualTest {
         }
         val captured=rule.onRoot().captureToImage()
         assertTrue(captured.width>0&&captured.height>0)
+    }
+
+    @Test fun calendarSevenColumnsHaveDistinctCoordinatesAtLargeFontScale() {
+        rule.setContent {
+            val density=LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density,1.6f)) {
+                MaterialTheme(colorScheme=CorporatePalettes.scheme("azul",false),
+                    typography=CorporateTypography) {
+                    Box(Modifier.width(360.dp)) {
+                        AgendaCalendarPanel(emptyList(),null,onSelect={})
+                    }
+                }
+            }
+        }
+        val labels=listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom")
+        labels.forEach { rule.onNodeWithText(it).assertExists() }
+        val positions=labels.map { rule.onNodeWithText(it).getUnclippedBoundsInRoot().center.x }
+        assertTrue("Colunas da agenda colapsadas ou invertidas: $positions",
+            positions.zipWithNext().all { (left,right)->right-left>=35.dp })
+        assertTrue("A grade ultrapassou seu espaço lógico",
+            positions.last()-positions.first() >= 250.dp)
+        val captured=rule.onRoot().captureToImage()
+        assertTrue(captured.width>0 && captured.height>0)
     }
 
     @Test fun calendarOnNarrowPhoneHasAccessibleTodayAndNavigation() {
