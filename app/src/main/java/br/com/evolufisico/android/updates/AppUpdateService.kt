@@ -95,9 +95,9 @@ class AppUpdateService(private val context: Context) {
         val downloadUrl = asset.getString("browser_download_url")
         val checksumUrl = sidecar.getString("browser_download_url")
         requireTrustedReleaseUrl(downloadUrl)
-        requireTrustedReleaseUrl(checksumUrl)
+        requireTrustedReleaseMetadataUrl(checksumUrl)
         val certificateUrl = certificate.getString("browser_download_url")
-        requireTrustedReleaseUrl(certificateUrl)
+        requireTrustedReleaseMetadataUrl(certificateUrl)
         val releaseFingerprint = ReleasePolicy.readFingerprint(
             readOfficialSmallFile(certificateUrl,1024)
         ) ?: error("Certificado oficial sem SHA-256 válido.")
@@ -128,7 +128,7 @@ class AppUpdateService(private val context: Context) {
     }
 
     private fun readOfficialSmallFile(raw: String, limit: Int): String {
-        requireTrustedReleaseUrl(raw)
+        requireTrustedReleaseMetadataUrl(raw)
         var address = URL(raw)
         for (redirect in 0..5) {
             requireTrustedDownloadHost(address)
@@ -276,7 +276,7 @@ class AppUpdateService(private val context: Context) {
         val cert = info.signingInfo?.apkContentsSigners?.firstOrNull()
         val fp = cert?.toByteArray()?.let { certificateSha256(it) } ?: "não disponível"
         val debuggable = context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
-        "Instalada: ${info.versionName} (código ${info.longVersionCode}) · " +
+        "Instalada: ${info.versionName} (código ${info.longVersionCode}) · pacote: $pkg · " +
             (if (debuggable) "APK DEBUG" else "APK RELEASE") +
             " · certificado SHA-256: ${fp.take(16)}…"
     }.getOrElse { "Não foi possível consultar a assinatura instalada." }
@@ -302,7 +302,9 @@ class AppUpdateService(private val context: Context) {
         )
         when(blocker) {
             UpdateBlocker.DIFFERENT_APPLICATION ->
-                error("Este APK pertence a outro aplicativo. Nenhum arquivo foi alterado.")
+                error("O APK tem outro identificador (${candidate.packageName}); " +
+                    "o aplicativo instalado é $pkg. Ele criaria uma segunda instalação, " +
+                    "não uma atualização. Não desinstale nem apague os dados antigos.")
             UpdateBlocker.VERSION_NOT_NEWER ->
                 error("Este APK precisa ter versionCode maior que o instalado ("+
                     installed.longVersionCode+").")
@@ -345,6 +347,12 @@ class AppUpdateService(private val context: Context) {
     private fun requireTrustedReleaseUrl(raw: String) {
         require(UpdatePolicy.validReleaseUrl(raw)) {
             "Origem de atualização não autorizada."
+        }
+    }
+
+    private fun requireTrustedReleaseMetadataUrl(raw: String) {
+        require(UpdatePolicy.validReleaseMetadataUrl(raw)) {
+            "Metadados de atualização fora da release oficial."
         }
     }
 
