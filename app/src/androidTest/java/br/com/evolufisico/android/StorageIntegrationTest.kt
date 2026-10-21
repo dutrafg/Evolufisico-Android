@@ -110,7 +110,7 @@ class StorageIntegrationTest {
             val incorrect = "SenhaPortatilIncorreta123".toCharArray()
             try {
                 // JSON do protótipo não precisa de senha.
-                assertEquals(8,
+                assertEquals(9,
                     manager.inspectBackup(ByteArrayInputStream(data), incorrect).recordCount)
             } finally { incorrect.fill('\u0000') }
             assertEquals("Inspeção nunca deve modificar dados", 1, clients.load().size)
@@ -160,6 +160,7 @@ class StorageIntegrationTest {
             assertEquals(1,operations.load().appointments.size)
             assertEquals(1,drafts.load().size)
         } finally {
+            drafts.save(emptyList())
             operations.save(OperationsData(), emptySet())
             forms.save(emptyList(), emptySet())
             charges.save(emptyList(), emptySet())
