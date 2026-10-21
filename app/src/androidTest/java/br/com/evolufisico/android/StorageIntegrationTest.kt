@@ -140,6 +140,15 @@ class StorageIntegrationTest {
             assertEquals(client.name, clients.load().first().name)
             assertEquals(charge.amountCents, charges.load().first().amountCents)
             assertEquals(assessment.weightKg, assessments.load().first().weightKg, 0.01)
+            // Simula queda APÓS o commit e ANTES de remover o diário.
+            val interrupted=java.io.File(app.filesDir,"restore_transaction.pending")
+            interrupted.writeText("EF_RESTORE_V1_COMMITTED",Charsets.US_ASCII)
+            manager.recoverInterruptedRestore()
+            assertFalse("Marcador confirmado deve ser finalizado",interrupted.exists())
+            assertEquals("Restauração confirmada não pode apagar clientes",
+                client.name,clients.load().first().name)
+            assertEquals(1,charges.load().size)
+            assertEquals(1,operations.load().appointments.size)
         } finally {
             operations.save(OperationsData(), emptySet())
             forms.save(emptyList(), emptySet())
