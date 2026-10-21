@@ -57,7 +57,9 @@ import java.util.Locale
  * Não grava dados de anamnese em logs ou preferências não cifradas.
  */
 @Composable
-fun AssessmentsScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
+fun AssessmentsScreen(clients: List<Client>,store:EncryptedAssessmentStore,
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={}
+) {
     val assessments = remember { mutableStateListOf<Assessment>() }
     var selectedClientId by remember { mutableStateOf(clients.firstOrNull()?.id.orEmpty()) }
     var loading by remember { mutableStateOf(true) }
@@ -95,6 +97,15 @@ fun AssessmentsScreen(clients: List<Client>, store: EncryptedAssessmentStore) {
         }
     }
 
+    LaunchedEffect(quickCreateId,loading,error,clients.size) {
+        if(quickCreateId>0 && !loading) {
+            if(error==null && clients.isNotEmpty()) {
+                editing=null
+                editorOpen=true
+            }
+            onQuickConsumed()
+        }
+    }
     if (loading) {
         AssessmentNotice("Carregando avaliações...")
         return

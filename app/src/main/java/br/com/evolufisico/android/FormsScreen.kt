@@ -56,7 +56,8 @@ import java.util.Locale
 
 @Composable
 fun FormsScreen(
-    clients: List<Client>, store: EncryptedFormStore, onDocumentFlow: (Boolean) -> Unit
+    clients: List<Client>, store: EncryptedFormStore, onDocumentFlow: (Boolean) -> Unit,
+    quickCreateId:Int=0,onQuickConsumed:()->Unit={}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -129,6 +130,15 @@ fun FormsScreen(
         }
     }
 
+    LaunchedEffect(quickCreateId,loading,fatal,clients.size) {
+        if(quickCreateId>0 && !loading) {
+            if(fatal==null && clients.isNotEmpty()) {
+                editing=null
+                editingOpen=true
+            }
+            onQuickConsumed()
+        }
+    }
     if (loading) { FormNotice("Carregando formulários..."); return }
     if (fatal != null) { FormNotice(fatal!!); return }
     if (clients.isEmpty()) { FormNotice("Cadastre um cliente para preencher formulários."); return }

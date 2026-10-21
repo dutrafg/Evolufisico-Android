@@ -197,6 +197,16 @@ private fun AppContent(
     onPaletteChange:(String)->Unit
 ) {
     var current by remember { mutableStateOf(Section.HOME) }
+    var quickLaunch by remember { mutableStateOf<QuickLaunch?>(null) }
+    var quickSequence by remember { mutableIntStateOf(0) }
+    fun launchFavorite(route:String) {
+        val destination=Section.entries.firstOrNull { it.name==route } ?: return
+        quickSequence++
+        quickLaunch=if(QuickLaunchRules.supportsCreate(route))
+            QuickLaunch(route,quickSequence) else null
+        current=destination
+    }
+    fun clearQuickLaunch() { quickLaunch=null }
     val appContext=LocalContext.current
     val shortcutPrefs=remember(appContext) {
         appContext.getSharedPreferences("module_shortcuts",android.content.Context.MODE_PRIVATE)
@@ -216,6 +226,7 @@ private fun AppContent(
     val scope = rememberCoroutineScope()
     val useRail = LocalConfiguration.current.screenWidthDp >= 840
     fun goBack() {
+        clearQuickLaunch()
         current=Section.valueOf(WorkspaceNavigation.backTarget(current.name))
     }
     BackHandler(enabled=current!=Section.HOME) { goBack() }
@@ -296,7 +307,7 @@ private fun AppContent(
                     Section.BILLING, Section.MODULES).forEach { section ->
                     NavigationBarItem(
                         selected = WorkspaceNavigation.bottomSelection(current.name)==section.name,
-                        onClick = { current = section },
+                        onClick = { clearQuickLaunch(); current = section },
                         icon = { Icon(section.icon, contentDescription = null) },
                         label = { Text(section.title, maxLines = 1) }
                     )
@@ -313,7 +324,7 @@ private fun AppContent(
                         Section.BILLING, Section.MODULES, Section.SETTINGS).forEach { section ->
                         NavigationRailItem(
                             selected = current == section,
-                            onClick = { current = section },
+                            onClick = { clearQuickLaunch(); current = section },
                             icon = { Icon(section.icon, contentDescription = section.title) },
                             label = { Text(section.title, maxLines = 1) }
                         )
@@ -329,14 +340,19 @@ private fun AppContent(
             } else {
                 when (current) {
                     Section.HOME -> HomeScreen(clients.size, backupManager,
-                        favorites,::updateFavorites,onNavigate = { current = it })
+                        favorites,::updateFavorites,onNavigate = { launchFavorite(it.name) })
                     Section.MODULES -> ModuleDirectoryScreen(favorites,::updateFavorites) { key ->
+                        clearQuickLaunch()
                         Section.entries.firstOrNull { it.name == key }?.let { current = it }
                     }
                     Section.CLIENTS -> ClientsScreen(clients.toList(), saving, backupManager,
                         onDocumentFlow, onPersist = ::persist)
-                    Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(), assessmentRepository)
-                    Section.FORMS -> FormsScreen(clients.toList(), formRepository, onDocumentFlow)
+                    Section.ASSESSMENTS -> AssessmentsScreen(clients.toList(),assessmentRepository,
+                        quickCreateId=quickLaunch?.takeIf { it.route=="ASSESSMENTS" }?.id?:0,
+                        onQuickConsumed=::clearQuickLaunch)
+                    Section.FORMS -> FormsScreen(clients.toList(),formRepository,onDocumentFlow,
+                        quickCreateId=quickLaunch?.takeIf { it.route=="FORMS" }?.id?:0,
+                        onQuickConsumed=::clearQuickLaunch)
                     Section.AGENDA -> OperationsScreen(clients.toList(), operationalRepository,
                         OperationsTab.AGENDA, onDocumentFlow)
                     Section.GOALS -> OperationsScreen(clients.toList(), operationalRepository, OperationsTab.GOALS)

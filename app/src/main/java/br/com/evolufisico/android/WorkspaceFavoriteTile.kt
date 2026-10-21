@@ -39,7 +39,8 @@ fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
                 maxLines=2,overflow=TextOverflow.Ellipsis,
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
-                Text("Abrir",style=MaterialTheme.typography.labelMedium,
+                Text(QuickLaunchRules.label(entry.route),
+                    style=MaterialTheme.typography.labelMedium,
                     color=MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Outlined.ChevronRight,contentDescription=null,
