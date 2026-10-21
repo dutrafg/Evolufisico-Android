@@ -122,7 +122,7 @@ fun ModuleDirectoryScreen(favorites:Set<String>,onFavoritesChange:(Set<String>)-
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
     LazyColumn(modifier=Modifier.fillMaxWidth().widthIn(max=VisualTokens.contentMaxWidthDp.dp),
         contentPadding=PaddingValues(horizontal=VisualLayout.edgePaddingDp(LocalConfiguration.current.screenWidthDp).dp,vertical=22.dp),
-        verticalArrangement=Arrangement.spacedBy(18.dp)) {
+        verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("Encontre suas ferramentas por área.",
                 color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -213,17 +213,17 @@ private fun ModuleTile(
     onUp:(()->Unit)?=null,onDown:(()->Unit)?=null
 ) {
     val icon=WorkspaceModuleArtwork.icon(module.route)
-    Card(modifier=modifier.heightIn(min=176.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=156.dp),onClick=onOpen,
         shape=RoundedCornerShape(VisualTokens.cardRadiusDp.dp),
         elevation=CardDefaults.cardElevation(defaultElevation=1.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement=Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement=Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 val swatch=VisualTokens.metric(
                     VisualTokens.metricIndexForRoute(module.route),
                     VisualTokens.dark(MaterialTheme.colorScheme))
-                Box(Modifier.size(44.dp).background(swatch.background,
+                Box(Modifier.size(40.dp).background(swatch.background,
                     RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
                     Icon(icon,contentDescription=null,tint=swatch.ink,
                         modifier=Modifier.size(24.dp))
