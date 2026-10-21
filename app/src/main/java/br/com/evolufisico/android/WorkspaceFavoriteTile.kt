@@ -19,11 +19,12 @@ object WorkspaceHomeModules {
 @Composable
 fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
     onOpen:()->Unit,onRemove:()->Unit) {
-    Card(modifier=modifier.heightIn(min=132.dp),onClick=onOpen,
+    Card(modifier=modifier.heightIn(min=120.dp),onClick=onOpen,
         shape=RoundedCornerShape(12.dp),
-        colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        colors=CardDefaults.cardColors(
+            containerColor=MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.45f))) {
         Column(Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement=Arrangement.spacedBy(5.dp)) {
+            verticalArrangement=Arrangement.spacedBy(7.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Text(entry.title,modifier=Modifier.weight(1f),
                     style=MaterialTheme.typography.titleSmall,
@@ -31,7 +32,7 @@ fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
                     overflow=TextOverflow.Ellipsis)
                 IconButton(onClick=onRemove) {
                     Icon(Icons.Outlined.Star,
-                        contentDescription="Remover "+entry.title+" do início",
+                        contentDescription="Desfavoritar "+entry.title+" e devolver ao catálogo",
                         tint=MaterialTheme.colorScheme.primary)
                 }
             }
@@ -41,6 +42,7 @@ fun WorkspaceFavoriteTile(entry:WorkspaceModule,modifier:Modifier=Modifier,
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
                 Text(QuickLaunchRules.label(entry.route),
                     style=MaterialTheme.typography.labelMedium,
+                    maxLines=2,overflow=TextOverflow.Ellipsis,
                     color=MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Outlined.ChevronRight,contentDescription=null,
