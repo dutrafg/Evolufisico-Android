@@ -85,6 +85,10 @@ class StorageIntegrationTest {
             val data = manager.export(password)
             val inspected = manager.inspectBackup(ByteArrayInputStream(data), password)
             assertEquals(8, inspected.recordCount)
+            // Backups JSON da Beta 11 nao precisam de senha nem do packageName original.
+            val noPassword=charArrayOf()
+            assertEquals(8,
+                manager.inspectBackup(ByteArrayInputStream(data), noPassword).recordCount)
             val damaged = data.clone()
             damaged[damaged.lastIndex] = (damaged.last().toInt() xor 1).toByte()
             assertTrue("Backup corrompido deve falhar validação AES-GCM",
@@ -115,7 +119,7 @@ class StorageIntegrationTest {
             charges.save(emptyList(), emptySet())
             assessments.save(emptyList())
             clients.save(emptyList())
-            val result = manager.restore(ByteArrayInputStream(data), password)
+            val result = manager.restore(ByteArrayInputStream(data), charArrayOf())
             assertEquals(8, result.recordCount)
             assertEquals("Avaliação",operations.load().services.first().name)
             val restoredAgenda=operations.load().appointments
