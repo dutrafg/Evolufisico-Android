@@ -3,7 +3,7 @@ name: Android Emulator QA (manual)
 on:
   workflow_dispatch:
   push:
-    branches: [ main, beta-2-development, beta-3-development, beta-4-development ]
+    branches: [ main, beta-2-development, beta-3-development, beta-4-development, beta-5-development ]
     paths:
       - 'app/src/**'
       - 'app/build.gradle.kts'

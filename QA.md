@@ -371,3 +371,17 @@
 - [ ] Confirmar CI e emulador Beta 4
 - [ ] Executar QA manual em tablet e celular físico
 - [ ] Revisar as demais etapas do documento BETA_4_1000_ETAPAS.md
+
+
+## Beta 5 — auditoria inicial de paridade
+
+- [x] Referência consultada no repositório EvoluFísico2 e diferenças documentadas
+- [x] Cadastro do cliente expandido com validação e busca por telefone/e-mail
+- [x] Importação e exportação retrocompatível de campos opcionais do cliente
+- [x] Avaliação física expandida com mais quatro medidas, persistidas também no backup
+- [x] Testes de regras de contato e medidas ampliados
+- [ ] Compilação e testes automatizados da Beta 5 aprovados no GitHub Actions
+- [ ] Instrumentação Android 10 da Beta 5 aprovada
+- [ ] Validação em smartphone/tablet físico, backup completo e restauração de versões antigas
+- [ ] Implementação das lacunas restantes de cálculo, análise de composição e formulários
+- [ ] Homologação de distribuição com dados pessoais reais

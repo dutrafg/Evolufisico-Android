@@ -334,3 +334,14 @@ Detalhes em `docs/ALPHAS_16_A_20_100_ETAPAS.md`.
 - [x] Iniciar melhorias na disponibilidade da Agenda
 - [ ] Homologar CI, instrumento Android 10 e fluxo em tablet real
 - [ ] Concluir os checkpoints pendentes por desenvolvimento verificável
+
+
+## Beta 5 — 10.000 verificações adicionais
+
+- [x] Documento de lacunas e plano em `docs/BETA_5_10000_ETAPAS.md`
+- [x] Primeira expansão de cliente e perimetria com compatibilidade de campos antigos
+- [ ] Implementar cálculos e protocolos físicos avançados com validação metodológica
+- [ ] Formulários com editor, etapas e rascunhos persistentes
+- [ ] Migrador assistido do backup web para Android com prévia e recuperação
+- [ ] Homologar PDFs, privacidade, backup, agenda, testes e interface tablet
+- [ ] Executar e registrar evidência por checkpoint antes de considerar 10000/10000

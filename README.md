@@ -317,3 +317,12 @@ O [plano de 1.000 etapas](docs/BETA_3_1000_ETAPAS.md) organiza módulos, desenvo
 A Agenda agora permite **procurar horários livres a qualquer momento**, escolher o expediente (07–22h, 08–18h ou 09–21h) e limitar resultados a segunda–sexta. A busca não grava nem remove atendimentos e valida a duração para evitar agendamentos que ultrapassem o fim do dia.
 
 O plano completo de **outras 1.000 etapas** está em `docs/BETA_4_1000_ETAPAS.md`, além das 1.000 da Beta 3. As etapas pendentes continuam explicitamente desmarcadas. O APK debug usa o pacote isolado `.beta4` e assinatura temporária de CI; não é garantia de atualização por cima da Beta 3.
+
+
+## Beta 5 experimental (91.0.0-beta.5) — paridade com EvoluFísico2
+
+Após comparação com [EvoluFísico2](https://github.com/dutrafg/Evolufisico2), foi criado o relatório [paridade Android × Web](docs/BETA_5_PARIDADE_EVOLUFISICO2.md) e o [plano de 10.000 etapas](docs/BETA_5_10000_ETAPAS.md), agrupado em 10 documentos de 1.000 verificações. **As 10.000 etapas não foram declaradas implementadas**.
+
+Primeiras melhorias reais: clientes com telefone, e-mail e nascimento opcionais; busca por contatos; exibição na ficha e PDF; leitura e exportação retrocompatíveis no backup; avaliação com quatro medidas corporais extras (tórax, abdômen, panturrilha e antebraço), também persistidas e validadas. O armazenamento local mantém o schema existente e lê os registros antigos sem os campos novos. Os testes de integração e restauração em aparelhos físicos são pendentes.
+
+O APK debug da Beta 5 usa sufixo `.beta5` e assinatura de homologação. Não deve ser considerado uma atualização assinada para substituir versões antigas, nem homologado com dados reais.
