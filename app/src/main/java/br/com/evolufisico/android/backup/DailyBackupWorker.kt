@@ -96,8 +96,16 @@ class DailyBackupWorker(appContext: Context, workerParameters: WorkerParameters)
     CoroutineWorker(appContext,workerParameters) {
     override suspend fun doWork(): Result {
         if (!DailyBackupScheduler(applicationContext).state().active) return Result.success()
-        // Falhas são registradas no próprio executor e não desabilitam o agendamento.
-        runCatching { VerifiedBackupExecutor.execute(applicationContext) }
-        return Result.success()
+        // O executor registra cada falha. Retentar evita esperar 24h por um erro
+        // transitório; após duas retentativas, manter o próximo agendamento diário.
+        return runCatching {
+            VerifiedBackupExecutor.execute(applicationContext)
+        }.fold(
+            onSuccess={ Result.success() },
+            onFailure={
+                if(BackupStatusRules.retryAfterFailure(runAttemptCount)) Result.retry()
+                else Result.success() // falha registrada; não cancelar trabalho periódico
+            }
+        )
     }
 }
