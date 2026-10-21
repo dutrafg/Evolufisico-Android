@@ -16,7 +16,7 @@ object BackupFileVerification {
             while(true) {
                 val count=source.read(block)
                 if(count<0) break
-                if(count==0) continue
+                if(count==0) return false // evita loop infinito em provedor defeituoso
                 readBytes+=count
                 if(readBytes>expected.size.toLong()) return false
                 hash.update(block,0,count)
