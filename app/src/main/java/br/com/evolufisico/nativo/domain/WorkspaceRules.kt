@@ -9,7 +9,7 @@ import java.util.Locale
 object WorkspaceRules {
     fun date(value: String): LocalDate {
         require(Regex("\\d{4}-\\d{2}-\\d{2}").matches(value)) { "Use uma data no formato AAAA-MM-DD." }
-        return try { LocalDate.parse(value) } catch (_: Exception) { error("Informe uma data válida.") }
+        return try { LocalDate.parse(value) } catch (_: java.time.format.DateTimeParseException) { throw IllegalArgumentException("Informe uma data válida.") }
     }
     private fun identity(id: String, studentId: String, student: String) {
         require(id.isNotBlank() && id.length <= 128) { "Identificador inválido." }
