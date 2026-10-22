@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "br.com.evolufisico.nativo"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "br.com.evolufisico.nativo"

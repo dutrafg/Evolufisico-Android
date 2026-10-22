@@ -49,7 +49,7 @@ O timer de descanso opera na tela de Treinos e não é um alarme em segundo plan
 
 ## Compilar e verificar
 
-JDK 17, Android SDK Platform 37, Build Tools 36.0.0 e Gradle 9.3.1.
+JDK 17, Android SDK Platform 36, Build Tools 36.0.0 e Gradle 9.3.1.
 
 ```sh
 bash gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
