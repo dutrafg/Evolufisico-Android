@@ -13,6 +13,8 @@ object Agenda {
         LocalDateTime.of(LocalDate.parse(item.date), LocalTime.parse(item.time))
 
     fun validate(item: Appointment) {
+        require(item.id.isNotBlank() && item.id.length<=128 && item.studentId.length<=128) { "Identificador de agenda inválido." }
+        require(item.student.length<=200 && item.type.isNotBlank() && item.type.length<=120 && item.location.length<=500 && item.notes.length<=4000) { "Texto da agenda acima do limite ou tipo vazio." }
         require(item.student.isNotBlank()) { "Informe aluno ou contato." }
         require(item.durationMinutes in 1..720) { "Duração deve estar entre 1 e 720 minutos." }
         require(item.status in setOf("Agendado", "Confirmado") + inactive) { "Situação inválida." }
@@ -37,6 +39,23 @@ object Agenda {
             aStart < bStart.plusMinutes(b.durationMinutes.toLong()) &&
                 bStart < aStart.plusMinutes(a.durationMinutes.toLong())
         }.getOrDefault(false)
+    }
+
+    /** One representative collision per visit, sorted by start. Avoids quadratic scans in audits. */
+    fun conflicts(items:List<Appointment>):List<Pair<Appointment,Appointment>> {
+        val active=items.filter{it.status !in inactive}.distinctBy{it.id}.mapNotNull{item->
+            runCatching{validate(item);item to start(item)}.getOrNull()
+        }.sortedWith(compareBy<Pair<Appointment,LocalDateTime>>{it.second}.thenBy{it.first.id})
+        val result=mutableListOf<Pair<Appointment,Appointment>>()
+        var latestEnd:LocalDateTime?=null
+        var anchor:Appointment?=null
+        for((item,time) in active) {
+            val end=time.plusMinutes(item.durationMinutes.toLong())
+            val previous=anchor
+            if(previous!=null && latestEnd?.let{time<it}==true && overlaps(item,previous))result.add(item to previous)
+            if(latestEnd==null || end>latestEnd) { latestEnd=end;anchor=item }
+        }
+        return result
     }
 
     /** Validate the entire batch before writing any of its occurrences. */

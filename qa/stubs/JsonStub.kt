@@ -16,6 +16,7 @@ class JSONObject {
     fun optJSONArray(k:String):JSONArray?=null
     fun getJSONObject(k:String):JSONObject=JSONObject()
     fun getJSONArray(k:String):JSONArray=JSONArray()
+    fun getDouble(k:String):Double=Double.NaN
     fun getInt(k:String):Int=0
     fun getLong(k:String):Long=0L
     fun has(k:String):Boolean=false

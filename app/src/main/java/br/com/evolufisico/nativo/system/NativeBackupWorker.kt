@@ -18,9 +18,10 @@ class NativeBackupWorker(context: Context, params: WorkerParameters) : Worker(co
         val prefs=applicationContext.getSharedPreferences("native-backup",Context.MODE_PRIVATE)
         val uriString=prefs.getString("folder",null) ?: return Result.failure()
         val dir=DocumentFile.fromTreeUri(applicationContext,Uri.parse(uriString)) ?: return Result.retry()
-        val bytes=CryptoStore(applicationContext).exportDeviceEncrypted()
+        val bytes=CryptoStore(applicationContext).use { it.exportDeviceEncrypted() }
         val name="EvoluFisico-auto-${LocalDateTime.now().toString().replace(':','-')}.efdevice"
         // Keep older copies; remove only a partial file if the new write fails.
+        try {
         val file=dir.createFile("application/octet-stream",name) ?: return Result.retry()
         try {
             applicationContext.contentResolver.openOutputStream(file.uri)?.use { it.write(bytes); it.flush() }
@@ -31,6 +32,7 @@ class NativeBackupWorker(context: Context, params: WorkerParameters) : Worker(co
         } catch (_: Exception) {
             file.delete()
             Result.retry()
+        }
         } finally { bytes.fill(0) }
     } catch (_: Exception) { Result.retry() }
     }

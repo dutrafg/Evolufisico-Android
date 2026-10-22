@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
@@ -34,10 +35,10 @@ private val metrics=listOf(
 )
 
 @Composable
-fun EvolutionScreen(repo:AppRepository,onPdf:(String,List<Evaluation>)->Unit)=Screen {
+fun EvolutionScreen(repo:AppRepository,onPdf:(String,List<Evaluation>)->Unit,initialClientId:String="")=Screen {
     Heading("Evolução","Gráficos por indicador, linha do tempo e comparações entre avaliações do mesmo aluno.")
     val students=repo.evaluations.distinctBy{it.studentId}
-    var selected by remember {mutableStateOf("")}
+    var selected by rememberSaveable(initialClientId) {mutableStateOf(initialClientId)}
     LaunchedEffect(students.map { it.studentId }) {
         if(students.none { it.studentId==selected }) selected=students.firstOrNull()?.studentId.orEmpty()
     }
@@ -46,7 +47,7 @@ fun EvolutionScreen(repo:AppRepository,onPdf:(String,List<Evaluation>)->Unit)=Sc
     if(choices.isNotEmpty())PillChoices(choices.map{it.second},choices.firstOrNull{it.first==selected}?.second.orEmpty()){
         label -> selected=choices.firstOrNull{it.second==label}?.first.orEmpty()
     }
-    val history=repo.evaluations.filter{it.studentId==selected}.sortedBy{it.date}
+    val history=br.com.evolufisico.nativo.domain.EvaluationTimeline.ordered(repo.evaluations.filter{it.studentId==selected})
     if(history.isNotEmpty()){
         val name=history.last().name
         DataCard("Histórico de $name","${history.size} avaliações de ${history.first().date} a ${history.last().date}") {

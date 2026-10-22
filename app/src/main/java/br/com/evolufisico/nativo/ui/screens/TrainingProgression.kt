@@ -9,9 +9,9 @@ import br.com.evolufisico.nativo.domain.*
 import java.time.LocalDate
 import java.util.Locale
 
-@Composable fun TrainingProgression(repo:AppRepository,onExportCsv:(String,String)->Unit) {
-    var clientId by rememberSaveable{mutableStateOf("")}
-    var clientName by rememberSaveable{mutableStateOf("")}
+@Composable fun TrainingProgression(repo:AppRepository,onExportCsv:(String,String)->Unit,initialClientId:String="") {
+    var clientId by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var clientName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var start by rememberSaveable{mutableStateOf(LocalDate.now().minusDays(89).toString())}
     var end by rememberSaveable{mutableStateOf(LocalDate.now().toString())}
     var preset by rememberSaveable{mutableStateOf("90 dias")}
@@ -26,7 +26,9 @@ import java.util.Locale
     })
     DateField("De",start,{start=it;selected="";preset=""});DateField("Até",end,{end=it;selected="";preset=""})
     Field("Buscar exercício",query,{query=it})
-    val result=runCatching{TrainingInsights.history(repo.trainingSessions.toList(),clientId,WorkspaceRules.date(start),WorkspaceRules.date(end))}
+    val sessions=repo.trainingSessions.toList()
+    val today=LocalDate.now()
+    val result=remember(sessions,clientId,start,end,today){runCatching{TrainingInsights.history(sessions,clientId,WorkspaceRules.date(start),WorkspaceRules.date(end),today)}}
     if(result.isFailure)Text(result.exceptionOrNull()?.message ?: "Período inválido.",color=MaterialTheme.colorScheme.error)
     val points=result.getOrDefault(emptyList()).filter{WorkspaceRules.search(it.exercise,query)}
     val trends=TrainingInsights.trends(points)

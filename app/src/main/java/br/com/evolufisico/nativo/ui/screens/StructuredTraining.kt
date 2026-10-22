@@ -20,18 +20,18 @@ private data class SetDraft(val id:String=UUID.randomUUID().toString(),val exerc
 }
 
 @Composable
-fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPdf:(TrainingSession)->Unit={},onExportCsv:(String,String)->Unit={_,_->}) {
+fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPdf:(TrainingSession)->Unit={},onExportCsv:(String,String)->Unit={_,_->},initialClientId:String="",restTimer:RestTimerState=rememberRestTimerState()) {
     var editing by remember{mutableStateOf<TrainingSession?>(null)}
     var deleting by remember{mutableStateOf<TrainingSession?>(null)}
     var finishing by remember{mutableStateOf<TrainingSession?>(null)}
     var query by rememberSaveable{mutableStateOf("")}
     var view by rememberSaveable{mutableStateOf("Sessões")}
     var filter by rememberSaveable{mutableStateOf("Todos")}
-    var filterClient by rememberSaveable{mutableStateOf("")}
-    var filterClientName by rememberSaveable{mutableStateOf("")}
+    var filterClient by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterClientName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var period by rememberSaveable{mutableStateOf("Todos os períodos")}
     var error by remember{mutableStateOf("")}
-    LaunchedEffect(createRequest){if(createRequest>0){view="Sessões";editing=TrainingSession()}}
+    LaunchedEffect(createRequest){if(createRequest>0){view="Sessões";editing=TrainingSession(studentId=filterClient,student=filterClientName)}}
     ActionError(error){error=""}
     deleting?.let{item->ConfirmDelete(if(item.isTemplate)"modelo" else "treino",{deleting=null},{repo.delete(item)})}
     finishing?.let{item->AlertDialog(onDismissRequest={finishing=null},title={Text("Concluir treino?")},
@@ -43,6 +43,8 @@ fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPd
         var duration by remember{mutableStateOf(item.durationMinutes.toString())};var text by remember{mutableStateOf(item.exercises)}
         var notes by remember{mutableStateOf(item.notes)};var effort by remember{mutableStateOf(item.effort?.toString().orEmpty())}
         var id by remember{mutableStateOf(item.studentId)};var student by remember{mutableStateOf(item.student)}
+        var libraryOpen by remember{mutableStateOf(false)}
+        var replaceSetId by remember{mutableStateOf<String?>(null)}
         val sets=remember{mutableStateListOf<SetDraft>().also{list->list.addAll(item.sets.map{SetDraft(it.id,it.exercise,it.repetitions.toString(),it.loadKg.toString(),it.done)})}}
         WorkspaceEditor(if(item.isTemplate)"Modelo de treino" else "Sessão de treino",{editing=null},{
             require(effort.isBlank() || effort.toIntOrNull() in 0..10){"Esforço deve ser de 0 a 10 ou vazio."}
@@ -58,6 +60,7 @@ fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPd
                 OutlinedCard(Modifier.fillMaxWidth()) {Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                     Text("Série ${index+1}",style=MaterialTheme.typography.titleSmall)
                     Field("Exercício *",row.exercise,{sets[index]=row.copy(exercise=it)})
+                    TextButton(onClick={replaceSetId=row.id;libraryOpen=true}){Text("Trocar exercício pela biblioteca")}
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)){NumericField("Repetições",row.repetitions,{sets[index]=row.copy(repetitions=it)})}
                         Box(Modifier.weight(1f)){NumericField("Carga (kg)",row.load,{sets[index]=row.copy(load=it)},decimal=true)}
@@ -88,6 +91,22 @@ fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPd
                 bulkError=""
             }.onFailure{bulkError=it.message ?: "Lote inválido."}}){Text("Adicionar lote")}
             if(bulkError.isNotBlank())Text(bulkError,color=MaterialTheme.colorScheme.error)
+            OutlinedButton(enabled=sets.size<200,onClick={replaceSetId=null;libraryOpen=true}){Text("Escolher exercício da biblioteca")}
+            if(libraryOpen)ExerciseLibraryPicker(repo.trainingSessions.toList(),{libraryOpen=false;replaceSetId=null},repo.exercises.toList()){source->
+                runCatching {
+                    val target=replaceSetId
+                    if(target!=null) {
+                        val index=sets.indexOfFirst{it.id==target}
+                        require(index>=0){"A série não está mais disponível."}
+                        sets[index]=sets[index].copy(exercise=source.exercise,done=false)
+                    } else {
+                        val added=TrainingInsights.batch(source.exercise,1,source.repetitions,source.loadKg,sets.size).single()
+                        sets.add(SetDraft(added.id,added.exercise,added.repetitions.toString(),added.loadKg.toString(),false))
+                    }
+                    bulkError=""
+                }.onFailure{bulkError=it.message ?: "Não foi possível reutilizar o exercício."}
+                libraryOpen=false;replaceSetId=null
+            }
             Field("Instruções complementares / treino antigo",text,{text=it},lines=4)
             if(!item.isTemplate)NumericField("Esforço percebido (0–10, opcional)",effort,{effort=it})
             Field("Observações",notes,{notes=it},lines=3)
@@ -95,15 +114,19 @@ fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPd
     }}
     Screen {
         Heading("Treinos","Séries, repetições, cargas externas e modelos reutilizáveis por cliente.")
-        PillChoices(listOf("Sessões","Modelos","Evolução de cargas"),view,{view=it})
-        if(view=="Evolução de cargas") {
-            TrainingProgression(repo,onExportCsv)
+        PillChoices(listOf("Sessões","Modelos","Biblioteca","Evolução de cargas"),view,{view=it})
+        if(view=="Biblioteca") {
+            ExerciseCatalogContent(repo,onExportCsv)
             return@Screen
         }
-        Button(onClick={editing=TrainingSession(isTemplate=view=="Modelos")}){Text(if(view=="Modelos")"+ Novo modelo" else "+ Nova sessão")}
+        if(view=="Evolução de cargas") {
+            TrainingProgression(repo,onExportCsv,filterClient)
+            return@Screen
+        }
+        Button(onClick={editing=TrainingSession(isTemplate=view=="Modelos",studentId=if(view=="Modelos")"" else filterClient,student=if(view=="Modelos")"" else filterClientName)}){Text(if(view=="Modelos")"+ Novo modelo" else "+ Nova sessão")}
         val sessions=repo.trainingSessions.filterNot{it.isTemplate}
         DataCard("Acompanhamento","${sessions.size} sessões · ${sessions.count{it.completed}} concluídas · ${repo.trainingSessions.count{it.isTemplate}} modelos")
-        if(view=="Sessões")RestTimer()
+        if(view=="Sessões")RestTimer(restTimer)
         Field("Buscar nome, cliente ou exercício",query,{query=it})
         if(view=="Sessões") {
             ClientPicker(repo,filterClient,filterClientName,emptyLabel="Filtrar cliente (todos)",clearLabel="Todos os clientes"){id,name->filterClient=id;filterClientName=name}
@@ -120,7 +143,7 @@ fun StructuredTrainingScreen(repo:AppRepository,createRequest:Int=0,onTrainingPd
         PagedRecords(found,query+view+filter+filterClient+period,{it.id}){item->
             var expanded by rememberSaveable(item.id){mutableStateOf(false)}
             DataCard(item.title,"${if(item.isTemplate)"Modelo reutilizável" else item.student.ifBlank{"Sem vínculo"}+" · "+item.date}\n${item.durationMinutes} min · ${item.sets.count{it.done}} / ${item.sets.size} séries · ${if(item.completed)"Concluído" else "Planejado"}\n${item.exercises.take(300)}") {
-                if(item.isTemplate)TextButton(onClick={editing=ProfessionalTools.newSession(item)}){Text("Usar modelo")}
+                if(item.isTemplate)TextButton(onClick={editing=ProfessionalTools.newSession(item).copy(studentId=filterClient,student=filterClientName)}){Text("Usar modelo")}
                 else TextButton(onClick={if(item.completed)runCatching{repo.save(item.copy(completed=false))}.onFailure{error=it.message.orEmpty()} else finishing=item}){Text(if(item.completed)"Reabrir" else "Concluir")}
                 TextButton(onClick={expanded=!expanded}){Text(if(expanded)"Recolher" else "Detalhes / séries")}
                 TextButton(enabled=!item.completed,onClick={editing=item}){Text(if(item.completed)"Reabra para editar" else "Editar")}

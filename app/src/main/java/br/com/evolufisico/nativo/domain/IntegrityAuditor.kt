@@ -46,6 +46,7 @@ object IntegrityAuditor {
         checkIds("Tarefa", tasks, TaskItem::id)
         val students = evaluations.map { it.studentId }.filter(String::isNotBlank).toSet()
         evaluations.forEach { e ->
+            runCatching{RecordRules.validate(e)}.onFailure{add("Avaliação",e.id,it.message ?: "Registro inválido")}
             if (e.studentId.isBlank()) add("Avaliação", e.id, "Sem identificador de aluno")
             if (e.name.isBlank()) add("Avaliação", e.id, "Nome não preenchido")
             if (!isDate(e.date)) add("Avaliação", e.id, "Data inválida")
@@ -82,6 +83,8 @@ object IntegrityAuditor {
             }
         }
         charges.forEach { c ->
+            runCatching{RecordRules.validate(c)}.onFailure{add("Cobrança",c.id,it.message ?: "Registro inválido")}
+            if(c.secondStudentId.isNotBlank() && c.secondStudentId !in students)add("Cobrança",c.id,"Segundo cliente vinculado sem avaliação cadastrada")
             if (!isDate(c.dueDate)) add("Cobrança", c.id, "Data de vencimento inválida")
             if (c.paidDate.isNotBlank() && !isDate(c.paidDate)) add("Cobrança", c.id, "Data de pagamento inválida")
             if (c.amountCents < 0 || c.discountCents < 0 || c.discountCents > c.amountCents)
@@ -93,23 +96,26 @@ object IntegrityAuditor {
                 add("Cobrança", c.id, "Aluno vinculado não encontrado nas avaliações (pode ser pré-cadastro)")
         }
         intakes.forEach { i ->
+            runCatching{RecordRules.validate(i)}.onFailure{add("Formulário",i.id,it.message ?: "Registro inválido")}
             if (!isDate(i.date)) add("Formulário", i.id, "Data inválida")
             if (i.student.isBlank()) add("Formulário", i.id, "Aluno não informado")
             if (i.studentId.isNotBlank() && i.studentId !in students)
                 add("Formulário", i.id, "Aluno vinculado não encontrado nas avaliações (pode ser pré-cadastro)")
         }
         appointments.forEach { a ->
+            runCatching{Agenda.validate(a)}.onFailure{add("Agenda",a.id,it.message ?: "Registro inválido")}
+            if(a.studentId.isNotBlank() && a.studentId !in students)add("Agenda",a.id,"Cliente vinculado sem avaliação cadastrada")
             if (!isDate(a.date)) add("Agenda", a.id, "Data inválida")
             if (runCatching { LocalTime.parse(a.time) }.isFailure) add("Agenda", a.id, "Horário inválido")
             if (a.durationMinutes !in 1..720) add("Agenda", a.id, "Duração inválida")
             if (a.student.isBlank()) add("Agenda", a.id, "Contato não informado")
         }
-        appointments.forEachIndexed { index, appointment ->
-            appointments.drop(index + 1).firstOrNull { Agenda.overlaps(appointment, it) }?.let { other ->
-                add("Agenda", appointment.id, "Conflito de horário com ${other.date} às ${other.time}")
-            }
+        Agenda.conflicts(appointments).forEach { (appointment,other) ->
+            add("Agenda", appointment.id, "Conflito de horário com ${other.date} às ${other.time}")
         }
         tasks.forEach { task ->
+            runCatching{WorkspaceRules.validate(task)}.onFailure{add("Tarefa",task.id,it.message ?: "Registro inválido")}
+            if(task.studentId.isNotBlank() && task.studentId !in students)add("Tarefa",task.id,"Cliente vinculado sem avaliação cadastrada")
             if (!isDate(task.dueDate)) add("Tarefa", task.id, "Data inválida")
             if (task.title.isBlank()) add("Tarefa", task.id, "Título vazio")
         }

@@ -17,7 +17,9 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun BillingScreen(repo: AppRepository, onPdf: () -> Unit) {
+fun BillingScreen(repo: AppRepository, onPdf: () -> Unit,initialClientId:String="") {
+    var filterId by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var editing by remember { mutableStateOf<Charge?>(null) }
     var deleting by remember { mutableStateOf<Charge?>(null) }
     var search by remember { mutableStateOf("") }
@@ -29,20 +31,23 @@ fun BillingScreen(repo: AppRepository, onPdf: () -> Unit) {
     if (editing!=null) BillingEditor(editing!!, repo, onCancel={editing=null}, onSave={repo.save(it);editing=null})
     else Screen {
         Heading("Cobrança","Serviços, preços, descontos, parcelas, recebimentos e histórico por aluno.")
-        val total=repo.charges.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
-        val received=repo.charges.filter { it.paid && !it.exempt }.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
+        ClientPicker(repo,filterId,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterId=id;filterName=name}
+        val scoped=repo.charges.filter{filterId.isBlank() || it.studentId==filterId || it.secondStudentId==filterId}
+        if(filterId.isNotBlank())Text("Cobranças conjuntas entram pelo valor integral, sem rateio.",style=MaterialTheme.typography.bodySmall)
+        val total=scoped.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
+        val received=scoped.filter { it.paid && !it.exempt }.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
         val pending=total-received
         DataCard("Valor recebido",money(received))
         DataCard("A receber", money(pending))
         DataCard("Faturamento total",money(total))
-        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            Button(onClick={editing=Charge()}) {Text("+ Nova cobrança")}
-            OutlinedButton(onClick=onPdf) {Text("PDF financeiro")}
+        ActionButtons {
+            Button(onClick={editing=Charge(studentId=filterId,student=filterName)}) {Text("+ Nova cobrança")}
+            OutlinedButton(onClick=onPdf) {Text("PDF financeiro completo")}
         }
         Field("Buscar aluno ou serviço",search,{search=it})
         PillChoices(listOf("Todos","Pago","Pendente","Vencida","Cortesia"),filter,{filter=it})
         PillChoices(listOf("Extrato","Por aluno"),view,{view=it})
-        val found=repo.charges.filter {
+        val found=scoped.filter {
             WorkspaceRules.search(it.student+" "+it.secondStudent+" "+it.service,search) &&
                 (filter=="Todos" || when(filter){
                     "Pago" -> it.paid && !it.exempt
@@ -57,7 +62,7 @@ fun BillingScreen(repo: AppRepository, onPdf: () -> Unit) {
                 val name=entries.first().student+entries.first().studentId.takeIf{it.isNotBlank()}?.let{" · "+it.take(6)}.orEmpty()
                 DataCard(name,"${entries.size} lançamentos · ${money(entries.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})} · em aberto ${money(entries.filterNot {it.paid}.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})}")
             }
-        } else PagedRecords(found,search+filter+view,{it.id}) { item ->
+        } else PagedRecords(found,search+filter+view+filterId,{it.id}) { item ->
             val net=Financial.billable(item.amountCents,item.discountCents,item.exempt)
             DataCard(item.student.ifEmpty { "Sem aluno" },
                 "${item.service} • ${money(net)} • ${item.dueDate} • ${if(item.exempt)"Cortesia" else if(item.paid)"Pago" else "Pendente"}"+
@@ -108,17 +113,11 @@ private fun BillingEditor(original:Charge,repo:AppRepository,onCancel:()->Unit,o
         .multiply(BigDecimal(100)).setScale(0,RoundingMode.HALF_UP).longValueExact() }.getOrNull()
     Screen {
         Heading("Lançamento financeiro","O desconto é subtraído do preço, mantendo o valor original no histórico.")
-        if(repo.evaluations.isNotEmpty()) {
-            Text("Aluno cadastrado (opcional)")
-            val pupils=repo.evaluations.distinctBy{it.studentId}
-            val choices=studentChoices(pupils)
-            PillChoices(choices.map{it.second},choices.firstOrNull{it.first==studentId}?.second.orEmpty(),{label ->
-                val id=choices.firstOrNull{it.second==label}?.first.orEmpty()
-                student=pupils.firstOrNull{it.studentId==id}?.name.orEmpty();studentId=id
-            })
-        }
-        Field("Aluno *",student,{student=it;studentId=repo.evaluations.firstOrNull{e->e.name==it}?.studentId.orEmpty()})
-        Field("Segundo aluno (se dupla)",second,{second=it;secondId=repo.evaluations.firstOrNull{e->e.name==it}?.studentId.orEmpty()})
+        ClientPicker(repo,studentId,student,emptyLabel="Vincular primeiro cliente (opcional)"){id,name->studentId=id;student=name}
+        Field("Aluno / contato *",student,{student=it;studentId=""})
+        ClientPicker(repo,secondId,second,emptyLabel="Vincular segundo cliente (opcional)"){id,name->secondId=id;second=name}
+        Field("Segundo contato (se dupla)",second,{second=it;secondId=""})
+        Text("Nomes digitados ficam sem vínculo. Para manter históricos separados, selecione cada cliente pelo identificador.",style=MaterialTheme.typography.bodySmall)
         Text("Serviço",style=MaterialTheme.typography.titleSmall)
         PillChoices(Financial.services.keys.toList(),service,{
             service=it;amount="%.2f".format(Locale.US,(Financial.services[it]?:0)/100.0)
@@ -160,7 +159,7 @@ private fun BillingEditor(original:Charge,repo:AppRepository,onCancel:()->Unit,o
                 if(error.isEmpty())runCatching { onSave(original.copy(student=student.trim(),secondStudent=second.trim(),
                     service=service.trim(),amountCents=a!!,discountCents=d!!,installments=parts!!,
                     paymentMethod=method,dueDate=due,paid=paid && !exempt,exempt=exempt,
-                    paidDate=if(paid)paidDate.ifBlank{LocalDate.now().toString()}else "",notes=notes,
+                    paidDate=if(paid && !exempt)paidDate.ifBlank{LocalDate.now().toString()}else "",notes=notes,
                     studentId=studentId,secondStudentId=secondId)) }.onFailure { error=it.message ?: "Não foi possível salvar. Tente novamente." }
             }){Text("Salvar cobrança")}
         }

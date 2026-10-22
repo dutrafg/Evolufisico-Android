@@ -16,16 +16,26 @@ object TrainingInsights {
         require(from<=to){"Início posterior ao fim do período."}
         if(clientId.isBlank())return emptyList()
         val end=minOf(to,today)
-        val rows=sessions.filter{!it.isTemplate && it.completed && it.studentId==clientId}
-            .filter{runCatching{WorkspaceRules.date(it.date).let{date->date>=from && date<=end}}.getOrDefault(false)}
-        return rows.flatMap{session->session.sets.filter{it.done && it.exercise.isNotBlank() && it.repetitions in 1..1000 && it.loadKg.isFinite() && it.loadKg in 0.0..2000.0}
-            .map{Triple(session.date,exerciseKey(it.exercise),it)}}
-            .groupBy{it.first to it.second}.map{(key,entries)->
-                val sets=entries.map{it.third}
-                Point(key.first,sets.map{it.exercise.trim().replace(spaces," ")}.sorted().first(),sets.size,
-                    sets.sumOf{it.repetitions.toLong()},sets.maxOf{it.loadKg},sets.sumOf{it.loadKg*it.repetitions})
-            }.sortedWith(compareBy<Point>{it.date}.thenBy{exerciseKey(it.exercise)})
+        data class Accumulator(var exercise:String,var sets:Int=0,var repetitions:Long=0,var maximumKg:Double=0.0,var volume:Double=0.0)
+        val grouped=mutableMapOf<Pair<String,String>,Accumulator>()
+        for(session in sessions) {
+            if(session.isTemplate || !session.completed || session.studentId!=clientId)continue
+            val date=runCatching{WorkspaceRules.date(session.date)}.getOrNull() ?: continue
+            if(date<from || date>end)continue
+            for(row in session.sets) {
+                if(!row.done || row.exercise.isBlank() || row.repetitions !in 1..1000 || !row.loadKg.isFinite() || row.loadKg !in 0.0..2000.0)continue
+                val label=row.exercise.trim().replace(spaces," ")
+                val bucket=grouped.getOrPut(session.date to exerciseKey(label)){Accumulator(label)}
+                bucket.exercise=minOf(bucket.exercise,label)
+                bucket.sets++;bucket.repetitions+=row.repetitions
+                bucket.maximumKg=maxOf(bucket.maximumKg,row.loadKg)
+                bucket.volume+=row.loadKg*row.repetitions
+            }
+        }
+        return grouped.map{(key,row)->Point(key.first,row.exercise,row.sets,row.repetitions,row.maximumKg,row.volume)}
+            .sortedWith(compareBy<Point>{it.date}.thenBy{exerciseKey(it.exercise)})
     }
+
     fun trends(points:List<Point>):List<Trend> = points.groupBy{exerciseKey(it.exercise)}.values.map{rows->
         val ordered=rows.sortedBy{it.date}
         Trend(ordered.last().exercise,ordered.last(),ordered.dropLast(1).lastOrNull())
@@ -35,6 +45,14 @@ object TrainingInsights {
         return ProfessionalTools.csv(listOf("Data","Exercício","Séries marcadas","Repetições","Carga máxima externa (kg)","Volume externo (kg·rep)"),
             points.map{listOf(it.date,it.exercise,it.sets.toString(),it.repetitions.toString(),it.maximumKg.toString(),it.volume.toString())})
     }
+    /** Reuse typed exercise values only; client names, notes and execution flags are not copied. */
+    fun library(sessions:List<TrainingSession>):List<WorkoutSet> = sessions
+        .sortedWith(compareByDescending<TrainingSession>{it.date}.thenBy{it.id}).asSequence()
+        .flatMap{it.sets.asSequence()}
+        .filter{it.exercise.isNotBlank() && it.repetitions in 1..1000 && it.loadKg.isFinite() && it.loadKg in 0.0..2000.0}
+        .distinctBy{exerciseKey(it.exercise)}
+        .map{it.copy(exercise=it.exercise.trim().replace(spaces," "),done=false)}
+        .sortedBy{exerciseKey(it.exercise)}.toList()
     fun batch(exercise:String,count:Int,repetitions:Int,load:Double,existingCount:Int):List<WorkoutSet> {
         require(count in 1..10 && existingCount in 0..200 && count<=200-existingCount){"Adicione de 1 a 10 séries, até o limite total de 200."}
         val result=List(count){WorkoutSet(exercise=exercise.trim(),repetitions=repetitions,loadKg=load)}

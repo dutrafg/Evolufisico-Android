@@ -1,4 +1,4 @@
-name: Android Beta 20.1 CI
+name: Android Native Beta 100 Revision 3 CI
 on:
   push:
     branches: [main]
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: beta20-${{ github.ref }}
+  group: native-beta100-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate-build:
+  test-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -23,7 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Android SDK platform and Build Tools
+      - name: Install Android API and Build Tools
         shell: bash
         run: |
           set -euo pipefail
@@ -31,16 +31,19 @@ jobs:
           if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Source checks
-        run: python3 qa/check_source.py
-      - name: Gradle wrapper verification
+      - name: Static and visual contract checks
+        run: |
+          python3 qa/check_source.py
+          python3 qa/check_window_contract.py
+          python3 qa/check_palette.py
+      - name: Verify Gradle wrapper
         run: bash gradlew --version
-      - name: Unit tests, lint and debug APK
+      - name: Unit tests, lint, and debug APK
         run: bash gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-      - name: Upload test APK (CI debug signature)
+      - name: Publish debug APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EvoluFisico-Android-Nativo-Beta20-1-debug-nao-atualizavel
+          name: EvoluFisico-Nativo-Beta100-Rev3-debug-nao-atualizavel
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30

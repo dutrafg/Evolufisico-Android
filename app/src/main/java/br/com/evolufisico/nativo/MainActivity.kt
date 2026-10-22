@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import br.com.evolufisico.nativo.data.AppRepository
@@ -17,15 +18,20 @@ import br.com.evolufisico.nativo.system.AppointmentNotifications
 import br.com.evolufisico.nativo.system.Reports
 import br.com.evolufisico.nativo.ui.NativeApp
 import java.time.LocalDate
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     private lateinit var repo: AppRepository
     private var message by mutableStateOf("")
+    private var dataBusy by mutableStateOf(false)
     private var pdf: ByteArray? = null
     private var csvBytes:ByteArray?=null
-    private var exportPassword: CharArray? = null
     private var restorePassword: CharArray? = null
     private var pendingBackup: ByteArray? = null
     private var legacyPassword: CharArray? = null
@@ -75,75 +81,73 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) { message = "Não foi possível acessar pasta: ${e.localizedMessage}" }
     }
     private val openBackup = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val password = restorePassword
-        restorePassword = null
-        var content: ByteArray? = null
-        if (uri != null && password != null) try {
-            content = contentResolver.openInputStream(uri)?.use { stream ->
-                val output = java.io.ByteArrayOutputStream()
-                val buffer = ByteArray(8192)
-                while (true) {
-                    val n = stream.read(buffer)
-                    if (n < 0) break
-                    if (output.size() + n > 24_000_000) error("Backup excede 24 MB")
-                    output.write(buffer, 0, n)
+        val password=restorePassword;restorePassword=null
+        if(uri==null || password==null || dataBusy) {
+            password?.fill('\u0000')
+            if(uri!=null)message="Restauração indisponível. Tente selecionar o arquivo novamente."
+        } else runDataOperation("Restauração não efetuada") {
+            var content:ByteArray?=null
+            try {
+                val count=withContext(Dispatchers.IO) {
+                    content=contentResolver.openInputStream(uri)?.use{it.readLimited(24_000_000)} ?: error("Arquivo inacessível")
+                    repo.store.importEncrypted(requireNotNull(content),password)
                 }
-                output.toByteArray()
-            } ?: error("Arquivo inacessível")
-            val count = repo.store.importEncrypted(requireNotNull(content), password)
-            repo.refresh();repo.rescheduleReminders()
-            message = "$count registros recuperados."
-        } catch (e: Exception) { message = "Restauração não efetuada: ${e.localizedMessage}" }
-        finally { content?.fill(0); password.fill('\u0000') }
-        if (uri == null) password?.fill('\u0000')
+                showRestoreResult("$count registros recuperados.")
+            } finally { content?.fill(0);password.fill('\u0000') }
+        }
     }
     private val legacyPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val password=legacyPassword
-        legacyPassword=null
-        var raw: ByteArray? = null
-        if (uri != null) try {
-            raw = contentResolver.openInputStream(uri)?.use { stream ->
-                val bytes=java.io.ByteArrayOutputStream();val buf=ByteArray(8192)
-                while(true) { val count=stream.read(buf);if(count<0)break
-                    require(bytes.size()+count<=24_000_000) { "Arquivo maior que 24 MB" }
-                    bytes.write(buf,0,count) }
-                bytes.toByteArray()
-            } ?: error("Arquivo indisponível")
-            val stage = LegacyImporter.parse(requireNotNull(raw),password)
-            raw?.fill(0)
-            require(stage.total>0) { "Backup sem registros" }
-            val count=repo.store.importLegacy(stage)
-            repo.refresh();repo.rescheduleReminders()
-            message="Importação legado concluída: $count registros (${stage.version}). Cópia original preservada."
-        } catch (e:Exception) { message="Importação legado cancelada: ${e.localizedMessage}" }
-        finally { raw?.fill(0); password?.fill('\u0000') }
-        if(uri==null)password?.fill('\u0000')
+        val password=legacyPassword;legacyPassword=null
+        if(uri==null || dataBusy)password?.fill('\u0000')
+        else runDataOperation("Importação legado cancelada") {
+            var raw:ByteArray?=null
+            try {
+                val result=withContext(Dispatchers.IO) {
+                    raw=contentResolver.openInputStream(uri)?.use{it.readLimited(24_000_000)} ?: error("Arquivo indisponível")
+                    val stage=LegacyImporter.parse(requireNotNull(raw),password)
+                    require(stage.total>0){"Backup sem registros"}
+                    val count=repo.store.importLegacy(stage)
+                    count to stage.version
+                }
+                showRestoreResult("Importação legado concluída: ${result.first} registros (${result.second}). Cópia original preservada.")
+            } finally { raw?.fill(0);password?.fill('\u0000') }
+        }
     }
     private val deviceBackupPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if(uri!=null)try {
-            val bytes=contentResolver.openInputStream(uri)?.use { it.readLimited(24_000_000) }?:error("Arquivo inválido")
+        if(uri!=null && !dataBusy)runDataOperation("Falha na restauração automática") {
+            var bytes:ByteArray?=null
             try {
-                val count=repo.store.importDeviceEncrypted(bytes);repo.refresh();repo.rescheduleReminders()
-                message="$count registros do backup automático restaurados."
-            } finally { bytes.fill(0) }
-        } catch(e:Exception) { message="Falha na restauração automática: ${e.localizedMessage}" }
+                val count=withContext(Dispatchers.IO) {
+                    bytes=contentResolver.openInputStream(uri)?.use{it.readLimited(24_000_000)} ?: error("Arquivo inválido")
+                    repo.store.importDeviceEncrypted(requireNotNull(bytes))
+                }
+                showRestoreResult("$count registros do backup automático restaurados.")
+            } finally { bytes?.fill(0) }
+        }
     }
     private val createBackup = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
-        val bytes = pendingBackup
-        if (uri != null) try {
-            val payload = bytes ?: error("Nenhum backup preparado")
-            contentResolver.openOutputStream(uri)?.use { it.write(payload); it.flush() } ?: error("Destino não disponível")
-            message = "Backup criptografado exportado. Guarde a senha em local seguro."
-        } catch (e: Exception) { message = "Falha no backup: ${e.localizedMessage}" }
-        finally { bytes?.fill(0); pendingBackup = null; exportPassword?.fill('\u0000'); exportPassword = null }
-        else { bytes?.fill(0); pendingBackup = null; exportPassword?.fill('\u0000'); exportPassword = null }
+        val bytes=pendingBackup;pendingBackup=null
+        if(uri==null)bytes?.fill(0)
+        else if(bytes==null)message="Backup não disponível. Gere o arquivo novamente."
+        else if(dataBusy) { bytes.fill(0);message="Aguarde e gere o backup novamente." }
+        else runDataOperation("Falha ao salvar backup") {
+            try {
+                withContext(Dispatchers.IO) {
+                    try {
+                        contentResolver.openOutputStream(uri)?.use{it.write(bytes);it.flush()} ?: error("Destino indisponível")
+                    } catch(e:Exception) { runCatching{contentResolver.delete(uri,null,null)};throw e }
+                }
+                message="Backup criptografado exportado. Guarde a senha em local seguro."
+            } finally { bytes.fill(0) }
+        }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         repo = AppRepository(applicationContext)
         setContent {
             NativeApp(
-                repository = repo, message = message, onDismissMessage = { message = "" },
+                repository = repo, dataBusy=dataBusy, message = message, onDismissMessage = { message = "" },
                 onCreateEvaluationPdf = { e -> createPdf("Avaliacao_${e.date}.pdf") { Reports.evaluation(e) } },
                 onCreateEvolutionPdf = { name, list -> createPdf("Evolucao_${LocalDate.now()}.pdf") { Reports.evolution(name, list) } },
                 onExportCsv={name,text->
@@ -155,36 +159,18 @@ class MainActivity : ComponentActivity() {
                 },
                 onCreateBillingPdf = { createPdf("Cobrancas_${LocalDate.now()}.pdf") { Reports.billing(repo.charges) } },
                 onCreateTrainingPdf = { item -> createPdf("Treino_${item.date}.pdf") { Reports.training(item) } },
+                onIntakePdf = { item -> createPdf("Anamnese_${item.date}.pdf") { Reports.intake(item) } },
+                onClientPdf = { id -> createPdf("Dossie_${LocalDate.now()}.pdf") {
+                    Reports.clientDossier(br.com.evolufisico.nativo.domain.ClientWorkspace.snapshot(id,repo.evaluations.toList(),repo.charges.toList(),
+                        repo.appointments.toList(),repo.tasks.toList(),repo.trainingSessions.toList(),repo.habits.toList(),repo.notes.toList()))
+                } },
+                onClientBackup = { id,password -> prepareBackup(password,id) },
                 onChooseFolder = { folderPicker.launch(null) },
-                onBackup = { password ->
-                    try {
-                        exportPassword = password.toCharArray()
-                        pendingBackup = repo.store.exportEncrypted(exportPassword!!)
-                        exportPassword?.fill('\u0000'); exportPassword = null
-                        val str = getPreferences(MODE_PRIVATE).getString("backup-folder", null)
-                        if (str != null) {
-                            val dir = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, Uri.parse(str))
-                                ?: error("Pasta de backup indisponível")
-                            val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
-                            val file = dir.createFile("application/octet-stream", "EvoluFisico-$stamp.efbackup")
-                                ?: error("Não foi possível criar o arquivo de backup")
-                            val bytes = pendingBackup ?: error("Backup vazio")
-                            try {
-                                val out = contentResolver.openOutputStream(file.uri) ?: error("Sem permissão de escrita")
-                                out.use { it.write(bytes); it.flush() }
-                                check(file.length() == bytes.size.toLong()) { "Backup incompleto no destino" }
-                                message = "Backup salvo na pasta escolhida."
-                            } catch (e: Exception) { file.delete(); throw e }
-                            finally { bytes.fill(0); pendingBackup = null }
-                        } else createBackup.launch("EvoluFisico-${LocalDate.now()}.efbackup")
-                    } catch (e: Exception) {
-                        message = "Não foi possível gerar backup: ${e.localizedMessage}"
-                        pendingBackup?.fill(0); pendingBackup = null; exportPassword?.fill('\u0000'); exportPassword = null
-                    }
-                },
+                onBackup = { password -> prepareBackup(password) },
                 onImportLegacy = { password ->
-                    legacyPassword=password.toCharArray()
-                    legacyPicker.launch(arrayOf("application/json","application/octet-stream","*/*"))
+                    legacyPassword?.fill('\u0000');legacyPassword=password.toCharArray()
+                    try { legacyPicker.launch(arrayOf("application/json","application/octet-stream","*/*")) }
+                    catch(e:Exception) { legacyPassword?.fill('\u0000');legacyPassword=null;message="Não foi possível abrir o seletor: ${e.localizedMessage}" }
                 },
                 onRestoreDevice = { deviceBackupPicker.launch(arrayOf("application/octet-stream","*/*")) },
                 onScheduleBackup = { time ->
@@ -208,10 +194,62 @@ class MainActivity : ComponentActivity() {
                     message="Lembretes desativados."
                 },
                 onRestore = { password ->
-                    restorePassword = password.toCharArray()
-                    openBackup.launch(arrayOf("application/octet-stream", "application/json", "*/*"))
+                    restorePassword?.fill('\u0000');restorePassword=password.toCharArray()
+                    try { openBackup.launch(arrayOf("application/octet-stream", "application/json", "*/*")) }
+                    catch(e:Exception) { restorePassword?.fill('\u0000');restorePassword=null;message="Não foi possível abrir o seletor: ${e.localizedMessage}" }
                 }
             )
+        }
+    }
+    private suspend fun showRestoreResult(success:String) {
+        try {
+            withContext(Dispatchers.IO) { repo.refresh() }
+        } catch(e:CancellationException) { throw e }
+        catch(e:Exception) {
+            message="$success Os dados foram gravados, mas a tela não pôde ser atualizada: ${e.localizedMessage}. Reabra o aplicativo."
+            return
+        }
+        repo.rescheduleReminders()
+        message=success
+    }
+    private fun runDataOperation(label:String,operation:suspend ()->Unit) {
+        if(dataBusy) { message="Aguarde a operação de dados em andamento.";return }
+        dataBusy=true
+        lifecycleScope.launch {
+            try { operation() }
+            catch(e:CancellationException) { throw e }
+            catch(e:Exception) { message="$label: ${e.localizedMessage ?: "erro desconhecido"}" }
+            finally { dataBusy=false }
+        }
+    }
+    private fun prepareBackup(password:String,clientId:String?=null) {
+        runDataOperation("Não foi possível preparar o backup") {
+            val secret=password.toCharArray()
+            var bytes:ByteArray?=null
+            try {
+                withContext(Dispatchers.IO) { bytes=repo.store.exportEncrypted(secret,clientId) }
+                val payload=requireNotNull(bytes)
+                val folder=if(clientId==null)getPreferences(MODE_PRIVATE).getString("backup-folder",null) else null
+                if(folder!=null) {
+                    withContext(Dispatchers.IO) {
+                        val dir=androidx.documentfile.provider.DocumentFile.fromTreeUri(this@MainActivity,Uri.parse(folder))
+                            ?: error("Pasta indisponível; selecione-a novamente em Configurações.")
+                        val stamp=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+                        val file=dir.createFile("application/octet-stream","EvoluFisico-$stamp.efbackup")
+                            ?: error("Não foi possível criar o arquivo de backup")
+                        try {
+                            contentResolver.openOutputStream(file.uri)?.use{it.write(payload);it.flush()} ?: error("Sem permissão de escrita")
+                            check(file.length()==payload.size.toLong()){ "Backup incompleto no destino" }
+                        } catch(e:Exception) { runCatching{file.delete()};throw e }
+                    }
+                    message="Backup criptografado salvo na pasta escolhida. Guarde a senha."
+                } else {
+                    pendingBackup?.fill(0);pendingBackup=payload
+                    try { createBackup.launch("EvoluFisico-${if(clientId==null)"Completo" else "Cliente"}-${LocalDate.now()}.efbackup") }
+                    catch(e:Exception) { pendingBackup=null;throw e }
+                    bytes=null // SAF callback now owns the encrypted buffer, including cancellation cleanup.
+                }
+            } finally { bytes?.fill(0);secret.fill('\u0000') }
         }
     }
     private fun createPdf(name:String,build:()->ByteArray) {
@@ -224,9 +262,9 @@ class MainActivity : ComponentActivity() {
     }
     override fun onDestroy() {
         csvBytes?.fill(0);csvBytes=null
-        exportPassword?.fill('\u0000'); restorePassword?.fill('\u0000'); legacyPassword?.fill('\u0000')
+        restorePassword?.fill('\u0000'); legacyPassword?.fill('\u0000')
         pendingBackup?.fill(0); pdf?.fill(0)
-        exportPassword = null; restorePassword = null; legacyPassword = null; pendingBackup = null; pdf = null
+        restorePassword = null; legacyPassword = null; pendingBackup = null; pdf = null
         super.onDestroy()
     }
 }

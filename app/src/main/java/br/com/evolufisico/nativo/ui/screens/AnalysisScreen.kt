@@ -44,16 +44,16 @@ private fun HelpMetric(label:String,value:String,explanation:String) {
     }
 }
 @Composable
-fun AnalysisScreen(repo:AppRepository)=Screen {
+fun AnalysisScreen(repo:AppRepository,initialClientId:String="")=Screen {
     Heading("Análises","Painel auditável: resultados, tendência, adesão e explicação de cada indicador.")
     val pupils=repo.evaluations.distinctBy{it.studentId}
-    var selected by remember{mutableStateOf("")}
-    if(selected.isEmpty()&&pupils.isNotEmpty())selected=pupils.first().studentId
+    var selected by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    LaunchedEffect(pupils.map{it.studentId}) { if(pupils.none{it.studentId==selected})selected=pupils.firstOrNull()?.studentId.orEmpty() }
     val choices=studentChoices(pupils)
     if(choices.isNotEmpty())PillChoices(choices.map{it.second},choices.firstOrNull{it.first==selected}?.second.orEmpty()){
         label->selected=choices.firstOrNull{it.second==label}?.first.orEmpty()
     }
-    val history=repo.evaluations.filter{it.studentId==selected}.sortedBy{it.date}
+    val history=br.com.evolufisico.nativo.domain.EvaluationTimeline.ordered(repo.evaluations.filter{it.studentId==selected})
     if(history.isEmpty())Text("Nenhuma análise disponível. Cadastre uma avaliação primeiro.")
     else {
         val last=history.last();val first=history.first()

@@ -8,6 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import br.com.evolufisico.nativo.ui.workspacePalettes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -32,23 +35,25 @@ fun SettingsScreen(
     Text("Aparência", style = MaterialTheme.typography.titleMedium)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("Tema escuro", Modifier.weight(1f))
-        Switch(checked = dark, onCheckedChange = onDarkChange)
+        Switch(checked = dark, onCheckedChange = onDarkChange,modifier=Modifier.semantics{contentDescription="Tema escuro"})
     }
-    Row(verticalAlignment=Alignment.CenterVertically){Text("Layout compacto",Modifier.weight(1f));Switch(compact,onCheckedChange=onCompactChange)}
-    Row(verticalAlignment=Alignment.CenterVertically){Text("Texto ampliado",Modifier.weight(1f));Switch(largeText,onCheckedChange=onLargeTextChange)}
+    Row(verticalAlignment=Alignment.CenterVertically){Text("Layout compacto",Modifier.weight(1f));Switch(compact,onCheckedChange=onCompactChange,modifier=Modifier.semantics{contentDescription="Layout compacto"})}
+    Row(verticalAlignment=Alignment.CenterVertically){Text("Texto ampliado",Modifier.weight(1f));Switch(largeText,onCheckedChange=onLargeTextChange,modifier=Modifier.semantics{contentDescription="Texto ampliado"})}
     Text("Os alvos de toque mantêm o tamanho; o modo compacto reduz os espaços dos cartões.",style=MaterialTheme.typography.bodySmall)
     Text("Cor principal")
     palette.forEachIndexed { i, color ->
         OutlinedCard(onClick={onToneChange(i)},modifier=Modifier.fillMaxWidth()) { Row(Modifier.padding(horizontal=12.dp),verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(24.dp).background(color, RoundedCornerShape(5.dp)))
-            RadioButton(selected = tone == i, onClick = { onToneChange(i) })
-            Text(listOf("Azul profundo","Azul clássico","Azul intenso","Azul aço","Azul petróleo","Petróleo escuro","Verde floresta","Ameixa","Vinho","Grafite").getOrElse(i){"Cor ${i+1}"},Modifier.weight(1f))
+            RadioButton(selected = tone == i, onClick = null)
+            Text(workspacePalettes.getOrNull(i)?.label ?: "Cor ${i+1}",Modifier.weight(1f))
         }}
     }
     HorizontalDivider()
         }
         "Dados e privacidade" -> {
+    val backupStatus=rememberBackupStatus()
     Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium)
+    Text(if(backupStatus.hasFolder)"Pasta de backup selecionada. Se o acesso foi revogado pelo Android, selecione novamente." else "Nenhuma pasta de backup selecionada.")
     Text("Os registros ficam no banco local criptografado por chave protegida no Android Keystore. O aplicativo não solicita acesso irrestrito aos arquivos do celular.")
     OutlinedButton(onClick = onChooseFolder) { Text("Escolher pasta local para backups") }
     Text("A pasta deve permitir gravação pelo seletor nativo. O Android 11+ restringe algumas pastas, incluindo a raiz e Android/data.",
@@ -71,9 +76,8 @@ fun SettingsScreen(
     Button(enabled = importPassword.isNotBlank(), onClick = {
         onRestore(importPassword); importPassword = ""
     }) { Text("Selecionar arquivo e restaurar") }
-    Text("Somente arquivos .efbackup gerados por esta versão são aceitos. O importador verifica o formato e não substitui registros existentes.",
+    Text("Aceita arquivos .efbackup nativos compatíveis. O importador verifica o formato e não substitui registros existentes.",
         style = MaterialTheme.typography.bodySmall)
-    HorizontalDivider()
     HorizontalDivider()
     Text("Importação do EvoluFísico anterior", style=MaterialTheme.typography.titleMedium)
     Text("Aceita backup JSON legado e pacotes .efx com senha mestra. A importação é aditiva e cancela integralmente em caso de ID repetido ou checksum incompatível.")
@@ -84,7 +88,9 @@ fun SettingsScreen(
     HorizontalDivider()
     Text("Backup automático diário",style=MaterialTheme.typography.titleMedium)
     Text("Protegido pelo Android Keystore, sem salvar senha. Só pode ser restaurado nesta instalação; não substitui o backup portátil protegido por senha.")
-    var dailyTime by remember { mutableStateOf("22:00") }
+    Text(if(backupStatus.enabled)"Ativo · horário preferencial ${backupStatus.time}" else "Backup automático desativado.")
+    Text("Último backup automático concluído: "+backupStatus.lastSuccess.ifBlank{"nenhum registrado"},style=MaterialTheme.typography.bodySmall)
+    var dailyTime by remember(backupStatus.time) { mutableStateOf(backupStatus.time) }
     Field("Horário preferencial (HH:MM)",dailyTime,{dailyTime=it})
     ActionButtons {
         Button(onClick={onScheduleBackup(dailyTime)}){Text("Ativar diário")}
@@ -118,11 +124,11 @@ fun SettingsScreen(
     HorizontalDivider()
         }
         "Sobre" -> {
-    Text("EvoluFísico Nativo · 0.1.0-beta.20.1", style = MaterialTheme.typography.labelMedium)
+    Text("EvoluFísico Nativo · 0.1.0-beta.100 · revisão 3", style = MaterialTheme.typography.labelMedium)
     Text("Importador de backup legado implementado, mas ainda sem homologação em dispositivo. Preserve os arquivos e o aplicativo anterior.",
         style = MaterialTheme.typography.bodySmall)
     Text("16 módulos nativos · funcionamento local · sem permissão de internet.",style=MaterialTheme.typography.bodySmall)
-    Text("Novos backups incluem treinos, hábitos e notas. Use esta versão ou posterior para restaurar esses módulos; backups antigos continuam aceitos.",style=MaterialTheme.typography.bodySmall)
+    Text("Novos backups completos incluem treinos, hábitos, notas e o catálogo de exercícios. Use esta versão ou posterior para restaurar esses módulos; backups antigos continuam aceitos.",style=MaterialTheme.typography.bodySmall)
         }
     }
 }

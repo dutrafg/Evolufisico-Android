@@ -7,6 +7,8 @@ object EvaluationTimeline {
     data class Choice(val id: String, val label: String)
     data class Point(val x: Float, val y: Float)
 
+    fun ordered(rows:List<Evaluation>):List<Evaluation> = rows.sortedWith(compareBy<Evaluation>{it.date}.thenBy{it.id})
+
     /** IDs, rather than dates, distinguish two check-ins taken on the same day. */
     fun choices(history: List<Evaluation>): List<Choice> {
         val counts = history.groupingBy { it.date }.eachCount()

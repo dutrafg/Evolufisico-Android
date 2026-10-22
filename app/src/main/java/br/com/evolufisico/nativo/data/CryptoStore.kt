@@ -50,10 +50,18 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             doFinal(data.copyOfRange(12, data.size))
         }
     }
-    private val allowedKinds = setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note")
+    private fun encryptRecord(record:JSONObject):ByteArray {
+        val clear=record.toString().toByteArray(Charsets.UTF_8)
+        return try { encrypt(clear) } finally { clear.fill(0) }
+    }
+    private fun decryptRecord(blob:ByteArray):JSONObject {
+        val clear=decrypt(blob)
+        return try { JSONObject(String(clear,Charsets.UTF_8)) } finally { clear.fill(0) }
+    }
+    private val allowedKinds = setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note", "exercise")
     fun put(kind: String, id: String, data: JSONObject) {
-        require(kind in allowedKinds && id.isNotBlank() && id.length <= 128)
-        val blob = encrypt(data.toString().toByteArray(Charsets.UTF_8))
+        require(kind in allowedKinds && id.isNotBlank() && id.length <= 128 && data.getString("id") == id)
+        val blob = encryptRecord(data)
         val values = ContentValues().apply { put("kind", kind); put("id", id); put("payload", blob) }
         check(writableDatabase.insertWithOnConflict("records", null, values, SQLiteDatabase.CONFLICT_REPLACE) != -1L)
     }
@@ -65,7 +73,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             require(item.id.isNotBlank() && item.id.length <= 128)
             ContentValues().apply {
                 put("kind", "appointment"); put("id", item.id)
-                put("payload", encrypt(item.toJson().toString().toByteArray(Charsets.UTF_8)))
+                put("payload", encryptRecord(item.toJson()))
             }
         }
         val db = writableDatabase
@@ -83,18 +91,45 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         val list = mutableListOf<JSONObject>()
         readableDatabase.query("records", arrayOf("payload"), "kind=?", arrayOf(kind),
             null, null, "id DESC").use { c ->
-            while (c.moveToNext()) list.add(JSONObject(String(decrypt(c.getBlob(0)), Charsets.UTF_8)))
+            while (c.moveToNext()) list.add(decryptRecord(c.getBlob(0)))
         }
         return list
     }
     fun delete(kind: String, id: String) { require(kind in allowedKinds); writableDatabase.delete("records", "kind=? AND id=?", arrayOf(kind, id)) }
 
+    /** One SQLite snapshot across all categories; encryption happens after releasing the read. */
+    private fun backupRecords(clientId:String?=null):JSONArray {
+        val all=JSONArray()
+        var hasProfile=false
+        val db=readableDatabase
+        db.beginTransactionNonExclusive()
+        try {
+            db.rawQuery("SELECT kind,payload FROM records ORDER BY kind,id",null).use { cursor ->
+                while(cursor.moveToNext()) {
+                    val kind=cursor.getString(0)
+                    require(kind in allowedKinds) { "Categoria de registro desconhecida. Backup interrompido." }
+                    val record=decryptRecord(cursor.getBlob(1))
+                    if(clientId!=null && !br.com.evolufisico.nativo.domain.ClientBackupScope.includes(
+                        kind,clientId,record.optString("studentId"),record.optString("secondStudentId"),
+                        record.optString("secondStudent"),record.optBoolean("isTemplate"))) continue
+                    require(all.length()<10000) { "Backup excede 10000 registros" }
+                    if(kind=="evaluation")hasProfile=true
+                    all.put(JSONObject().put("kind",kind).put("record",record))
+                }
+            }
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
+        if(clientId!=null)require(hasProfile) { "Cliente sem avaliação cadastrada" }
+        return all
+    }
+
     /** Export is portable and passphrase-encrypted: Keystore device keys never leave the device. */
-    fun exportEncrypted(passphrase: CharArray): ByteArray {
+    fun exportEncrypted(passphrase: CharArray, clientId: String? = null): ByteArray {
         require(passphrase.size >= 8) { "Senha deve conter pelo menos 8 caracteres" }
-        val all = JSONArray()
-        for (kind in allowedKinds) for (record in list(kind)) all.put(JSONObject().put("kind", kind).put("record", record))
+        require(clientId == null || clientId.isNotBlank()) { "Selecione um cliente" }
+        val all=backupRecords(clientId)
         val plain = JSONObject().put("schema", 1).put("records", all).toString().toByteArray(Charsets.UTF_8)
+        try {
         require(plain.size <= 16_000_000) { "Backup excede 16 MB" }
         val salt = ByteArray(16).also(SecureRandom()::nextBytes)
         val derived = derive(passphrase, salt)
@@ -103,8 +138,8 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             .put("version", 1).put("iterations", 210000)
             .put("salt", b64(salt)).put("iv", b64(cipher.iv))
             .put("ciphertext", b64(cipher.doFinal(plain)))
-        plain.fill(0)
         return output.toString().toByteArray(Charsets.UTF_8)
+        } finally { plain.fill(0) }
     }
     /** Import rejects conflicts, unknown kinds and malformed schemas; no existing rows are erased. */
     fun importEncrypted(file: ByteArray, passphrase: CharArray): Int {
@@ -117,7 +152,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, derive(passphrase, salt), GCMParameterSpec(128, iv))
         val clear = cipher.doFinal(from64(obj.getString("ciphertext")))
-        val payload = JSONObject(String(clear, Charsets.UTF_8)); clear.fill(0)
+        val payload = try { JSONObject(String(clear, Charsets.UTF_8)) } finally { clear.fill(0) }
         require(payload.getInt("schema") == 1) { "Versão dos registros não suportada" }
         val arr = payload.getJSONArray("records")
         require(arr.length() <= 10000) { "Backup excede 10000 registros" }
@@ -129,16 +164,6 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             val record = entry.getJSONObject("record")
             val id = record.getString("id")
             require(id.isNotBlank() && id.length <= 128 && seen.add("$kind:$id"))
-            when (kind) {
-                "evaluation" -> Evaluation.fromJson(record)
-                "charge" -> Charge.fromJson(record)
-                "intake" -> Intake.fromJson(record)
-                "appointment" -> Appointment.fromJson(record)
-                "task" -> TaskItem.fromJson(record).also(WorkspaceRules::validate)
-                "training" -> WorkspaceRules.validate(TrainingSession.fromJson(record))
-                "habit" -> WorkspaceRules.validate(HabitEntry.fromJson(record))
-                "note" -> WorkspaceRules.validate(NotebookEntry.fromJson(record))
-            }
             staged.add(Triple(kind, id, record))
         }
         return importStaged(staged)
@@ -147,6 +172,8 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
     /** All-or-nothing import; refuses collisions and never modifies pre-existing records. */
     fun importLegacy(stage: LegacyImporter.Stage): Int {
         require(stage.total in 1..2000) { "Backup sem registros ou acima do limite" }
+        stage.evaluations.forEach(br.com.evolufisico.nativo.domain.RecordRules::validate)
+        stage.charges.forEach(br.com.evolufisico.nativo.domain.RecordRules::validate)
         val entries = stage.evaluations.map { Triple("evaluation", it.id, it.toJson()) } +
             stage.charges.map { Triple("charge", it.id, it.toJson()) }
         val db = writableDatabase
@@ -160,7 +187,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             for ((kind,id,record) in entries) {
                 val values = ContentValues().apply {
                     put("kind",kind); put("id",id)
-                    put("payload",encrypt(record.toString().toByteArray(Charsets.UTF_8)))
+                    put("payload",encryptRecord(record))
                 }
                 db.insertOrThrow("records",null,values)
             }
@@ -172,15 +199,14 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
     /** Periodic same-device backup, without persisting a portable user's password.
      * Keystore protection cannot be restored if the app is uninstalled or Android is reset. */
     fun exportDeviceEncrypted(): ByteArray {
-        val array = JSONArray()
-        allowedKinds.forEach { kind -> list(kind).forEach { record ->
-            array.put(JSONObject().put("kind",kind).put("record",record))
-        } }
+        val array=backupRecords()
         val raw = JSONObject().put("schema",1).put("records",array).toString().toByteArray(Charsets.UTF_8)
+        try {
         require(raw.size <= 16_000_000) { "Backup automático acima do limite" }
         return JSONObject().put("type","EF-DEVICE-BACKUP")
             .put("version",1).put("ciphertext",b64(encrypt(raw)))
-            .toString().toByteArray(Charsets.UTF_8).also { raw.fill(0) }
+            .toString().toByteArray(Charsets.UTF_8)
+        } finally { raw.fill(0) }
     }
     fun importDeviceEncrypted(file: ByteArray): Int {
         require(file.size <= 24_000_000)
@@ -188,7 +214,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         require(header.getString("type") == "EF-DEVICE-BACKUP" && header.getInt("version") == 1)
         val plaintext = decrypt(from64(header.getString("ciphertext")))
         // Do not expose plaintext in external storage; wrap only in-memory for the same import machinery.
-        val root = JSONObject(String(plaintext,Charsets.UTF_8)); plaintext.fill(0)
+        val root = try { JSONObject(String(plaintext,Charsets.UTF_8)) } finally { plaintext.fill(0) }
         val records = root.getJSONArray("records")
         require(root.getInt("schema") == 1 && records.length() <= 10000)
         val stage = mutableListOf<Triple<String,String,JSONObject>>()
@@ -208,15 +234,17 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         records.forEach { (kind,id,record) ->
             require(kind in allowedKinds && id.isNotBlank() && id.length <= 128 &&
                 id == record.getString("id") && keys.add("$kind:$id")) { "Registro inválido ou duplicado" }
+            RestoreJsonRules.validate(kind,record)
             when(kind) {
-                "evaluation" -> Evaluation.fromJson(record)
-                "charge" -> Charge.fromJson(record)
-                "intake" -> Intake.fromJson(record)
-                "appointment" -> Appointment.fromJson(record)
+                "evaluation" -> br.com.evolufisico.nativo.domain.RecordRules.validate(Evaluation.fromJson(record))
+                "charge" -> br.com.evolufisico.nativo.domain.RecordRules.validate(Charge.fromJson(record))
+                "intake" -> br.com.evolufisico.nativo.domain.RecordRules.validate(Intake.fromJson(record))
+                "appointment" -> br.com.evolufisico.nativo.domain.Agenda.validate(Appointment.fromJson(record))
                 "task" -> TaskItem.fromJson(record).also(WorkspaceRules::validate)
                 "training" -> WorkspaceRules.validate(TrainingSession.fromJson(record))
                 "habit" -> WorkspaceRules.validate(HabitEntry.fromJson(record))
                 "note" -> WorkspaceRules.validate(NotebookEntry.fromJson(record))
+                "exercise" -> br.com.evolufisico.nativo.domain.ExerciseCatalog.validate(ExerciseDefinition.fromJson(record))
             }
         }
         val db=writableDatabase
@@ -229,7 +257,8 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
                 db.rawQuery("SELECT payload FROM records WHERE kind=? AND id=?", arrayOf(kind,id)).use { cursor ->
                     if (!cursor.moveToNext()) missing.add(Triple(kind,id,record))
                     else {
-                        val original = String(decrypt(cursor.getBlob(0)), Charsets.UTF_8)
+                        val clear=decrypt(cursor.getBlob(0))
+                        val original=try { String(clear,Charsets.UTF_8) } finally { clear.fill(0) }
                         require(original == record.toString()) {
                             "Há uma versão diferente do registro $kind/$id. Restauração interrompida sem alterar dados."
                         }
@@ -238,7 +267,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
             }
             missing.forEach { (kind,id,record) ->
                 val values=ContentValues().apply { put("kind",kind);put("id",id)
-                    put("payload",encrypt(record.toString().toByteArray(Charsets.UTF_8))) }
+                    put("payload",encryptRecord(record)) }
                 db.insertOrThrow("records",null,values)
             }
             db.setTransactionSuccessful()

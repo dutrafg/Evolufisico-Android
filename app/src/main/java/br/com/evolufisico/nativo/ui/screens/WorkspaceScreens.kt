@@ -18,7 +18,6 @@ import br.com.evolufisico.nativo.domain.WorkspaceRules
 import br.com.evolufisico.nativo.domain.ProfessionalTools
 import java.time.LocalDate
 import java.util.UUID
-import kotlinx.coroutines.delay
 
 @Composable
 fun WorkspaceEditor(title: String, onClose: () -> Unit, onSave: () -> Unit,
@@ -29,12 +28,12 @@ fun WorkspaceEditor(title: String, onClose: () -> Unit, onSave: () -> Unit,
     Dialog(onDismissRequest={discard=true},properties=DialogProperties(usePlatformDefaultWidth=false)) {
         BackHandler { discard=true }
         Surface(Modifier.fillMaxSize()) {
-            Column(Modifier.systemBarsPadding().imePadding()) {
+            Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
                 Row(Modifier.fillMaxWidth().padding(12.dp),horizontalArrangement=Arrangement.SpaceBetween) {
                     TextButton(onClick={discard=true}) { Text("Cancelar") }
                     Button(onClick={runCatching(onSave).onFailure {error=it.message ?: "Falha ao salvar. Tente novamente."}}) { Text("Salvar") }
                 }
-                Screen {
+                Screen(bottomInset=24.dp) {
                     Heading(title)
                     if(error.isNotBlank()) Text(error,color=MaterialTheme.colorScheme.error)
                     content()
@@ -89,13 +88,15 @@ fun ActionError(message: String, onDismiss: ()->Unit) {
 }
 
 @Composable
-fun TasksScreen(repo: AppRepository, createRequest: Int=0) {
+fun TasksScreen(repo: AppRepository, createRequest: Int=0,initialClientId:String="") {
     var editing by remember { mutableStateOf<TaskItem?>(null) }
     var deleting by remember { mutableStateOf<TaskItem?>(null) }
+    var filterClient by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var query by rememberSaveable { mutableStateOf("") }
-    var filter by rememberSaveable { mutableStateOf("Pendentes") }
+    var filter by rememberSaveable { mutableStateOf(if(initialClientId.isBlank())"Pendentes" else "Todas") }
     var error by remember { mutableStateOf("") }
-    LaunchedEffect(createRequest) { if(createRequest>0) editing=TaskItem() }
+    LaunchedEffect(createRequest) { if(createRequest>0) editing=TaskItem(studentId=filterClient,student=filterName) }
     ActionError(error) {error=""}
     deleting?.let { item -> ConfirmDelete("tarefa",{deleting=null},{repo.delete(item)}) }
     editing?.let { item -> key(item.id) {
@@ -115,17 +116,18 @@ fun TasksScreen(repo: AppRepository, createRequest: Int=0) {
     } }
     Screen {
         Heading("Tarefas","Pendências, prazos e organização do atendimento.")
-        Button(onClick={editing=TaskItem()}){Text("+ Nova tarefa")}
+        Button(onClick={editing=TaskItem(studentId=filterClient,student=filterName)}){Text("+ Nova tarefa")}
         val overdue=repo.tasks.count {WorkspaceRules.overdue(it)}
         DataCard("Sua organização","${repo.tasks.count{!it.done}} pendentes · $overdue atrasadas · ${repo.tasks.count{it.done}} concluídas")
+        ClientPicker(repo,filterClient,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterClient=id;filterName=name}
         Field("Buscar título ou detalhes",query,{query=it})
         PillChoices(listOf("Pendentes","Hoje","Atrasadas","Urgentes","Vinculadas","Concluídas","Todas"),filter,{filter=it})
-        val found=ProfessionalTools.taskOrder(repo.tasks.toList()).filter { task -> WorkspaceRules.search(task.title+" "+task.notes+" "+task.student+" "+task.category,query) && when(filter) {
+        val found=ProfessionalTools.taskOrder(repo.tasks.toList()).filter { task -> (filterClient.isBlank() || task.studentId==filterClient) && WorkspaceRules.search(task.title+" "+task.notes+" "+task.student+" "+task.category,query) && when(filter) {
             "Pendentes"->!task.done; "Hoje"->!task.done && task.dueDate==LocalDate.now().toString()
             "Atrasadas"->WorkspaceRules.overdue(task);"Urgentes"->!task.done && task.priority==3;"Vinculadas"->task.studentId.isNotBlank(); "Concluídas"->task.done; else->true
         }}
         if(found.isEmpty()) EmptyWorkspace("Nenhuma tarefa nesta visualização.")
-        PagedRecords(found,query+"|"+filter,{it.id}) { task ->
+        PagedRecords(found,query+"|"+filter+"|"+filterClient,{it.id}) { task ->
             DataCard(task.title,"${listOf("Normal","Alta","Urgente")[task.priority.coerceIn(1,3)-1]} · ${task.category} · ${task.student}\nPrazo: ${task.dueDate} · ${if(task.done) "Concluída" else if(WorkspaceRules.overdue(task)) "Atrasada" else "Pendente"}\n${task.notes}") {
                 TextButton(onClick={runCatching{repo.save(task.copy(done=!task.done))}.onFailure{error=it.message.orEmpty()}}){Text(if(task.done)"Reabrir" else "Concluir")}
                 TextButton(onClick={editing=task}){Text("Editar")}
@@ -139,37 +141,13 @@ fun TasksScreen(repo: AppRepository, createRequest: Int=0) {
     OutlinedCard(Modifier.fillMaxWidth()) { Text(text,Modifier.padding(24.dp),style=MaterialTheme.typography.bodyLarge) }
 }
 
-/** Foreground rest timer: the monotonic deadline prevents drift after brief suspension. */
-@Composable fun RestTimer() {
-    var remaining by rememberSaveable { mutableIntStateOf(60) }
-    var running by rememberSaveable { mutableStateOf(false) }
-    var deadline by rememberSaveable { mutableLongStateOf(0L) }
-    LaunchedEffect(running,deadline) {
-        while(running) {
-            remaining=((deadline-android.os.SystemClock.elapsedRealtime()+999)/1000).toInt().coerceAtLeast(0)
-            if(remaining==0) {running=false;break}
-            delay(200)
-        }
-    }
-    OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text("Descanso · ${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",style=MaterialTheme.typography.titleMedium)
-            Text("Cronômetro local desta tela; não envia aviso em segundo plano.",style=MaterialTheme.typography.bodySmall)
-            PillChoices(listOf("30 s","60 s","90 s","120 s"),"${remaining} s") {label->running=false;remaining=label.substringBefore(' ').toInt()}
-            Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                Button(enabled=running || remaining>0,onClick={if(running)running=false else if(remaining>0){deadline=android.os.SystemClock.elapsedRealtime()+remaining*1000L;running=true}}){Text(if(running)"Pausar" else "Iniciar")}
-                TextButton(onClick={val previous=remaining;remaining=(remaining+30).coerceAtMost(3600);if(running)deadline+=(remaining-previous)*1000L}){Text("+30 s")}
-                TextButton(onClick={running=false;remaining=60}){Text("Reiniciar")}
-            }
-        }
-    }
-}
-
 @Composable
-fun HabitsScreen(repo: AppRepository, createRequest: Int=0) {
+fun HabitsScreen(repo: AppRepository, createRequest: Int=0,initialClientId:String="") {
     var editing by remember { mutableStateOf<HabitEntry?>(null) };var deleting by remember { mutableStateOf<HabitEntry?>(null) }
-    var query by rememberSaveable { mutableStateOf("") };var filter by rememberSaveable { mutableStateOf("Hoje") }
-    LaunchedEffect(createRequest){if(createRequest>0)editing=HabitEntry()}
+    var filterClient by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
+    var query by rememberSaveable { mutableStateOf("") };var filter by rememberSaveable { mutableStateOf(if(initialClientId.isBlank())"Hoje" else "Todos") }
+    LaunchedEffect(createRequest){if(createRequest>0)editing=HabitEntry(studentId=filterClient,student=filterName)}
     deleting?.let{item->ConfirmDelete("registro de hábito",{deleting=null},{repo.delete(item)})}
     editing?.let{item->key(item.id){
         var title by remember{mutableStateOf(item.title)};var date by remember{mutableStateOf(item.date)}
@@ -182,20 +160,21 @@ fun HabitsScreen(repo: AppRepository, createRequest: Int=0) {
             repo.save(item.copy(title=title.trim(),studentId=id,student=student,date=date,value=amount,target=goal,unit=unit.trim(),notes=notes));editing=null
         }) {
             Field("Hábito *",title,{title=it});ClientPicker(repo,id,student){newId,name->id=newId;student=name}
-            DateField("Data",date,{date=it});Field("Quantidade realizada",value,{value=it})
-            Field("Meta definida por você",target,{target=it});Field("Unidade (L, h, passos, vezes...)",unit,{unit=it})
+            DateField("Data",date,{date=it});NumericField("Quantidade realizada",value,{value=it},decimal=true)
+            NumericField("Meta definida por você",target,{target=it},decimal=true);Field("Unidade (L, h, passos, vezes...)",unit,{unit=it})
             Field("Observações",notes,{notes=it},lines=3)
         }
     }}
     Screen {
         Heading("Hábitos","Diário de acompanhamento com metas informadas pelo usuário, sem recomendações automáticas de saúde.")
-        Button(onClick={editing=HabitEntry()}){Text("+ Registrar hábito")}
+        Button(onClick={editing=HabitEntry(studentId=filterClient,student=filterName)}){Text("+ Registrar hábito")}
+        ClientPicker(repo,filterClient,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterClient=id;filterName=name}
         Field("Buscar hábito ou cliente",query,{query=it})
         PillChoices(listOf("Hoje","7 dias","Todos","Meta atingida","Em andamento"),filter,{filter=it})
-        val found=repo.habits.filter{WorkspaceRules.search(it.title+" "+it.student,query) && when(filter){
+        val found=repo.habits.filter{(filterClient.isBlank() || it.studentId==filterClient) && WorkspaceRules.search(it.title+" "+it.student,query) && when(filter){
             "Hoje"->it.date==LocalDate.now().toString();"7 dias"->runCatching{WorkspaceRules.date(it.date) in LocalDate.now().minusDays(6)..LocalDate.now()}.getOrDefault(false);"Meta atingida"->it.value>=it.target;"Em andamento"->it.value<it.target;else->true}}
         if(found.isEmpty())EmptyWorkspace("Nenhum hábito nesta visualização.")
-        PagedRecords(found,query+"|"+filter,{it.id}){item->
+        PagedRecords(found,query+"|"+filter+"|"+filterClient,{it.id}){item->
             var history by rememberSaveable(item.id){mutableStateOf(false)}
             DataCard(item.title,"${item.student.ifBlank{"Sem vínculo"}} · ${item.date}\n${item.value} / ${item.target} ${item.unit}\n${item.notes}") {
                 TextButton(onClick={editing=item}){Text("Editar")}
@@ -212,11 +191,13 @@ fun HabitsScreen(repo: AppRepository, createRequest: Int=0) {
 }
 
 @Composable
-fun NotebookScreen(repo: AppRepository, createRequest: Int=0, initialQuery:String="") {
+fun NotebookScreen(repo: AppRepository, createRequest: Int=0, initialQuery:String="",initialClientId:String="") {
     var editing by remember{mutableStateOf<NotebookEntry?>(null)};var deleting by remember{mutableStateOf<NotebookEntry?>(null)}
+    var filterClient by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var query by rememberSaveable(initialQuery){mutableStateOf(initialQuery)};var filter by rememberSaveable{mutableStateOf("Ativas")}
     var error by remember{mutableStateOf("")}
-    LaunchedEffect(createRequest){if(createRequest>0)editing=NotebookEntry()}
+    LaunchedEffect(createRequest){if(createRequest>0)editing=NotebookEntry(studentId=filterClient,student=filterName)}
     ActionError(error){error=""}
     deleting?.let{item->ConfirmDelete("nota",{deleting=null},{repo.delete(item)})}
     editing?.let{item->key(item.id){
@@ -233,12 +214,13 @@ fun NotebookScreen(repo: AppRepository, createRequest: Int=0, initialQuery:Strin
     }}
     Screen {
         Heading("Notas","Anotações locais criptografadas, com busca e vínculo opcional ao cliente.")
-        Button(onClick={editing=NotebookEntry()}){Text("+ Nova nota")}
+        Button(onClick={editing=NotebookEntry(studentId=filterClient,student=filterName)}){Text("+ Nova nota")}
+        ClientPicker(repo,filterClient,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterClient=id;filterName=name}
         Field("Buscar título, conteúdo ou cliente",query,{query=it})
         PillChoices(listOf("Ativas","Fixadas","Vinculadas","Arquivadas","Todas"),filter,{filter=it})
-        val found=repo.notes.filter{WorkspaceRules.search(it.title+" "+it.body+" "+it.student+" "+it.category,query) && when(filter){"Ativas"->!it.archived;"Fixadas"->it.pinned && !it.archived;"Vinculadas"->it.studentId.isNotBlank() && !it.archived;"Arquivadas"->it.archived;else->true}}
+        val found=repo.notes.filter{(filterClient.isBlank() || it.studentId==filterClient) && WorkspaceRules.search(it.title+" "+it.body+" "+it.student+" "+it.category,query) && when(filter){"Ativas"->!it.archived;"Fixadas"->it.pinned && !it.archived;"Vinculadas"->it.studentId.isNotBlank() && !it.archived;"Arquivadas"->it.archived;else->true}}
         if(found.isEmpty())EmptyWorkspace("Nenhuma anotação encontrada.")
-        PagedRecords(found,query+"|"+filter,{it.id}){item->
+        PagedRecords(found,query+"|"+filter+"|"+filterClient,{it.id}){item->
             var expanded by rememberSaveable(item.id){mutableStateOf(false)}
             DataCard((if(item.pinned)"★ " else "")+item.title,"${item.date} · ${item.category} · ${item.student.ifBlank{"Geral"}}\n${ProfessionalTools.notePreview(item,expanded)}") {
             TextButton(onClick={editing=item}){Text("Editar")}

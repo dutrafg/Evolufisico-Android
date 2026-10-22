@@ -11,6 +11,7 @@ import br.com.evolufisico.nativo.data.Evaluation
 import br.com.evolufisico.nativo.data.TrainingSession
 import br.com.evolufisico.nativo.domain.WorkspaceRules
 import br.com.evolufisico.nativo.domain.ProfessionalTools
+import br.com.evolufisico.nativo.domain.ClientWorkspace
 import br.com.evolufisico.nativo.domain.Anthropometry
 import br.com.evolufisico.nativo.domain.AssessmentChecks
 import br.com.evolufisico.nativo.domain.Financial
@@ -53,8 +54,7 @@ object Reports {
                 while(remain.isNotEmpty()){
                     space(21f)
                     pen.color=Color.rgb(36,45,55);pen.textSize=11f;pen.isFakeBoldText=false
-                    var size=remain.length
-                    while(size>1&&pen.measureText(remain.take(size))>507f)size--
+                    val size=pen.breakText(remain,true,507f,null).coerceAtLeast(1)
                     page.canvas.drawText(remain.take(size),44f,y,pen)
                     remain=remain.drop(size).trimStart();y+=19f
                 }
@@ -159,7 +159,7 @@ object Reports {
     fun evolution(name:String,items:List<Evaluation>)=render{
         section("Evolução • $name")
         line("Total de avaliações",items.size.toString())
-        val ordered=items.sortedBy{it.date}
+        val ordered=br.com.evolufisico.nativo.domain.EvaluationTimeline.ordered(items)
         ordered.forEach{e->
             section("Avaliação de ${e.date}")
             line("Peso","${Metrics.oneDecimal(e.weightKg)} kg")
@@ -221,6 +221,48 @@ object Reports {
             section("Leitura do registro")
             line("Reproduz dados registrados. Carga zero significa sem carga externa informada; o volume não estima peso corporal ou resistência de máquina.")
         }
+    }
+    fun clientDossier(data:ClientWorkspace.Snapshot):ByteArray = render {
+        val profile=data.profile
+        section("Resumo do dossiê")
+        line("Cliente",profile.name);line("Contato",listOf(profile.phone,profile.email).filter{it.isNotBlank()}.joinToString(" · "))
+        line("Avaliação mais recente",profile.date)
+        line("Peso / gordura","${Metrics.oneDecimal(profile.weightKg)} kg · ${Metrics.oneDecimal(profile.bodyFatPercent)}%")
+        section("Acompanhamento")
+        line("Avaliações",data.evaluations.size.toString())
+        line("Atendimentos",data.appointments.size.toString())
+        line("Treinos concluídos",data.training.count{it.completed}.toString())
+        line("Registros de hábitos",data.habits.size.toString())
+        line("Notas ativas",data.notes.size.toString())
+        val pending=data.charges.filter{!it.paid && !it.exempt}
+        line("Cobranças vinculadas pendentes",currency(pending.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)}))
+        line("Critério financeiro","Cobranças conjuntas entram pelo valor integral, sem rateio.")
+        section("Últimas avaliações (até 10)")
+        data.evaluations.take(10).forEach{line(it.date,"${Metrics.oneDecimal(it.weightKg)} kg · ${Metrics.oneDecimal(it.bodyFatPercent)}% gordura")}
+        section("Atendimentos por data (até 10)")
+        data.appointments.take(10).forEach{line("${it.date} ${it.time}","${it.type} · ${it.status}")}
+        section("Tarefas pendentes por prioridade (até 20)")
+        val tasks=data.tasks.filterNot{it.done}
+        if(tasks.isEmpty())line("Nenhuma tarefa pendente vinculada.")
+        tasks.take(20).forEach{line(it.dueDate,it.title)}
+        section("Escopo do resumo")
+        line("Resumo de registros vinculados por ID, não inclui fotos nem conteúdo das notas. Não substitui o backup criptografado nem os relatórios detalhados.")
+    }
+    fun intake(item:br.com.evolufisico.nativo.data.Intake):ByteArray = render {
+        section("Anamnese · ${item.level}")
+        line("Cliente",item.student);line("Data",item.date)
+        line("Identificador",item.studentId.ifBlank{"Sem vínculo"})
+        line("Registro autodeclarado. Este documento não concede aptidão para atividade física.")
+        section("Respostas registradas")
+        if(item.answers["objective"].isNullOrBlank() && item.objective.isNotBlank())line("Objetivo",item.objective)
+        if(item.answers["history"].isNullOrBlank() && item.healthHistory.isNotBlank())line("Histórico relatado",item.healthHistory)
+        if(item.answers["work"].isNullOrBlank() && item.routine.isNotBlank())line("Rotina",item.routine)
+        item.answers.filterValues{it.isNotBlank()}.forEach{(key,value)->
+            line(br.com.evolufisico.nativo.domain.IntakeQuestionnaire.labels[key] ?: key,value)
+        }
+        val unanswered=(1..7).count{item.answers["parq_$it"].isNullOrBlank()}
+        line("Perguntas de triagem sem resposta",unanswered.toString())
+        section("Observações e encaminhamentos");line(item.observations.ifBlank{"Sem observações."})
     }
     private fun currency(value:Long)=java.text.NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(value/100.0)
 }

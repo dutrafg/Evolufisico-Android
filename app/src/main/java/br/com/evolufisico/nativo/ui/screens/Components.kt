@@ -17,16 +17,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-@Composable fun Screen(content: @Composable ColumnScope.() -> Unit) {
+@Composable fun Screen(bottomInset:Dp=104.dp,content: @Composable ColumnScope.() -> Unit) {
     val inset=if(LocalCompactWorkspace.current)12.dp else 18.dp
     val gap=if(LocalCompactWorkspace.current)8.dp else 12.dp
     Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
         Column(Modifier.widthIn(max=1120.dp).fillMaxWidth().verticalScroll(rememberScrollState())
-            .padding(start=inset,end=inset,top=inset,bottom=104.dp),
+            .padding(start=inset,end=inset,top=inset,bottom=bottomInset),
             verticalArrangement=Arrangement.spacedBy(gap),content=content)
     }
 }

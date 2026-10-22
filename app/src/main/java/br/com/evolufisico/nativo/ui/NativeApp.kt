@@ -2,6 +2,8 @@ package br.com.evolufisico.nativo.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.core.view.WindowCompat
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -83,7 +85,7 @@ fun NativeApp(
     onCreateBillingPdf: () -> Unit,
     onChooseFolder: () -> Unit, onBackup: (String) -> Unit, onRestore: (String) -> Unit,
     onImportLegacy: (String) -> Unit, onRestoreDevice: () -> Unit, onScheduleBackup: (String) -> Unit, onDisableBackup: () -> Unit,
-    onEnableReminders: () -> Unit, onDisableReminders: () -> Unit, onExportCsv:(String,String)->Unit, onCreateTrainingPdf:(TrainingSession)->Unit
+    onEnableReminders: () -> Unit, onDisableReminders: () -> Unit, onExportCsv:(String,String)->Unit, onCreateTrainingPdf:(TrainingSession)->Unit,onClientPdf:(String)->Unit,onClientBackup:(String,String)->Unit,onIntakePdf:(Intake)->Unit,dataBusy:Boolean=false
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("appearance", android.content.Context.MODE_PRIVATE) }
@@ -98,6 +100,7 @@ fun NativeApp(
     var globalQuery by rememberSaveable { mutableStateOf("") }
     var moduleQuery by rememberSaveable { mutableStateOf("") }
     val screenState=rememberSaveableStateHolder()
+    val restTimer=rememberRestTimerState()
     var modulesOpen by rememberSaveable { mutableStateOf(false) }
     var moduleOrder by remember { mutableStateOf(ModuleOrder.parse(prefs.getString("module-order",null))) }
     fun saveOrder(value:List<Int>){moduleOrder=ModuleOrder.normalize(value);prefs.edit().putString("module-order",moduleOrder.joinToString(",")).apply()}
@@ -124,8 +127,23 @@ fun NativeApp(
     val notificationPrefs=context.getSharedPreferences("native-notifications",android.content.Context.MODE_PRIVATE)
     var reminderLead by remember { mutableIntStateOf(notificationPrefs.getInt("lead-minutes",60).takeIf{it in listOf(15,30,60,1440)} ?: 60) }
     val colors=workspaceColors(tone,dark)
+    SideEffect {
+        (context as? android.app.Activity)?.let{activity->
+            WindowCompat.getInsetsController(activity.window,activity.window.decorView).apply {
+                isAppearanceLightStatusBars=!dark
+                isAppearanceLightNavigationBars=!dark
+            }
+        }
+    }
     CompositionLocalProvider(LocalEditorState provides {editorActive=it},LocalCompactWorkspace provides compact) {
     MaterialTheme(colorScheme=colors,typography=workspaceTypography(largeText),shapes=Shapes(small=RoundedCornerShape(6.dp),medium=RoundedCornerShape(8.dp),large=RoundedCornerShape(12.dp))) {
+        if(dataBusy) AlertDialog(onDismissRequest={},
+            properties=androidx.compose.ui.window.DialogProperties(dismissOnBackPress=false,dismissOnClickOutside=false),
+            title={Text("Processando backup")},
+            text={Column(verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Text("Aguarde a conclusão da operação de dados.")
+            }},confirmButton={})
         pendingRoute?.let { route -> AlertDialog(onDismissRequest={pendingRoute=null},title={Text("Sair da edição?")},
             text={Text("As alterações ainda não salvas serão perdidas ao trocar de módulo.")},
             confirmButton={TextButton(onClick={editorActive=false;pendingRoute=null;navigate(route.index,route.create,route.client,route.query,route.date)}){Text("Descartar e continuar")}},
@@ -153,11 +171,13 @@ fun NativeApp(
             }
         },confirmButton={TextButton(onClick={searchOpen=false}){Text("Fechar")}})
         if(modulesOpen) ModuleHub(moduleOrder,{modulesOpen=false},{saveOrder(it)},{navigate(it)},favorites,{toggleFavorite(it)})
-        BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Custom top bar does not apply system insets itself. Protect the whole shell,
+        // including cutouts and landscape side bars, before measuring its contents.
+        BoxWithConstraints(Modifier.fillMaxSize().background(colors.background).windowInsetsPadding(WindowInsets.safeDrawing)) {
             val wide=LocalConfiguration.current.smallestScreenWidthDp>=600 && maxWidth>=900.dp
             val imeVisible=WindowInsets.ime.getBottom(LocalDensity.current)>0
             Box {
-                Scaffold(modifier=Modifier.imePadding(),
+                Scaffold(modifier=Modifier.imePadding(),contentWindowInsets=WindowInsets(0,0,0,0),
                     topBar={Surface(shadowElevation=2.dp){Row(Modifier.fillMaxWidth().heightIn(min=64.dp).padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){
                         if(!wide)IconButton(onClick={modulesOpen=true}){Icon(Icons.Filled.Apps,"Abrir painel de módulos")}
                         Icon(Icons.Filled.MonitorHeart,null,tint=MaterialTheme.colorScheme.primary)
@@ -181,7 +201,7 @@ fun NativeApp(
                         ExtendedFloatingActionButton(onClick={fabOpen=!fabOpen},icon={Icon(if(fabOpen)Icons.Filled.Close else Icons.Filled.Add,if(fabOpen)"Fechar atalhos" else "Abrir atalhos")},text={Text(if(fabOpen)"Fechar" else "Criar")})
                     }}
                 ) {padding->
-                    Row(Modifier.fillMaxSize().padding(padding)) {
+                    Row(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                         if(wide)Surface(Modifier.width(240.dp).fillMaxHeight(),tonalElevation=1.dp){ModuleMenu(screen,moduleQuery,{moduleQuery=it},{navigate(it)},Modifier.fillMaxSize(),favorites,{toggleFavorite(it)},moduleOrder,{modulesOpen=true})}
                         Column(Modifier.weight(1f).fillMaxHeight()) {
                             if(message.isNotBlank())Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=4.dp),verticalAlignment=Alignment.CenterVertically){
@@ -191,11 +211,11 @@ fun NativeApp(
                             key(screen) {screenState.SaveableStateProvider(screen) {when(screen) {
                                 0->HomeScreen(repository,{navigate(1)},{navigate(6)},{navigate(it)},{navigate(8,client=it)})
                                 1->EvaluationsScreen(repository,onCreateEvaluationPdf,createRequest,studentId)
-                                2->EvolutionScreen(repository,onCreateEvolutionPdf)
+                                2->EvolutionScreen(repository,onCreateEvolutionPdf,studentId)
                                 3->CalculatorScreen()
-                                4->IntakeScreen(repository)
-                                5->AnalysisScreen(repository)
-                                6->BillingScreen(repository,onCreateBillingPdf)
+                                4->IntakeScreen(repository,studentId,onIntakePdf)
+                                5->AnalysisScreen(repository,studentId)
+                                6->BillingScreen(repository,onCreateBillingPdf,studentId)
                                 7->SettingsScreen(dark=dark,onDarkChange={dark=it;prefs.edit().putBoolean("dark",it).apply()},tone=tone,
                                     onToneChange={tone=it;prefs.edit().putInt("tone",it).apply()},palette=workspacePalettes.map{if(dark)Color(it.dark) else Color(it.light)},
                                     onChooseFolder,onBackup,onRestore,onImportLegacy,onRestoreDevice,onScheduleBackup,onDisableBackup,onEnableReminders,onDisableReminders,
@@ -204,17 +224,21 @@ fun NativeApp(
                                         repository.rescheduleReminders()},
                                     onRunAudit={IntegrityAuditor.run(repository.evaluations.toList(),repository.charges.toList(),repository.intakes.toList(),repository.appointments.toList(),repository.tasks.toList()).description()+
                                         "\n"+WorkspaceRules.audit(repository.trainingSessions.toList(),repository.habits.toList(),repository.notes.toList(),repository.evaluations.map{it.studentId}.toSet()).let { issues ->
-                                            if(issues.isEmpty())"Treinos, hábitos e notas: nenhum problema detectado." else issues.joinToString("\n")
+                                            val catalogIssues=repository.exercises.mapNotNull { exercise ->
+                                                runCatching{br.com.evolufisico.nativo.domain.ExerciseCatalog.validate(exercise)}.exceptionOrNull()?.let{"Exercício ${exercise.id.take(14)}: ${it.message}"}
+                                            }
+                                            val all=issues+catalogIssues
+                                            if(all.isEmpty())"Treinos, hábitos, notas e catálogo: nenhum problema detectado." else all.take(25).joinToString("\n")+if(all.size>25)"\n… e mais ${all.size-25} ocorrências." else ""
                                         }},compact=compact,onCompactChange={compact=it;prefs.edit().putBoolean("compact",it).apply()},
                                     largeText=largeText,onLargeTextChange={largeText=it;prefs.edit().putBoolean("large-text",it).apply()})
-                                8->ClientsScreen(repository,routeQuery,studentId,onReevaluate={navigate(1,true,it)},onModule={navigate(it)})
+                                8->ClientsScreen(repository,routeQuery,studentId,onReevaluate={navigate(1,true,it)},onModule={navigate(it)},onClientModule={index,id->navigate(index,client=id)},onClientPdf=onClientPdf,onClientBackup=onClientBackup)
                                 9->CalendarScreen(repository,createRequest,routeDate)
-                                10->TasksScreen(repository,createRequest)
-                                11->GoalsScreen(repository)
-                                12->StructuredTrainingScreen(repository,createRequest,onCreateTrainingPdf,onExportCsv)
-                                13->HabitsScreen(repository,createRequest)
-                                14->NotebookScreen(repository,createRequest,routeQuery)
-                                15->ReportsScreen(repository,onCreateBillingPdf,onExportCsv)
+                                10->TasksScreen(repository,createRequest,studentId)
+                                11->GoalsScreen(repository,studentId)
+                                12->StructuredTrainingScreen(repository,createRequest,onCreateTrainingPdf,onExportCsv,studentId,restTimer)
+                                13->HabitsScreen(repository,createRequest,studentId)
+                                14->NotebookScreen(repository,createRequest,routeQuery,studentId)
+                                15->ReportsScreen(repository,onCreateBillingPdf,onExportCsv,studentId)
                             }}}
                         }
                     }
@@ -238,7 +262,7 @@ private fun ModuleHub(order:List<Int>,onClose:()->Unit,onSave:(List<Int>)->Unit,
     fun close(){if(editing && draft!=order)discard=true else onClose()}
     androidx.compose.ui.window.Dialog(onDismissRequest={close()},properties=androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth=false)) {
         BackHandler { close() }
-        Surface(Modifier.fillMaxSize().systemBarsPadding()) {
+        Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Screen {
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                     Text(if(editing)"Organizar módulos" else "Módulos",Modifier.weight(1f),style=MaterialTheme.typography.headlineSmall)

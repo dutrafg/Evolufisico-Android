@@ -11,7 +11,13 @@ fun InputStream.readLimited(maxBytes: Int): ByteArray {
     while(true) {
         val size = read(buffer)
         if(size == -1) break
-        if(size == 0) continue
+        if(size == 0) {
+            val byte = read()
+            if(byte == -1) break
+            require(sink.size() < maxBytes) { "Arquivo excede $maxBytes bytes" }
+            sink.write(byte)
+            continue
+        }
         require(sink.size().toLong() + size.toLong() <= maxBytes.toLong()) { "Arquivo excede $maxBytes bytes" }
         sink.write(buffer,0,size)
     }

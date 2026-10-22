@@ -52,11 +52,11 @@ fun EvaluationsScreen(repo: AppRepository, onPdf: (Evaluation) -> Unit, createRe
         Heading("Avaliações", "Antropometria, Pollock 7, bioimpedância, fotos e reavaliações.")
         Button(onClick = { editing = null; editorOpen = true }) { Text("+ Nova avaliação") }
         Field("Buscar por aluno", query, { query = it })
-        val list = repo.evaluations.filter { it.name.contains(query, ignoreCase = true) }
+        val list = repo.evaluations.filter { br.com.evolufisico.nativo.domain.WorkspaceRules.search(it.name,query) }
         if (list.isEmpty()) Text("Nenhuma avaliação encontrada.")
         PagedRecords(list,query,{it.id}) { e ->
             val pg = Anthropometry.pollock7(e.sex,e.age,e.weightKg,e.skinfolds)?.fatPercent
-            val earlier = repo.evaluations.filter { it.studentId == e.studentId && it.id != e.id && it.date < e.date }.maxByOrNull { it.date }
+            val earlier = repo.evaluations.filter { it.studentId == e.studentId && it.id != e.id && it.date < e.date }.maxWithOrNull(compareBy<Evaluation>{it.date}.thenBy{it.id})
             val alerts = AssessmentChecks.review(e,earlier)
             DataCard(e.name, "${e.date}  •  ${Metrics.oneDecimal(e.weightKg)} kg  •  IMC ${Metrics.oneDecimal(Metrics.bmi(e.weightKg,e.heightCm))}  •  Pollock ${Metrics.oneDecimal(pg)}%" +
                 if(alerts.isEmpty()) "" else "  •  ${alerts.size} item(ns) para conferir") {

@@ -1,3 +1,9 @@
+# Atualização de código Beta 33
+
+A Beta 33 mantém o pacote e o formato dos registros/backups. Edição de contato modifica somente a avaliação mais recente do cliente, preservando ID e medidas; não renomeia registros históricos. PDF de dossiê é um resumo, não um backup. CSV de notas omite conteúdo por padrão; a inclusão exige seleção explícita. A versão está sem compilação/homologação Android neste ambiente; veja `qa/ENTREGA_BETA33.md`.
+
+---
+
 # Migração e QA — Beta 2 nativa
 
 Versão `0.1.0-native-beta.2`, versionCode 602, Android 10+. A Beta 1 anterior usava versionCode 601. Não houve alteração de applicationId nem do formato da tabela local. Os registros adicionais usam novos valores de tipo na mesma tabela criptografada.

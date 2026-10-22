@@ -4,6 +4,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.font.FontWeight
 
 val LocalCompactWorkspace=staticCompositionLocalOf{false}
 
@@ -34,10 +35,10 @@ fun workspaceColors(tone:Int,dark:Boolean):ColorScheme {
 fun workspaceTypography(large:Boolean):Typography {
     val scale=if(large)1.12f else 1f
     val t=Typography()
-    return t.copy(headlineSmall=t.headlineSmall.copy(fontSize=t.headlineSmall.fontSize*scale,lineHeight=t.headlineSmall.lineHeight*scale),
-        titleLarge=t.titleLarge.copy(fontSize=t.titleLarge.fontSize*scale,lineHeight=t.titleLarge.lineHeight*scale),
-        titleMedium=t.titleMedium.copy(fontSize=t.titleMedium.fontSize*scale,lineHeight=t.titleMedium.lineHeight*scale),
-        titleSmall=t.titleSmall.copy(fontSize=t.titleSmall.fontSize*scale,lineHeight=t.titleSmall.lineHeight*scale),
+    return t.copy(headlineSmall=t.headlineSmall.copy(fontWeight=FontWeight.SemiBold,fontSize=t.headlineSmall.fontSize*scale,lineHeight=t.headlineSmall.lineHeight*scale),
+        titleLarge=t.titleLarge.copy(fontWeight=FontWeight.SemiBold,fontSize=t.titleLarge.fontSize*scale,lineHeight=t.titleLarge.lineHeight*scale),
+        titleMedium=t.titleMedium.copy(fontWeight=FontWeight.SemiBold,fontSize=t.titleMedium.fontSize*scale,lineHeight=t.titleMedium.lineHeight*scale),
+        titleSmall=t.titleSmall.copy(fontWeight=FontWeight.SemiBold,fontSize=t.titleSmall.fontSize*scale,lineHeight=t.titleSmall.lineHeight*scale),
         bodyLarge=t.bodyLarge.copy(fontSize=t.bodyLarge.fontSize*scale,lineHeight=t.bodyLarge.lineHeight*scale),
         bodyMedium=t.bodyMedium.copy(fontSize=t.bodyMedium.fontSize*scale,lineHeight=t.bodyMedium.lineHeight*scale),
         bodySmall=t.bodySmall.copy(fontSize=t.bodySmall.fontSize*scale,lineHeight=t.bodySmall.lineHeight*scale),

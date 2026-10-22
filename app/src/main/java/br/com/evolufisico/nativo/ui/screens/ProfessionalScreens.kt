@@ -22,11 +22,43 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
-fun ClientsScreen(repo: AppRepository, initialQuery: String="", initialClientId:String="", onReevaluate: (String)->Unit, onModule: (Int)->Unit) {
+fun ClientsScreen(repo: AppRepository, initialQuery: String="", initialClientId:String="", onReevaluate: (String)->Unit,
+    onModule: (Int)->Unit,onClientModule:(Int,String)->Unit={index,_->onModule(index)},onClientPdf:(String)->Unit={},onClientBackup:(String,String)->Unit={_,_->}) {
     var query by rememberSaveable(initialQuery){mutableStateOf(initialQuery)}
     var selected by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var section by rememberSaveable(selected){mutableStateOf("Resumo")}
+    var editing by remember{mutableStateOf<Evaluation?>(null)}
+    var error by remember{mutableStateOf("")}
+    var backupClient by remember { mutableStateOf<String?>(null) }
+    var backupPassword by remember { mutableStateOf("") }
+    backupClient?.let { id ->
+        AlertDialog(onDismissRequest={backupClient=null;backupPassword=""},
+            title={Text("Backup individual criptografado")},
+            text={Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                Text("Inclui registros vinculados por identificador, inclusive notas arquivadas. Exclui cobranças conjuntas, modelos de treino e registros sem vínculo. Restaure em Configurações; conflitos não são sobrescritos.")
+                OutlinedTextField(value=backupPassword,onValueChange={backupPassword=it},label={Text("Senha: pelo menos 8 caracteres")},
+                    singleLine=true,visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
+            }},
+            confirmButton={TextButton(enabled=backupPassword.length>=8,onClick={
+                val password=backupPassword;backupPassword="";backupClient=null
+                runCatching{onClientBackup(id,password)}.onFailure{error=it.message ?: "Falha no backup."}
+            }){Text("Exportar")}},
+            dismissButton={TextButton(onClick={backupClient=null;backupPassword=""}){Text("Cancelar")}})
+    }
     val latest=WorkspaceRules.latest(repo.evaluations.toList())
     val client=latest.firstOrNull{it.studentId==selected}
+    ActionError(error){error=""}
+    editing?.let{profile->key(profile.id){
+        var name by remember{mutableStateOf(profile.name)}
+        var phone by remember{mutableStateOf(profile.phone)}
+        var email by remember{mutableStateOf(profile.email)}
+        WorkspaceEditor("Editar contato",{editing=null},{
+            repo.save(ClientWorkspace.editContact(profile,name,phone,email));editing=null
+        }) {
+            Text("Atualiza o contato na avaliação mais recente. Avaliações anteriores e os registros vinculados mantêm seu histórico; o identificador do cliente não muda.")
+            Field("Nome *",name,{name=it});Field("Telefone",phone,{phone=it});Field("E-mail",email,{email=it})
+        }
+    }}
     Screen {
         Heading("Clientes","Dossiê vinculado por identificador. Pessoas com o mesmo nome mantêm históricos separados.")
         if(client==null) {
@@ -35,43 +67,66 @@ fun ClientsScreen(repo: AppRepository, initialQuery: String="", initialClientId:
             val found=latest.filter{WorkspaceRules.search(it.name+" "+it.email+" "+it.phone,query)}
             DataCard("Base de clientes","${latest.size} perfis · ${repo.evaluations.size} avaliações")
             if(found.isEmpty())EmptyWorkspace("Nenhum perfil encontrado. Cadastre uma avaliação para começar.")
-            val labels=studentChoices(found).toMap()
+            val labels=studentChoices(latest).toMap()
             PagedRecords(found,query,{it.studentId}){item->DataCard(labels[item.studentId] ?: item.name,"Última avaliação: ${item.date}\n${item.phone} · ${item.email}") {
                 TextButton(onClick={selected=item.studentId}){Text("Abrir dossiê")}
                 TextButton(onClick={onReevaluate(item.studentId)}){Text("Reavaliar")}
             }}
         } else {
+            val evaluations=repo.evaluations.toList();val charges=repo.charges.toList();val appointments=repo.appointments.toList()
+            val tasks=repo.tasks.toList();val training=repo.trainingSessions.toList();val habits=repo.habits.toList();val notes=repo.notes.toList()
+            val data=remember(client.studentId,evaluations,charges,appointments,tasks,training,habits,notes){
+                ClientWorkspace.snapshot(client.studentId,evaluations,charges,appointments,tasks,training,habits,notes)
+            }
             TextButton(onClick={selected=""}){Text("Voltar aos clientes")}
-            Heading(client.name)
-            DataCard("Cadastro","${client.age?.let{"$it anos"} ?: "Idade não informada"} · ${client.sex}\n${client.email}\n${client.phone}")
-            DataCard("Avaliação atual","${client.date} · ${Metrics.oneDecimal(client.weightKg)} kg · IMC ${Metrics.oneDecimal(Metrics.bmi(client.weightKg,client.heightCm))}") {
-                TextButton(onClick={onReevaluate(client.studentId)}){Text("Nova avaliação")}
-                TextButton(onClick={onModule(2)}){Text("Evolução")}
-                TextButton(onClick={onModule(11)}){Text("Metas")}
+            Heading(studentChoices(latest).toMap()[client.studentId] ?: client.name)
+            ActionButtons {
+                OutlinedButton(onClick={editing=client}){Text("Editar contato")}
+                OutlinedButton(onClick={runCatching{onClientPdf(client.studentId)}.onFailure{error=it.message ?: "Falha ao gerar resumo."}}){Text("PDF do dossiê")}
+                OutlinedButton(onClick={backupClient=client.studentId}){Text("Backup individual")}
+                Button(onClick={onReevaluate(client.studentId)}){Text("Nova avaliação")}
             }
-            val entries=repo.charges.filter{it.studentId==client.studentId || it.secondStudentId==client.studentId}
-            val pending=entries.filter{!it.paid && !it.exempt}
-            DataCard("Financeiro","${entries.size} lançamentos vinculados · pendente ${money(pending.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})}") {
-                TextButton(onClick={onModule(6)}){Text("Abrir cobranças")}
+            PillChoices(listOf("Resumo","Avaliações","Formulários","Agenda","Tarefas","Notas"),section,{section=it})
+            when(section) {
+                "Resumo"->{
+                    DataCard("Cadastro","${client.age?.let{"$it anos"} ?: "Idade não informada"} · ${client.sex}\n${client.email}\n${client.phone}")
+                    DataCard("Avaliação atual","${client.date} · ${Metrics.oneDecimal(client.weightKg)} kg · IMC ${Metrics.oneDecimal(Metrics.bmi(client.weightKg,client.heightCm))}") {
+                        TextButton(onClick={onClientModule(2,client.studentId)}){Text("Evolução")}
+                        TextButton(onClick={onClientModule(11,client.studentId)}){Text("Metas")}
+                        TextButton(onClick={onClientModule(5,client.studentId)}){Text("Análises")}
+                        TextButton(onClick={onClientModule(15,client.studentId)}){Text("Relatórios deste cliente")}
+                    }
+                    val pending=data.charges.filter{!it.paid && !it.exempt}
+                    DataCard("Financeiro vinculado","${data.charges.size} lançamentos · pendente ${money(pending.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})}\nCobranças conjuntas são contadas pelo valor integral, sem rateio.") {
+                        TextButton(onClick={onClientModule(6,client.studentId)}){Text("Abrir cobranças")}
+                    }
+                    DataCard("Treinos e hábitos","${data.training.size} sessões · ${data.training.count{it.completed}} concluídas · ${data.habits.size} registros de hábitos") {
+                        TextButton(onClick={onClientModule(12,client.studentId)}){Text("Treinos deste cliente")}
+                        TextButton(onClick={onClientModule(13,client.studentId)}){Text("Hábitos deste cliente")}
+                    }
+                }
+                "Formulários"->{
+                    val forms=repo.intakes.filter{it.studentId==client.studentId}
+                    TextButton(onClick={onClientModule(4,client.studentId)}){Text("Abrir formulários deste cliente")}
+                    if(forms.isEmpty())EmptyWorkspace("Sem formulários vinculados.")
+                    PagedRecords(forms,selected,{it.id}){DataCard(it.date,"${it.level} · ${it.answers.count{entry->entry.value.isNotBlank()}} respostas")}
+                }
+                "Avaliações"->PagedRecords(data.evaluations,selected,{it.id}){DataCard(it.date,"Peso: ${Metrics.oneDecimal(it.weightKg)} kg · Gordura: ${Metrics.oneDecimal(it.bodyFatPercent)}%\n${it.notes}")}
+                "Agenda"->{
+                    if(data.appointments.isEmpty())EmptyWorkspace("Sem atendimentos vinculados.")
+                    PagedRecords(data.appointments,selected,{it.id}){DataCard("${it.date} · ${it.time}","${it.type} · ${it.status} · ${it.location}")}
+                }
+                "Tarefas"->{
+                    TextButton(onClick={onClientModule(10,client.studentId)}){Text("Editar tarefas deste cliente")}
+                    if(data.tasks.isEmpty())EmptyWorkspace("Sem tarefas vinculadas.")
+                    PagedRecords(data.tasks,selected,{it.id}){DataCard(it.title,"${it.dueDate} · ${if(it.done)"Concluída" else "Pendente"} · ${it.category}")}
+                }
+                "Notas"->{
+                    TextButton(onClick={onClientModule(14,client.studentId)}){Text("Editar notas deste cliente")}
+                    if(data.notes.isEmpty())EmptyWorkspace("Sem notas ativas vinculadas.")
+                    PagedRecords(data.notes,selected,{it.id}){DataCard(it.title,ProfessionalTools.notePreview(it,false))}
+                }
             }
-            Heading("Histórico")
-            repo.evaluations.filter{it.studentId==client.studentId}.forEach{DataCard(it.date,"Peso: ${Metrics.oneDecimal(it.weightKg)} kg · Gordura: ${Metrics.oneDecimal(it.bodyFatPercent)}%\n${it.notes}")}
-            Heading("Atendimentos")
-            val visits=repo.appointments.filter{it.studentId==client.studentId}
-            if(visits.isEmpty())Text("Sem atendimentos vinculados.")
-            visits.forEach{DataCard("${it.date} · ${it.time}","${it.type} · ${it.status} · ${it.location}")}
-            Heading("Tarefas vinculadas")
-            val clientTasks=ProfessionalTools.taskOrder(repo.tasks.filter{it.studentId==client.studentId})
-            if(clientTasks.isEmpty())Text("Nenhuma tarefa vinculada.")
-            clientTasks.take(10).forEach{DataCard(it.title,"${it.dueDate} · ${if(it.done)"Concluída" else "Pendente"} · ${it.category}")}
-            Heading("Treinos e hábitos")
-            val training=repo.trainingSessions.filter{!it.isTemplate && it.studentId==client.studentId}
-            DataCard("Acompanhamento","${training.size} treinos · ${training.count{it.completed}} concluídos · ${repo.habits.count{it.studentId==client.studentId}} registros de hábitos") {
-                TextButton(onClick={onModule(12)}){Text("Treinos")};TextButton(onClick={onModule(13)}){Text("Hábitos")}
-            }
-            val notes=repo.notes.filter{it.studentId==client.studentId && !it.archived}
-            if(notes.isNotEmpty())Heading("Notas vinculadas")
-            notes.forEach{DataCard(it.title,it.body)}
         }
     }
 }
@@ -162,12 +217,14 @@ fun CalendarScreen(repo: AppRepository, createRequest: Int=0, initialDate:String
 
 @Composable fun DialogScreen(content: @Composable ()->Unit) {
     androidx.compose.ui.window.Dialog(onDismissRequest={},properties=androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth=false)) {
-        Surface(Modifier.fillMaxSize().systemBarsPadding().imePadding()){content()}
+        Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).imePadding()){content()}
     }
 }
 
 @Composable
-fun GoalsScreen(repo: AppRepository) {
+fun GoalsScreen(repo: AppRepository,initialClientId:String="") {
+    var filterClient by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var query by rememberSaveable{mutableStateOf("")};var filter by rememberSaveable{mutableStateOf("Todas")}
     var editing by remember{mutableStateOf<Evaluation?>(null)}
     editing?.let{item->key(item.id){
@@ -195,12 +252,13 @@ fun GoalsScreen(repo: AppRepository) {
     }}
     Screen {
         Heading("Metas","Acompanhe objetivos definidos pelo profissional e pelo cliente. O progresso é descritivo.")
+        ClientPicker(repo,filterClient,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterClient=id;filterName=name}
         Field("Buscar cliente",query,{query=it});PillChoices(listOf("Todas","Com metas","Sem metas","Prazo vencido"),filter,{filter=it})
         val found=WorkspaceRules.latest(repo.evaluations.toList()).filter{e->
             val has=e.goalWeightKg!=null || e.goalBodyFatPercent!=null
-            WorkspaceRules.search(e.name,query) && when(filter){"Com metas"->has;"Sem metas"->!has;"Prazo vencido"->has && e.goalDate.isNotBlank() && e.goalDate<LocalDate.now().toString();else->true}}
+            (filterClient.isBlank() || e.studentId==filterClient) && WorkspaceRules.search(e.name,query) && when(filter){"Com metas"->has;"Sem metas"->!has;"Prazo vencido"->has && e.goalDate.isNotBlank() && e.goalDate<LocalDate.now().toString();else->true}}
         if(found.isEmpty())EmptyWorkspace("Nenhum cliente neste filtro.")
-        PagedRecords(found,query+filter,{it.studentId}){e->
+        PagedRecords(found,query+filter+filterClient,{it.studentId}){e->
             val due=runCatching{LocalDate.parse(e.goalDate)}.getOrNull()
             DataCard(e.name,GoalTracking.summary("Peso",e.goalWeightBaselineKg,e.weightKg,e.goalWeightKg,"kg",due)+"\n"+
                 GoalTracking.summary("Gordura",e.goalBodyFatBaselinePercent,e.bodyFatPercent,e.goalBodyFatPercent,"%",due)+"\n"+e.goalNotes) {
@@ -212,49 +270,57 @@ fun GoalsScreen(repo: AppRepository) {
 }
 
 @Composable
-fun ReportsScreen(repo: AppRepository, onBillingPdf:()->Unit,onExportCsv:(String,String)->Unit) {
+fun ReportsScreen(repo: AppRepository, onBillingPdf:()->Unit,onExportCsv:(String,String)->Unit,initialClientId:String="") {
+    var filterId by rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
+    var filterName by rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
+    fun linked(id:String)=filterId.isBlank() || id==filterId
     val context=LocalContext.current
     var exportKind by rememberSaveable{mutableStateOf("Avaliações")}
+    var includeNoteBody by rememberSaveable{mutableStateOf(false)}
     var includeNames by rememberSaveable{mutableStateOf(false)}
     var period by rememberSaveable{mutableStateOf("30 dias")}
     val today=LocalDate.now()
     val start=when(period){"7 dias"->today.minusDays(6);"30 dias"->today.minusDays(29);"90 dias"->today.minusDays(89);else->LocalDate.MIN}
     fun inPeriod(value:String)=runCatching{LocalDate.parse(value) in start..today}.getOrDefault(false)
-    val evals=repo.evaluations.filter{inPeriod(it.date)}
-    val visits=repo.appointments.filter{inPeriod(it.date)}
+    val evals=repo.evaluations.filter{linked(it.studentId) && inPeriod(it.date)}
+    val visits=repo.appointments.filter{linked(it.studentId) && inPeriod(it.date)}
     val completed=visits.count{it.status=="Concluído"}
-    val charges=repo.charges.filter{inPeriod(it.dueDate)}
+    val charges=repo.charges.filter{(linked(it.studentId) || (filterId.isNotBlank() && it.secondStudentId==filterId)) && inPeriod(it.dueDate)}
     val paid=charges.filter{it.paid && !it.exempt}.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)}
     val pending=charges.filter{!it.paid && !it.exempt}.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)}
-    val sessions=repo.trainingSessions.filter{!it.isTemplate && it.completed && inPeriod(it.date)}
-    val habits=repo.habits.filter{inPeriod(it.date)}
-    val summary="EvoluFísico · Resumo $period até $today\n${evals.size} avaliações\n${visits.size} atendimentos; $completed concluídos\nRecebido: ${money(paid)}; pendente: ${money(pending)} (por vencimento)\n${sessions.size} treinos concluídos; ${sessions.sumOf{it.durationMinutes}} minutos\n${habits.size} registros de hábitos; ${habits.count{it.value>=it.target}} metas atingidas"
+    val sessions=repo.trainingSessions.filter{!it.isTemplate && it.completed && linked(it.studentId) && inPeriod(it.date)}
+    val habits=repo.habits.filter{linked(it.studentId) && inPeriod(it.date)}
+    val summary="EvoluFísico · Resumo $period até $today\n${evals.size} avaliações\n${visits.size} atendimentos; $completed concluídos\nRecebido: ${money(paid)}; pendente: ${money(pending)} (por vencimento)\n${sessions.size} treinos concluídos; ${sessions.sumOf{it.durationMinutes.toLong()}} minutos\n${habits.size} registros de hábitos; ${habits.count{it.value>=it.target}} metas atingidas"
     var error by remember{mutableStateOf("")}
     ActionError(error){error=""}
     Screen {
         Heading("Relatórios","Indicadores do período. Financeiro agrupado pela data de vencimento, sem previsão de receita.")
+        ClientPicker(repo,filterId,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterId=id;filterName=name}
+        if(filterId.isNotBlank())Text("Resumo e CSV filtrados pelo identificador. Cobranças conjuntas entram pelo valor integral, sem rateio.")
         PillChoices(listOf("7 dias","30 dias","90 dias","Todo período"),period,{period=it})
         DataCard("Avaliações","${evals.size} registros · ${evals.map{it.studentId}.distinct().size} clientes avaliados")
         DataCard("Atendimentos","${visits.size} agendados no período · $completed concluídos · ${visits.count{it.status=="Faltou"}} faltas")
         DataCard("Financeiro por vencimento","Recebido: ${money(paid)}\nPendente: ${money(pending)}\n${charges.count{it.exempt}} cortesias") {
             TextButton(onClick=onBillingPdf){Text("PDF financeiro completo")}
         }
-        DataCard("Treinamento","${sessions.size} sessões concluídas · ${sessions.sumOf{it.durationMinutes}} minutos informados · ${sessions.sumOf{ProfessionalTools.completedVolume(it)}} kg·rep de carga externa registrada")
+        DataCard("Treinamento","${sessions.size} sessões concluídas · ${sessions.sumOf{it.durationMinutes.toLong()}} minutos informados · ${sessions.sumOf{ProfessionalTools.completedVolume(it)}} kg·rep de carga externa registrada")
         DataCard("Hábitos","${habits.size} registros · ${habits.count{it.value>=it.target}} metas atingidas")
-        DataCard("Organização atual","${repo.tasks.count{!it.done}} tarefas pendentes · ${repo.tasks.count{WorkspaceRules.overdue(it)}} atrasadas · ${repo.notes.size} notas")
+        DataCard("Organização atual","${repo.tasks.count{linked(it.studentId) && !it.done}} tarefas pendentes · ${repo.tasks.count{linked(it.studentId) && WorkspaceRules.overdue(it)}} atrasadas · ${repo.notes.count{linked(it.studentId)}} notas")
         OutlinedButton(onClick={runCatching{
             context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply{type="text/plain";putExtra(Intent.EXTRA_TEXT,summary)},"Compartilhar resumo"))
         }.onFailure{error="Não foi possível abrir o compartilhamento."}}){Text("Compartilhar resumo sem nomes")}
         Heading("Exportar planilha CSV","Escolha o conjunto de dados do período. O arquivo é salvo pelo seletor Android; textos são protegidos contra interpretação como fórmula em planilhas.")
-        PillChoices(listOf("Avaliações","Cobranças","Treinos","Séries","Hábitos","Tarefas"),exportKind,{exportKind=it})
+        PillChoices(listOf("Avaliações","Cobranças","Treinos","Séries","Hábitos","Tarefas","Agenda","Notas"),exportKind,{exportKind=it;includeNoteBody=false})
+        if(exportKind=="Notas")Row(verticalAlignment=Alignment.CenterVertically){Text("Incluir conteúdo das notas",Modifier.weight(1f));Switch(includeNoteBody,onCheckedChange={includeNoteBody=it})}
         Row(verticalAlignment=Alignment.CenterVertically){Text("Incluir nomes de clientes",Modifier.weight(1f));Switch(includeNames,onCheckedChange={includeNames=it})}
         Button(onClick={runCatching{
-            val csv=ExportTables.build(exportKind,evals,charges,repo.trainingSessions.filter{inPeriod(it.date)},habits,
-                repo.tasks.filter{inPeriod(it.dueDate)},includeNames)
+            val csv=ExportTables.build(exportKind,evals,charges,repo.trainingSessions.filter{linked(it.studentId) && inPeriod(it.date)},habits,
+                repo.tasks.filter{linked(it.studentId) && inPeriod(it.dueDate)},includeNames,visits,repo.notes.filter{linked(it.studentId) && inPeriod(it.date)},includeNoteBody)
             onExportCsv("EvoluFisico_${exportKind}_${today}.csv",csv)
         }.onFailure{error=it.message ?: "Falha ao preparar CSV."}}){Text("Salvar CSV do período")}
         Heading("Distribuição por serviço")
         if(charges.isEmpty())Text("Sem cobranças neste período.")
-        charges.groupBy{it.service}.forEach{(service,rows)->DataCard(service,"${rows.size} lançamentos · ${money(rows.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})}")}
+        val services=charges.groupBy{it.service}.entries.sortedBy{it.key}
+        PagedRecords(services,period,{it.key}){entry->DataCard(entry.key,"${entry.value.size} lançamentos · ${money(entry.value.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)})}")}
     }
 }

@@ -21,11 +21,11 @@ assert 'fun progress' in files['GoalTracking.kt']
 assert 'DatePicker' in files['Components.kt']
 assert 'goalWeightKg' in files['EvaluationsScreen.kt']
 assert 'goalWeightBaselineKg' in files['IntegrityAuditor.kt']
-assert 'Agenda.overlaps' in files['IntegrityAuditor.kt']
+assert 'Agenda.conflicts' in files['IntegrityAuditor.kt']
 assert 'bytes.fill(0)' in (src/'MainActivity.kt').read_text()
 assert 'file.delete()' in (src/'system'/'NativeBackupWorker.kt').read_text()
-assert 'versionCode = 621' in (root/'app/build.gradle.kts').read_text()
-assert '0.1.0-native-beta.20.1' in (root/'app/build.gradle.kts').read_text()
+assert 'versionCode = 702' in (root/'app/build.gradle.kts').read_text()
+assert '0.1.0-native-beta.100' in (root/'app/build.gradle.kts').read_text()
 assert 'ReminderPolicy.shouldNotify' in files['AppointmentNotifications.kt']
 assert 'ReminderPolicy.shouldSchedule' in files['AppointmentNotifications.kt']
 assert '1440' in files['SettingsScreen.kt']
@@ -66,12 +66,12 @@ assert 'CardGrid(found' in files['NativeApp.kt']
 assert 'CompactModuleCard' in files['NativeApp.kt']
 assert 'dueReassessments' in files['DashboardInsights.kt']
 assert 'PagedRecords(visibleTasks' in files['HomeScreen.kt']
-assert 'TrainingProgression(repo,onExportCsv)' in files['StructuredTraining.kt']
+assert 'TrainingProgression(repo,onExportCsv,filterClient)' in files['StructuredTraining.kt']
 assert 'TrainingInsights.batch' in files['StructuredTraining.kt']
 assert 'onCreateTrainingPdf' in files['NativeApp.kt']
 assert 'Reports.training(item)' in files['MainActivity.kt']
 assert 'fun training(item:TrainingSession)' in files['Reports.kt']
-assert 'it.studentId==clientId' in files['TrainingInsights.kt']
+assert 'session.studentId!=clientId' in files['TrainingInsights.kt']
 assert 'enabled=!item.completed' in files['StructuredTraining.kt']
 assert 'ClientLabels.choices' in files['Components.kt']
 assert 'FlowRow' in files['Components.kt']
@@ -79,4 +79,11 @@ assert 'liveRegion=LiveRegionMode.Polite' in files['Components.kt']
 assert 'if(invalidPrice)0L' in files['BillingScreen.kt']
 assert 'Modifier.imePadding()' in files['NativeApp.kt']
 assert 'calendarWidth=maxOf(maxWidth,350.dp)' in files['ProfessionalScreens.kt']
-print(f'Auditoria estática: {len(files)} arquivos Kotlin; 16 destinos; Beta 20.1, redimensionamento e revisão de lógica integrados. PASSOU.')
+assert 'ClientWorkspace.snapshot' in files['ProfessionalScreens.kt']
+assert 'Reports.clientDossier' in files['MainActivity.kt']
+assert 'onClientModule={index,id->navigate(index,client=id)}' in files['NativeApp.kt']
+assert 'ExerciseLibraryPicker' in files['StructuredTraining.kt']
+assert 'includeNoteBody:Boolean=false' in files['ExportTables.kt']
+assert '"Agenda"' in files['ExportTables.kt']
+assert 'Screen(bottomInset=24.dp)' in files['WorkspaceScreens.kt']
+print(f'Auditoria estática: {len(files)} arquivos Kotlin; 16 destinos; Beta 100, área segura Android e exportações integradas. PASSOU.')
