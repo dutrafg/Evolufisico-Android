@@ -2,6 +2,7 @@ package br.com.evolufisico.nativo.ui.screens
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -77,8 +78,9 @@ fun ClientsScreen(repo: AppRepository, initialQuery: String="", initialClientId:
 
 @Composable
 fun CalendarScreen(repo: AppRepository, createRequest: Int=0, initialDate:String="") {
-    var selected by rememberSaveable(initialDate){mutableStateOf(initialDate.ifBlank{LocalDate.now().toString()})}
-    var monthText by rememberSaveable(initialDate){mutableStateOf(YearMonth.from(LocalDate.parse(initialDate.ifBlank{LocalDate.now().toString()})).toString())}
+    val safeInitial=runCatching{WorkspaceRules.date(initialDate)}.getOrNull()?.takeIf{it.year in 1..9999} ?: LocalDate.now()
+    var selected by rememberSaveable(initialDate){mutableStateOf(safeInitial.toString())}
+    var monthText by rememberSaveable(initialDate){mutableStateOf(YearMonth.from(safeInitial).toString())}
     var filter by rememberSaveable{mutableStateOf("Todos")}
     var editing by remember{mutableStateOf<Appointment?>(null)}
     var deleting by remember{mutableStateOf<Appointment?>(null)}
@@ -98,12 +100,16 @@ fun CalendarScreen(repo: AppRepository, createRequest: Int=0, initialDate:String
     Screen {
         Heading("Agenda","Calendário mensal, recorrência e detecção de conflito de horários.")
         Button(onClick={editing=Appointment(date=selected);new=true}){Text("+ Agendar")}
-        val month=YearMonth.parse(monthText)
+        val month=runCatching{YearMonth.parse(monthText)}.getOrNull()?.takeIf{it.year in 1..9999} ?: YearMonth.now()
+        Text("${month.month.getDisplayName(TextStyle.SHORT,Locale.forLanguageTag("pt-BR"))} ${month.year}",Modifier.fillMaxWidth(),textAlign=androidx.compose.ui.text.style.TextAlign.Center,style=MaterialTheme.typography.titleMedium)
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
-            TextButton(onClick={monthText=month.minusMonths(1).toString();selected=month.minusMonths(1).atDay(1).toString()}){Text("Anterior")}
-            Text("${month.month.getDisplayName(TextStyle.SHORT,Locale.forLanguageTag("pt-BR"))} ${month.year}",style=MaterialTheme.typography.titleMedium)
-            TextButton(onClick={monthText=month.plusMonths(1).toString();selected=month.plusMonths(1).atDay(1).toString()}){Text("Próximo")}
+            TextButton(enabled=month>YearMonth.of(1,1),onClick={monthText=month.minusMonths(1).toString();selected=month.minusMonths(1).atDay(1).toString()}){Text("Anterior")}
+            TextButton(enabled=month<YearMonth.of(9999,12),onClick={monthText=month.plusMonths(1).toString();selected=month.plusMonths(1).atDay(1).toString()}){Text("Próximo")}
         }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val calendarWidth=maxOf(maxWidth,350.dp)
+            Row(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState())) {
+                Column(Modifier.width(calendarWidth)) {
         Row(Modifier.fillMaxWidth()){
             listOf("Seg","Ter","Qua","Qui","Sex","Sáb","Dom").forEach{label->
                 Text(label,Modifier.weight(1f).semantics{contentDescription=label},textAlign=androidx.compose.ui.text.style.TextAlign.Center,
@@ -117,11 +123,11 @@ fun CalendarScreen(repo: AppRepository, createRequest: Int=0, initialDate:String
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(2.dp)) {
                 (0..6).forEach{column->
                     val number=week+column-offset+1
-                    if(number !in 1..month.lengthOfMonth())Spacer(Modifier.weight(1f).aspectRatio(1f))
+                    if(number !in 1..month.lengthOfMonth())Spacer(Modifier.weight(1f).heightIn(min=64.dp))
                     else {
                         val date=month.atDay(number).toString()
                         val active=date==selected
-                        Surface(modifier=Modifier.weight(1f).aspectRatio(1f).semantics {contentDescription="Data $date, ${occupied[date] ?: 0} atendimentos";this.selected=active},shape=MaterialTheme.shapes.small,
+                        Surface(modifier=Modifier.weight(1f).heightIn(min=64.dp).semantics {contentDescription="Data $date, ${occupied[date] ?: 0} atendimentos";this.selected=active},shape=MaterialTheme.shapes.small,
                             color=if(active)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                             border=if(date==LocalDate.now().toString()) androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.primary) else null,
                             onClick={selected=date}) {
@@ -131,6 +137,9 @@ fun CalendarScreen(repo: AppRepository, createRequest: Int=0, initialDate:String
                             }
                         }
                     }
+                }
+            }
+        }
                 }
             }
         }

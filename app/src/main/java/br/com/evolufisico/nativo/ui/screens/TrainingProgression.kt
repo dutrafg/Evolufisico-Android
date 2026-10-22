@@ -43,7 +43,7 @@ import java.util.Locale
                 TextButton(onClick={selected=if(selected==trend.exercise)"" else trend.exercise}){Text(if(selected==trend.exercise)"Recolher histórico" else "Ver histórico diário")}
             }
             if(selected==trend.exercise) {
-                val history=points.filter{it.exercise.equals(trend.exercise,ignoreCase=true)}.sortedByDescending{it.date}
+                val history=points.filter{TrainingInsights.exerciseKey(it.exercise)==TrainingInsights.exerciseKey(trend.exercise)}.sortedByDescending{it.date}
                 PagedRecords(history,clientId+start+end+selected,{it.date}){point->
                     DataCard(point.date,"${point.sets} séries · ${point.repetitions} rep · máxima ${fmt(point.maximumKg)} kg\nVolume externo: ${fmt(point.volume)} kg·rep")
                 }

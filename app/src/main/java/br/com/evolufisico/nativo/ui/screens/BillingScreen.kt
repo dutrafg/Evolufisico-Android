@@ -128,7 +128,7 @@ private fun BillingEditor(original:Charge,repo:AppRepository,onCancel:()->Unit,o
         Field("Desconto (R$)",discount,{discount=it})
         val baseCents=cents(amount);val discountCents=cents(discount)
         val invalidPrice=baseCents==null||discountCents==null||baseCents<0||discountCents<0||discountCents>baseCents
-        val total=Financial.billable(baseCents?:0L,discountCents?:0L,exempt)
+        val total=if(invalidPrice)0L else Financial.billable(baseCents!!,discountCents!!,exempt)
         DataCard("Total a cobrar",if(invalidPrice) "Confira valor e desconto" else money(total))
         Field("Parcelas (1–24)",installments,{installments=it})
         if(!invalidPrice && installments.toIntOrNull() in 1..24) {

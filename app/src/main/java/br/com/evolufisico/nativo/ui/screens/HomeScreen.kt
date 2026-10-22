@@ -76,8 +76,8 @@ fun HomeScreen(repository: AppRepository, openEvaluations: () -> Unit, openBilli
         }
         HorizontalDivider()
         Heading("Tarefas")
-        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.weight(1f)) { Field("Nova tarefa",taskText,{taskText=it}) }
+        Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Field("Nova tarefa",taskText,{taskText=it})
             Button(enabled=taskText.isNotBlank(),onClick={runCatching{repository.save(TaskItem(title=taskText.trim()))}.onSuccess{taskText=""}.onFailure{actionError=it.message ?: "Falha ao salvar tarefa."}}){Text("Adicionar")}
         }
         PillChoices(listOf("Pendentes","Concluídas","Todas"),taskFilter,{taskFilter=it})

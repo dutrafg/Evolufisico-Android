@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -154,8 +155,9 @@ fun NativeApp(
         if(modulesOpen) ModuleHub(moduleOrder,{modulesOpen=false},{saveOrder(it)},{navigate(it)},favorites,{toggleFavorite(it)})
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide=LocalConfiguration.current.smallestScreenWidthDp>=600 && maxWidth>=900.dp
+            val imeVisible=WindowInsets.ime.getBottom(LocalDensity.current)>0
             Box {
-                Scaffold(
+                Scaffold(modifier=Modifier.imePadding(),
                     topBar={Surface(shadowElevation=2.dp){Row(Modifier.fillMaxWidth().heightIn(min=64.dp).padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){
                         if(!wide)IconButton(onClick={modulesOpen=true}){Icon(Icons.Filled.Apps,"Abrir painel de módulos")}
                         Icon(Icons.Filled.MonitorHeart,null,tint=MaterialTheme.colorScheme.primary)
@@ -165,12 +167,12 @@ fun NativeApp(
                         }
                         IconButton(onClick={globalQuery="";searchOpen=true}){Icon(Icons.Filled.Search,"Buscar no aplicativo")}
                     }}},
-                    bottomBar={if(!wide)NavigationBar(tonalElevation=3.dp){
+                    bottomBar={if(!wide && !imeVisible)NavigationBar(tonalElevation=3.dp){
                         moduleOrder.take(4).forEach{index->val dest=tabs[index]
                             NavigationBarItem(selected=screen==index,onClick={navigate(index)},icon={Icon(dest.icon,dest.label,Modifier.size(22.dp))},label={Text(dest.label,maxLines=1,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)})}
                         NavigationBarItem(selected=screen !in moduleOrder.take(4),onClick={modulesOpen=true},icon={Icon(Icons.Filled.Apps,"Todos os módulos")},label={Text("Módulos")})
                     }},
-                    floatingActionButton={if(!editorActive)Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    floatingActionButton={if(!editorActive && !imeVisible)Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){
                         if(fabOpen)Card{Column(Modifier.padding(8.dp).heightIn(max=330.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(4.dp)){
                             listOf(1 to "Nova avaliação",9 to "Agendar atendimento",10 to "Nova tarefa",12 to "Novo treino",13 to "Registrar hábito",14 to "Nova nota").forEach{(index,label)->
                                 TextButton(onClick={navigate(index,true)}){Icon(tabs[index].icon,null,Modifier.size(20.dp));Spacer(Modifier.width(8.dp));Text(label)}
@@ -244,7 +246,7 @@ private fun ModuleHub(order:List<Int>,onClose:()->Unit,onSave:(List<Int>)->Unit,
                 }
                 if(editing) {
                     Text("Use as setas para mover. Os quatro primeiros ficam na barra inferior do smartphone.")
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    ActionButtons {
                         OutlinedButton(onClick={draft=ModuleOrder.defaults}){Text("Restaurar padrão")}
                         Button(onClick={onSave(draft);editing=false}){Text("Salvar ordem")}
                     }

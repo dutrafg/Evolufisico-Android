@@ -1,4 +1,4 @@
-name: Android Beta 20 CI
+name: Android Beta 20.1 CI
 on:
   push:
     branches: [main]
@@ -40,7 +40,7 @@ jobs:
       - name: Upload test APK (CI debug signature)
         uses: actions/upload-artifact@v4
         with:
-          name: EvoluFisico-Android-Nativo-Beta20-debug-nao-atualizavel
+          name: EvoluFisico-Android-Nativo-Beta20-1-debug-nao-atualizavel
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30

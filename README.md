@@ -1,6 +1,6 @@
-# EvoluFísico Android nativo — Beta 20 de testes
+# EvoluFísico Android nativo — Beta 20.1 de testes
 
-Aplicativo Kotlin, Jetpack Compose e Material 3 para Android 10+ (`minSdk 29`). Pacote `br.com.evolufisico.nativo`; `versionCode=620`; `versionName=0.1.0-native-beta.20`. Sem WebView e sem permissão de internet.
+Aplicativo Kotlin, Jetpack Compose e Material 3 para Android 10+ (`minSdk 29`). Pacote `br.com.evolufisico.nativo`; `versionCode=621`; `versionName=0.1.0-native-beta.20.1`. Sem WebView e sem permissão de internet.
 
 ## Espaço de trabalho: 16 módulos
 
@@ -37,6 +37,14 @@ Em Treinos → Evolução de cargas, selecione um cliente por ID e um período. 
 
 Sessões e modelos podem ser exportados em PDF pelo seletor nativo. O editor inclui lotes de 1 a 10 séries, validados antes da inclusão, até 200 no treino. Sessões concluídas precisam ser reabertas para editar. A lista de sessões ganhou filtros por cliente e últimos 30/90 dias. Seletores preservam a distinção entre clientes homônimos.
 
+## Revisão Beta 20.1 — layout e QA
+
+Filtros quebram linhas em vez de ficarem escondidos numa faixa horizontal. O campo de data usa um ícone de 48 dp, o calendário mantém largura mínima e rolagem em telas estreitas, e indicadores empilham ícone/valor quando falta espaço ou a fonte é grande. Paginação mostra o estado acima dos botões. A barra inferior e o botão flutuante cedem espaço ao teclado.
+
+Clientes homônimos com IDs importados de prefixo semelhante recebem rótulos distintos, independentemente do idioma do aparelho. Exercícios colados de PDFs normalizam espaços não separáveis. Valores financeiros negativos são rejeitados no domínio; a prévia de edição trata entradas inválidas antes de calcular o total.
+
+Oito testes de regressão foram adicionados, mas não executados. Auditoria estática e leitura de XML passaram. JUnit/Lint continuam bloqueados pelo download do Gradle sem rede. Não houve validação visual em Android.
+
 ## Dados e compatibilidade
 
 Todos os registros, inclusive treinos, hábitos e notas, usam o banco AES-GCM protegido pelo Android Keystore. Os novos tipos integram o backup portátil com senha e o backup desta instalação. Backups antigos continuam aceitos. Não use uma versão anterior para editar/restaurar dados desta Beta: ela pode ignorar campos novos, como séries, prioridade e arquivo de notas. A restauração recusa conflitos e não substitui silenciosamente registros.
@@ -56,8 +64,8 @@ bash gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 python3 qa/check_source.py
 ```
 
-A compilação debug destina-se a testes; esta entrega contém o código-fonte e não inclui um novo APK. A série mantém o mesmo pacote e aumenta o versionCode da Beta 10 (610) para 620; a atualização requer a mesma assinatura. Não desinstale a instalação anterior sem antes proteger seus dados em backup portátil.
+A compilação debug destina-se a testes; esta entrega contém o código-fonte e não inclui um novo APK. A série mantém o mesmo pacote e aumenta o versionCode da Beta 20 (620) para 621; a atualização requer a mesma assinatura. Não desinstale a instalação anterior sem antes proteger seus dados em backup portátil.
 
-Veja `qa/ENTREGA_BETA20.md` para escopo e evidências. Testes automatizados não substituem homologação em aparelho/emulador, inspeção visual ou restauração real.
+Veja `qa/REVISAO_BETA20_1.md` para escopo e evidências. Testes automatizados não substituem homologação em aparelho/emulador, inspeção visual ou restauração real.
 
-A suíte preserva os testes anteriores e acrescenta nove testes focados e uma matriz de 10.000 casos para evolução de cargas, clientes, lotes e CSV. Os testes Kotlin/Android não foram executados neste ambiente: a distribuição Gradle 9.3.1 não está em cache, a rede bloqueou o download, e não há Android SDK local. Não há APK Beta 20 validado nesta entrega. Consulte `qa/ENTREGA_BETA20.md` para o estado e os comandos de compilação. Os cenários de QA não representam etapas de desenvolvimento concluídas. O CSV exportado é texto aberto para planilhas e não substitui o backup criptografado.
+A revisão preserva os testes anteriores e acrescenta oito testes de regressão para rótulos de clientes, valores financeiros e espaços copiados de PDFs. Os testes Kotlin/Android não foram executados neste ambiente: a distribuição Gradle 9.3.1 não está em cache, a rede bloqueou o download, e não há Android SDK local. Não há APK Beta 20.1 validado nesta entrega. Consulte `qa/REVISAO_BETA20_1.md` para o estado e os comandos de compilação. Os cenários de QA não representam etapas de desenvolvimento concluídas. O CSV exportado é texto aberto para planilhas e não substitui o backup criptografado.

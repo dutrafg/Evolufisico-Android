@@ -86,7 +86,7 @@ fun SettingsScreen(
     Text("Protegido pelo Android Keystore, sem salvar senha. Só pode ser restaurado nesta instalação; não substitui o backup portátil protegido por senha.")
     var dailyTime by remember { mutableStateOf("22:00") }
     Field("Horário preferencial (HH:MM)",dailyTime,{dailyTime=it})
-    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+    ActionButtons {
         Button(onClick={onScheduleBackup(dailyTime)}){Text("Ativar diário")}
         OutlinedButton(onClick=onDisableBackup){Text("Desativar")}
     }
@@ -111,14 +111,14 @@ fun SettingsScreen(
         when(reminderLeadMinutes){15->"15 min";30->"30 min";1440->"24 horas";else->"1 hora"},{label->
             onReminderLeadChange(when(label){"15 min"->15;"30 min"->30;"24 horas"->1440;else->60})
         })
-    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+    ActionButtons {
         Button(onClick=onEnableReminders){Text("Ativar lembretes")}
         OutlinedButton(onClick=onDisableReminders){Text("Desativar")}
     }
     HorizontalDivider()
         }
         "Sobre" -> {
-    Text("EvoluFísico Nativo · 0.1.0-beta.20", style = MaterialTheme.typography.labelMedium)
+    Text("EvoluFísico Nativo · 0.1.0-beta.20.1", style = MaterialTheme.typography.labelMedium)
     Text("Importador de backup legado implementado, mas ainda sem homologação em dispositivo. Preserve os arquivos e o aplicativo anterior.",
         style = MaterialTheme.typography.bodySmall)
     Text("16 módulos nativos · funcionamento local · sem permissão de internet.",style=MaterialTheme.typography.bodySmall)

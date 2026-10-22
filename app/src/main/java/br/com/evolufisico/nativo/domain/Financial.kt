@@ -11,7 +11,10 @@ object Financial {
         "Diária" to 2_500L,
         "Personalizado" to 15_000L
     )
-    fun net(base:Long,discount:Long):Long = (base-discount).coerceAtLeast(0)
+    fun net(base:Long,discount:Long):Long {
+        require(base>=0 && discount>=0){"Valor e desconto não podem ser negativos."}
+        return (base-discount).coerceAtLeast(0)
+    }
     /** Courtesy is not a receivable nor a payment and must not inflate revenue. */
     fun billable(base:Long,discount:Long,exempt:Boolean):Long = if(exempt)0 else net(base,discount)
     /** Distributes cents exactly, largest remainder to the first installments. */

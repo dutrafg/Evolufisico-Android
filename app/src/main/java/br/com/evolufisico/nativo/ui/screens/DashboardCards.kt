@@ -13,7 +13,7 @@ import br.com.evolufisico.nativo.domain.LayoutPolicy
 
 @Composable fun <T> CardGrid(items:List<T>,minimumWidth:Double=250.0,maxColumns:Int=4,content:@Composable (T)->Unit) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val columns=LayoutPolicy.cardColumns(maxWidth.value.toDouble(),LocalDensity.current.fontScale.toDouble(),minimumWidth,maxColumns)
+        val columns=LayoutPolicy.cardColumns(maxWidth.value.toDouble().coerceAtLeast(1.0),LocalDensity.current.fontScale.toDouble(),minimumWidth,maxColumns)
         Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
             items.chunked(columns).forEach{row->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -30,12 +30,19 @@ import br.com.evolufisico.nativo.domain.LayoutPolicy
         elevation=CardDefaults.elevatedCardElevation(defaultElevation=2.dp),
         colors=CardDefaults.elevatedCardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.primaryContainer) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stacked=maxWidth<220.dp || LocalDensity.current.fontScale>1.5f
+                @Composable fun Badge(){Surface(shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.primaryContainer) {
                     Icon(icon,null,Modifier.padding(12.dp).size(28.dp),tint=MaterialTheme.colorScheme.onPrimaryContainer)
+                }}
+                if(stacked)Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                    Badge()
+                    Text(value,style=MaterialTheme.typography.headlineSmall)
+                } else Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                    Badge()
+                    Text(value,Modifier.weight(1f).padding(start=12.dp),style=MaterialTheme.typography.headlineSmall,
+                        textAlign=androidx.compose.ui.text.style.TextAlign.End)
                 }
-                Text(value,Modifier.weight(1f).padding(start=12.dp),style=MaterialTheme.typography.headlineSmall,
-                    textAlign=androidx.compose.ui.text.style.TextAlign.End)
             }
             Text(title,style=MaterialTheme.typography.titleMedium)
             Text(detail,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)

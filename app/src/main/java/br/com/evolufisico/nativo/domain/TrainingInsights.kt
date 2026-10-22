@@ -10,7 +10,8 @@ object TrainingInsights {
     data class Trend(val exercise:String,val current:Point,val previous:Point?) {
         val differenceKg:Double? get()=previous?.let{current.maximumKg-it.maximumKg}
     }
-    private fun normalized(value:String)=value.trim().replace(Regex("\\s+")," ").lowercase(Locale.ROOT)
+    private val spaces=Regex("[\\s\\p{Zs}]+")
+    fun exerciseKey(value:String)=value.trim().replace(spaces," ").lowercase(Locale.ROOT)
     fun history(sessions:List<TrainingSession>,clientId:String,from:LocalDate,to:LocalDate,today:LocalDate=LocalDate.now()):List<Point> {
         require(from<=to){"Início posterior ao fim do período."}
         if(clientId.isBlank())return emptyList()
@@ -18,17 +19,17 @@ object TrainingInsights {
         val rows=sessions.filter{!it.isTemplate && it.completed && it.studentId==clientId}
             .filter{runCatching{WorkspaceRules.date(it.date).let{date->date>=from && date<=end}}.getOrDefault(false)}
         return rows.flatMap{session->session.sets.filter{it.done && it.exercise.isNotBlank() && it.repetitions in 1..1000 && it.loadKg.isFinite() && it.loadKg in 0.0..2000.0}
-            .map{Triple(session.date,normalized(it.exercise),it)}}
+            .map{Triple(session.date,exerciseKey(it.exercise),it)}}
             .groupBy{it.first to it.second}.map{(key,entries)->
                 val sets=entries.map{it.third}
-                Point(key.first,sets.map{it.exercise.trim().replace(Regex("\\s+")," ")}.sorted().first(),sets.size,
+                Point(key.first,sets.map{it.exercise.trim().replace(spaces," ")}.sorted().first(),sets.size,
                     sets.sumOf{it.repetitions.toLong()},sets.maxOf{it.loadKg},sets.sumOf{it.loadKg*it.repetitions})
-            }.sortedWith(compareBy<Point>{it.date}.thenBy{normalized(it.exercise)})
+            }.sortedWith(compareBy<Point>{it.date}.thenBy{exerciseKey(it.exercise)})
     }
-    fun trends(points:List<Point>):List<Trend> = points.groupBy{normalized(it.exercise)}.values.map{rows->
+    fun trends(points:List<Point>):List<Trend> = points.groupBy{exerciseKey(it.exercise)}.values.map{rows->
         val ordered=rows.sortedBy{it.date}
         Trend(ordered.last().exercise,ordered.last(),ordered.dropLast(1).lastOrNull())
-    }.sortedBy{normalized(it.exercise)}
+    }.sortedBy{exerciseKey(it.exercise)}
     fun csv(points:List<Point>):String {
         require(points.size<=20_000){"Exporte no máximo 20.000 linhas por vez; reduza o período."}
         return ProfessionalTools.csv(listOf("Data","Exercício","Séries marcadas","Repetições","Carga máxima externa (kg)","Volume externo (kg·rep)"),
