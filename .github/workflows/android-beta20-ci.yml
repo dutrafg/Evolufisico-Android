@@ -1,0 +1,43 @@
+name: Android Beta 20 CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta20-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Android SDK platform and Build Tools
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-37' 'build-tools;36.0.0'
+      - name: Source checks
+        run: python3 qa/check_source.py
+      - name: Gradle wrapper verification
+        run: bash gradlew --version
+      - name: Unit tests, lint and debug APK
+        run: bash gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+      - name: Upload test APK (CI debug signature)
+        uses: actions/upload-artifact@v4
+        with:
+          name: EvoluFisico-Android-Nativo-Beta20-debug-nao-atualizavel
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,16 @@
+{
+  "versionName": "0.1.0-native-beta.10",
+  "versionCode": 610,
+  "applicationId": "br.com.evolufisico.nativo",
+  "sourceAudit": "PASS",
+  "kotlinProductionFiles": 43,
+  "destinations": 16,
+  "newFocusedTestsPrepared": 7,
+  "newParameterizedCasesPrepared": 10000,
+  "unitTests": "NOT_RUN",
+  "lint": "NOT_RUN",
+  "apk": "NOT_BUILT",
+  "visualAndDeviceValidation": "NOT_RUN",
+  "blocker": "Gradle 9.3.1 download failed: Network is unreachable; Android SDK is absent.",
+  "developmentStageCountClaimed": false
+}

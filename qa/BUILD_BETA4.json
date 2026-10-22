@@ -1,0 +1,14 @@
+{
+  "versionName": "0.1.0-native-beta.4",
+  "versionCode": 604,
+  "applicationId": "br.com.evolufisico.nativo",
+  "sourceAudit": "PASS",
+  "kotlinSourceFiles": 41,
+  "destinations": 16,
+  "unitTestsAdded": 6,
+  "unitTests": "NOT_RUN",
+  "lint": "NOT_RUN",
+  "apk": "NOT_BUILT",
+  "deviceValidation": "NOT_RUN",
+  "blocker": "Gradle 9.3.1 download failed: Network is unreachable; no cached Gradle distribution or Android SDK."
+}

@@ -1,66 +1,43 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
-    namespace = "br.com.evolufisico.android"
-    compileSdk = 36
+    namespace = "br.com.evolufisico.nativo"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId = "br.com.evolufisico.android"
+        applicationId = "br.com.evolufisico.nativo"
         minSdk = 29 // Android 10+
-        targetSdk = 35
-        versionCode = 143
-        versionName = "38.0.0-alpha.38"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    signingConfigs {
-        if (!System.getenv("EF_KEYSTORE_FILE").isNullOrBlank()) {
-            create("distribution") {
-                storeFile = file(System.getenv("EF_KEYSTORE_FILE"))
-                storePassword = System.getenv("EF_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("EF_KEY_ALIAS")
-                keyPassword = System.getenv("EF_KEY_PASSWORD")
-            }
-        }
+        targetSdk = 36
+        versionCode = 620
+        versionName = "0.1.0-native-beta.20"
     }
     buildTypes {
-        debug {
-            // APK de homologação paralelo: mantém intacto o aplicativo oficial.
-            applicationIdSuffix = ".alpha38"
-            versionNameSuffix = "-preview"
-        }
         release {
-            signingConfigs.findByName("distribution")?.let { signingConfig = it }
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false // auditar R8 antes do primeiro release
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin { jvmToolchain(17) }
     buildFeatures { compose = true }
-    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2025.06.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.09.00"))
+    implementation("androidx.activity:activity-compose:1.12.4")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.activity:activity-compose:1.11.0")
-    implementation("androidx.core:core:1.16.0")
-    implementation("androidx.work:work-runtime-ktx:2.10.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.documentfile:documentfile:1.1.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
+    implementation("androidx.core:core-ktx:1.17.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:core:1.6.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
 }
