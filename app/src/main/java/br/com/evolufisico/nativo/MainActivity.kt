@@ -309,6 +309,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var restorePreview by remember { mutableStateOf<BackupInspector.Summary?>(null) }
     var pendingPdf by remember { mutableStateOf<ByteArray?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var diagnosticsResult by remember { mutableStateOf<String?>(null) }
 
     val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
@@ -513,6 +514,16 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                             autoBackupTime = String.format(Locale.ROOT, "%02d:%02d", hour, minute)
                             preferences.edit().putString("auto_backup_time", autoBackupTime).apply()
                         }, time.hour, time.minute, true).show()
+                    },
+                    diagnosticsResult = diagnosticsResult,
+                    onRunDiagnostics = {
+                        scope.launch {
+                            diagnosticsResult = try {
+                                withContext(Dispatchers.IO) { database.diagnosticReport() }
+                            } catch (e: Exception) {
+                                "Diagnóstico indisponível: " + (e.message ?: "erro ao consultar o banco.")
+                            }
+                        }
                     },
                     onBackup = { exportBackup.launch("EvoluFisico-Backup.json") },
                     onRestore = { importBackup.launch(arrayOf("application/json", "text/plain")) }
@@ -1811,6 +1822,8 @@ private fun SettingsScreen(
     onAutoBackupEnabledChange: (Boolean) -> Unit,
     onChooseBackupFolder: () -> Unit,
     onChooseBackupTime: () -> Unit,
+    diagnosticsResult: String?,
+    onRunDiagnostics: () -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit
 ) {
@@ -1920,6 +1933,16 @@ private fun SettingsScreen(
                 Button(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("Exportar backup") }
                 androidx.compose.material3.OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("Restaurar") }
             }
+        }
+        item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+        item {
+            Text("Manutenção e diagnóstico", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("A verificação consulta o SQLite sem alterar nem excluir registros.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.material3.OutlinedButton(onClick = onRunDiagnostics, modifier = Modifier.fillMaxWidth()) {
+                Text("Verificar integridade dos dados")
+            }
+            if (diagnosticsResult != null) Text(diagnosticsResult, style = MaterialTheme.typography.bodySmall)
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
