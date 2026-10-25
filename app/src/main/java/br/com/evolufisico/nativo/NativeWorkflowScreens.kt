@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -94,16 +95,23 @@ internal fun AnalyticsScreen(
     students: List<Student>,
     assessments: List<Assessment>,
     onOpenStudent: (Long) -> Unit,
-    onExportReportPdf: (Student, List<Assessment>, String) -> Unit
+    onExportReportPdf: (Student, List<Assessment>, String, Map<String, Double>, Map<String, String>) -> Unit
 ) {
     var selectedStudent by remember(students) { mutableStateOf(students.firstOrNull()) }
-    val history = assessments.filter { it.studentId == selectedStudent?.id }
-        .distinctBy { it.date }.sortedBy { it.date }
+    val history = assessments.filter { it.studentId == selectedStudent?.id }.sortedBy { it.date }
+    val duplicateDays = history.groupBy { it.date }.filterValues { it.size > 1 }.keys
     var selectedDates by remember(selectedStudent?.id) { mutableStateOf(history.takeLast(3).map { it.date }) }
     val selected = history.filter { it.date in selectedDates }.sortedBy { it.date }
     val dateKeys = selected.map { it.date }
     val spanDays = AnalysisMath.coverageDays(dateKeys)?.toInt() ?: 0
-    val scientificAudit = EfiaScientificEngines.analyze(selected)
+    val semInputs = remember(selectedStudent?.id, selectedDates) { mutableStateMapOf<String, String>() }
+    val semSources = remember(selectedStudent?.id, selectedDates) { mutableStateMapOf<String, String>() }
+    val semValues = semInputs.mapNotNull { (name, input) ->
+        input.trim().replace(',', '.').toDoubleOrNull()
+            ?.takeIf { it.isFinite() && it > 0.0 }?.let { name to it }
+    }.toMap()
+    val provenance = semSources.filterValues { it.trim().length > 3 }
+    val scientificAudit = EfiaScientificEngines.analyze(selected, semValues, provenance)
     val qualified = AnalysisMath.isEligibleWindow(dateKeys) && scientificAudit.eligible
     val comparableCount = listOf(
         selected.all { it.weightKg > 0 },
@@ -156,6 +164,11 @@ internal fun AnalyticsScreen(
                     item {
                         SectionCard("Escolher datas para comparar") {
                             Text("Marque três datas obrigatórias e, se necessário, uma quarta. São exigidos pelo menos 21 dias totais e sete dias entre as duas últimas coletas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (duplicateDays.isNotEmpty()) {
+                                Text("Há avaliações repetidas nas datas: " + duplicateDays.sorted().joinToString(", ") +
+                                    ". Reveja o histórico: a seleção duplicada bloqueia o relatório.",
+                                    color = MaterialTheme.colorScheme.error)
+                            }
                             history.forEach { assessment ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Checkbox(
@@ -222,6 +235,37 @@ internal fun AnalyticsScreen(
                             }
                         }
                         item {
+                            SectionCard("Mudança mínima detectável · EF79") {
+                                Text("Informe SEM e a referência do mesmo método/equipamento. Sem os dois, o MDC95 não será calculado. O sistema não valida a fonte.")
+                                listOf(
+                                    "peso" to "Peso · kg",
+                                    "cintura" to "Cintura · cm",
+                                    "gordura" to "Gordura corporal · pontos percentuais",
+                                    "massaMagra" to "Massa livre de gordura · kg"
+                                ).forEach { (key, label) ->
+                                    Text(label, fontWeight = FontWeight.SemiBold)
+                                    OutlinedTextField(
+                                        value = semInputs[key].orEmpty(),
+                                        onValueChange = { semInputs[key] = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("SEM informado") },
+                                        singleLine = true
+                                    )
+                                    if (semInputs[key].orEmpty().isNotBlank() && key !in semValues) {
+                                        Text("Informe SEM positivo e numérico.", color = MaterialTheme.colorScheme.error)
+                                    }
+                                    OutlinedTextField(
+                                        value = semSources[key].orEmpty(),
+                                        onValueChange = { semSources[key] = it.take(250) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("Fonte e protocolo do SEM") },
+                                        singleLine = true
+                                    )
+                                }
+                                Text("Os campos ficam apenas no rascunho atual e são exportados no PDF; não alteram as avaliações.")
+                            }
+                        }
+                        item {
                             SectionCard("Auditoria científica EF78–EF82") {
                                 Text("EF78 qualidade · EF79 diferenças/MDC · EF80 coerência · EF81 contexto · EF82 tendências.")
                                 Text(scientificAudit.asText(), style = MaterialTheme.typography.bodySmall)
@@ -238,7 +282,7 @@ internal fun AnalyticsScreen(
                                     minLines = 6
                                 )
                                 Button(
-                                    onClick = { selectedStudent?.let { onExportReportPdf(it, selected, reportDraft) } },
+                                    onClick = { selectedStudent?.let { onExportReportPdf(it, selected, reportDraft, semValues, provenance) } },
                                     enabled = selectedStudent != null && reportDraft.isNotBlank(),
                                     modifier = Modifier.fillMaxWidth()
                                 ) { Text("Exportar análise em PDF") }
