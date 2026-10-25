@@ -1,10 +1,13 @@
-# EvoluFísico Android nativo — Beta 4
+# EvoluFísico Android nativo — Beta 4 (polimento visual)
 
 Aplicativo Android nativo em Kotlin e Jetpack Compose, com navegação e identidade visual inspiradas nas capturas do EvoluFisico2. Os registros ficam armazenados localmente.
 
 ## Nesta versão
 
-- Dashboard adaptável a celulares e tablets, com alunos, avaliações, agenda, pendências e módulos favoritos.
+- Dashboard com composição próxima à referência 3.0: dois indicadores no celular, agenda e central de atenção; cartões adaptáveis em tablets.
+- Acabamento do tema com texto grafite, fundo verde claro, cartões arredondados e paleta de destaque em amostras circulares.
+- Agenda aparece apenas na navegação inferior, sem repetição na lista de Módulos.
+- Busca de alunos aparece quando já existem cadastros, preservando o estado vazio mais limpo.
 - Cadastro, busca, edição, perfil e exclusão de alunos; registro e histórico de avaliações.
 - Agenda local com criação, consulta e exclusão de atendimentos.
 - Tarefas, cobranças com ação de recebimento e opção para ocultar valores, e formulários de anamnese.
@@ -25,7 +28,7 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-O CI publica um APK debug para teste. O pacote e o identificador Android permanecem iguais às versões beta anteriores.
+O CI publica um APK debug para teste. O identificador Android permanece igual às versões beta anteriores. O código de versão foi elevado para instalar esta atualização sobre a Beta 4 anterior quando a assinatura do APK for compatível.
 
 ## Referência
 

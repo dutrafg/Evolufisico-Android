@@ -5,7 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,16 +20,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
@@ -48,6 +55,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -85,10 +93,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val Graphite = Color(0xFF112B25)
+private val Graphite = Color(0xFF1C1B1F)
 private val Teal = Color(0xFF107454)
-private val Fog = Color(0xFFF2F8F4)
-private val Muted = Color(0xFF647970)
+private val Fog = Color(0xFFF2F7F4)
+private val Muted = Color(0xFF575A5F)
 private val accents = listOf(
     "Verde-petróleo" to Color(0xFF107454),
     "Azul" to Color(0xFF2563EB),
@@ -144,7 +152,15 @@ private fun EvoluFisicoTheme(dark: Boolean, accentIndex: Int, content: @Composab
             surface = Color.White
         )
     }
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(
+        colorScheme = colors,
+        shapes = Shapes(
+            small = RoundedCornerShape(24.dp),
+            medium = RoundedCornerShape(18.dp),
+            large = RoundedCornerShape(24.dp)
+        ),
+        content = content
+    )
 }
 
 private data class Destination(val title: String, val icon: ImageVector)
@@ -161,7 +177,6 @@ private val moduleNames = listOf(
     "Avaliações",
     "Evolução",
     "Calculadora",
-    "Agenda",
     "Formulários",
     "Análises",
     "Cobranças",
@@ -260,8 +275,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             TopAppBar(
                 title = {
                     Column {
-                        Text("EvoluFísico", fontWeight = FontWeight.SemiBold)
-                        Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("EvoluFísico", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(title, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
@@ -528,10 +543,6 @@ private fun HomeScreen(
                             MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
                             MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
-                            MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
-                        }
                     }
                 }
             }
@@ -628,8 +639,10 @@ private fun StudentsScreen(
         item {
             Text("Alunos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Buscar aluno") }, singleLine = true)
-            Spacer(Modifier.height(8.dp))
+            if (students.isNotEmpty()) {
+                OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Buscar aluno") }, singleLine = true)
+                Spacer(Modifier.height(8.dp))
+            }
             Button(onClick = onAdd) { Text("Adicionar aluno") }
             if (!errorMessage.isNullOrBlank()) {
                 Text(errorMessage, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
@@ -937,50 +950,75 @@ private fun SettingsScreen(
     onBackup: () -> Unit,
     onRestore: () -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("Configurações", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
         item {
-            SectionCard("Geral") {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (dark) "Modo escuro" else "Modo claro")
-                    Switch(checked = dark, onCheckedChange = onDarkChange)
-                }
-                Text("Cor de destaque", fontWeight = FontWeight.Medium)
-                accents.chunked(5).forEachIndexed { rowIndex, row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEachIndexed { columnIndex, accent ->
-                            val index = rowIndex * 5 + columnIndex
-                            Button(
-                                onClick = { onAccentChange(index) },
-                                modifier = Modifier.weight(1f).height(40.dp),
-                                contentPadding = PaddingValues(0.dp),
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = accent.second)
-                            ) { Text((index + 1).toString(), color = Color.White, fontWeight = FontWeight.Bold) }
+            Text("Configurações", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        }
+        item {
+            Text("Geral", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(if (dark) "Modo escuro" else "Modo claro", style = MaterialTheme.typography.bodyLarge)
+                Switch(checked = dark, onCheckedChange = onDarkChange)
+            }
+            Spacer(Modifier.height(10.dp))
+            Text("Cor de destaque", style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(8.dp))
+            accents.chunked(5).forEachIndexed { rowIndex, row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEachIndexed { columnIndex, accent ->
+                        val index = rowIndex * 5 + columnIndex
+                        Box(
+                            modifier = Modifier.weight(1f).size(42.dp).background(accent.second, CircleShape)
+                                .clickable { onAccentChange(index) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (index == accentIndex) {
+                                Icon(Icons.Default.Check, contentDescription = "Selecionada: " + accent.first, tint = Color.White)
+                            }
                         }
                     }
                 }
-                Text("Selecionada: " + accents[accentIndex].first, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+            }
+            Text("Selecionada: " + accents[accentIndex].first, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
+        item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+        item {
+            Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Os dados desta Beta ficam no armazenamento local do aplicativo. O backup é exportado manualmente; a restauração substitui os dados locais pelo conteúdo do arquivo.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Ocultar valores financeiros", modifier = Modifier.weight(1f))
+                Switch(checked = maskFinancial, onCheckedChange = onMaskFinancialChange)
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("Exportar backup") }
+                androidx.compose.material3.OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("Restaurar") }
             }
         }
+        item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            SectionCard("Dados e privacidade") {
-                Text("Os registros ficam no aparelho. O backup completo inclui alunos, avaliações, agenda, formulários, tarefas e cobranças.")
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ocultar valores financeiros", modifier = Modifier.weight(1f))
-                    Switch(checked = maskFinancial, onCheckedChange = onMaskFinancialChange)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("Exportar backup") }
-                    TextButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("Restaurar") }
-                }
-                Text("A restauração substitui os dados locais pelos dados do arquivo selecionado.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        item {
-            SectionCard("Sobre") {
-                Text("EvoluFísico Android — Beta 4")
-                Text("Versão nativa inspirada no EvoluFisico2 3.0.0.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text("EvoluFísico Android — Beta 4", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
