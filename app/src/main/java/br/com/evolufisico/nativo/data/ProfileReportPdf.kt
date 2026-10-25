@@ -29,6 +29,17 @@ internal object ProfileReportPdf {
         assessment.bodyFatPercent?.let { lines += Line("Gordura corporal informada: " + number(it) + "%") }
         listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
             .forEach { (label, value) -> value?.let { lines += Line("$label: " + number(it) + " cm") } }
+        val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar média" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
+        if (folds.any { it.second != null }) {
+            lines += Line("Dobras cutâneas · Pollock 7", true)
+            lines += Line("Sexo: " + assessment.sex + (assessment.ageYears?.let { " · idade: $it anos" } ?: ""))
+            folds.forEach { (label, value) -> value?.let { lines += Line("$label: " + number(it) + " mm") } }
+            assessment.pollock7?.let {
+                lines += Line("Soma: " + number(it.sumMm) + " mm · densidade: " + number(it.density))
+                lines += Line("Gordura estimada: " + number(it.bodyFatPercent) + "% · massa de gordura: " + number(it.fatMassKg) + " kg · massa livre: " + number(it.leanMassKg) + " kg")
+                if (it.wasClamped) lines += Line("A estimativa foi limitada ao intervalo válido para o método.")
+            }
+        }
         lines += Line("")
         lines += Line("Observações", true)
         lines += Line(assessment.notes.ifBlank { "Nenhuma observação registrada." })
