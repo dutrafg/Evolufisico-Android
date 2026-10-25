@@ -1234,6 +1234,7 @@ private fun ProfileScreen(
     onDeleteAssessment: (Long) -> Unit
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var itemToDelete by remember(student.id) { mutableStateOf<Pair<String, Long>?>(null) }
     val latest = assessments.firstOrNull()
     val pendingCharges = charges.filter { it.status == "Pendente" }
     val amountLabel = if (maskFinancial) "••••" else NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(pendingCharges.sumOf { it.amount })
@@ -1311,7 +1312,7 @@ private fun ProfileScreen(
                         Row {
                             TextButton(onClick = { onEditAssessment(assessment) }) { Text("Editar") }
                             TextButton(onClick = { onExportAssessmentPdf(assessment) }) { Text("PDF") }
-                            TextButton(onClick = { onDeleteAssessment(assessment.id) }) { Text("Excluir") }
+                            TextButton(onClick = { itemToDelete = "Avaliação" to assessment.id }) { Text("Excluir") }
                         }
                     }
                     Text("Peso: " + formatNumber(assessment.weightKg) + " kg  ·  Altura: " + formatNumber(assessment.heightCm) + " cm")
@@ -1330,8 +1331,8 @@ private fun ProfileScreen(
                         folds.forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " mm") }
                         assessment.pollock3?.let { Text("3 dobras: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
                         assessment.pollock7?.let { Text("7 dobras: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
-                        if (assessment.contextEvent.isNotBlank()) Text("Evento informado: " + assessment.contextEvent + " · sem inferir causalidade")
                     }
+                    if (assessment.contextEvent.isNotBlank()) Text("Evento informado: " + assessment.contextEvent + " · sem inferir causalidade")
                     if (assessment.notes.isNotBlank()) Text(assessment.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -1347,7 +1348,7 @@ private fun ProfileScreen(
                     Row {
                         TextButton(onClick = { onEditForm(form) }) { Text("Editar") }
                         TextButton(onClick = { onExportFormPdf(form) }) { Text("PDF") }
-                        TextButton(onClick = { onDeleteForm(form.id) }) { Text("Excluir") }
+                        TextButton(onClick = { itemToDelete = "Anamnese" to form.id }) { Text("Excluir") }
                     }
                 }
                 TextButton(onClick = onAddForm) { Text("Adicionar anamnese") }
@@ -1365,12 +1366,28 @@ private fun ProfileScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = { onEditCharge(charge) }) { Text("Editar") }
                         if (charge.status == "Pendente") Button(onClick = { onReceiveCharge(charge.id) }) { Text("Receber") }
-                        TextButton(onClick = { onDeleteCharge(charge.id) }) { Text("Excluir") }
+                        TextButton(onClick = { itemToDelete = "Cobrança" to charge.id }) { Text("Excluir") }
                     }
                 }
                 TextButton(onClick = onAddCharge) { Text("Adicionar cobrança") }
             }
         }
+    }
+    itemToDelete?.let { (type, id) ->
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("Excluir $type?") },
+            text = { Text("Esta ação exclui definitivamente o registro selecionado e não pode ser desfeita sem restaurar um backup.") },
+            confirmButton = { TextButton(onClick = {
+                itemToDelete = null
+                when (type) {
+                    "Avaliação" -> onDeleteAssessment(id)
+                    "Anamnese" -> onDeleteForm(id)
+                    "Cobrança" -> onDeleteCharge(id)
+                }
+            }) { Text("Excluir definitivamente") } },
+            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text("Cancelar") } }
+        )
     }
     if (confirmDelete) {
         AlertDialog(
