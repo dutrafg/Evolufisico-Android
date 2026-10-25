@@ -53,7 +53,10 @@ data class Assessment(
     val axillaryFoldMm: Double? = null,
     val suprailiacFoldMm: Double? = null,
     val abdominalFoldMm: Double? = null,
-    val thighFoldMm: Double? = null
+    val thighFoldMm: Double? = null,
+    val bioimpedanceBodyFatPercent: Double? = null,
+    val bioimpedanceLeanMassKg: Double? = null,
+    val bioimpedanceDevice: String = ""
 ) {
     val bmi: Double? get() = AssessmentMath.bmi(weightKg, heightCm)
     val pollock7: BodyFatEstimate? get() = ageYears?.let {
@@ -65,7 +68,7 @@ data class Assessment(
 }
 
 class LocalDatabase(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 6) {
+    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 7) {
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -106,7 +109,10 @@ class LocalDatabase(context: Context) :
                 fold_axillary_mm REAL,
                 fold_suprailiac_mm REAL,
                 fold_abdominal_mm REAL,
-                fold_thigh_mm REAL
+                fold_thigh_mm REAL,
+                bia_body_fat_percent REAL,
+                bia_lean_mass_kg REAL,
+                bia_device TEXT NOT NULL DEFAULT ''
             )"""
         )
         db.execSQL("CREATE INDEX index_assessments_student_date ON assessments(student_id, date DESC, id DESC)")
@@ -137,6 +143,10 @@ class LocalDatabase(context: Context) :
                 "fold_subscapular_mm REAL", "fold_chest_mm REAL", "fold_axillary_mm REAL",
                 "fold_suprailiac_mm REAL", "fold_abdominal_mm REAL", "fold_thigh_mm REAL"
             ).forEach { column -> db.execSQL("ALTER TABLE assessments ADD COLUMN $column") }
+        }
+        if (oldVersion < 7) {
+            listOf("bia_body_fat_percent REAL", "bia_lean_mass_kg REAL", "bia_device TEXT NOT NULL DEFAULT ''")
+                .forEach { column -> db.execSQL("ALTER TABLE assessments ADD COLUMN $column") }
         }
     }
 
@@ -287,7 +297,7 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Assessment>()
         readableDatabase.query(
             "assessments",
-            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm"),
+            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm", "bia_body_fat_percent", "bia_lean_mass_kg", "bia_device"),
             "student_id=?", arrayOf(studentId.toString()), null, null, "date DESC, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -313,7 +323,10 @@ class LocalDatabase(context: Context) :
                     axillaryFoldMm = if (cursor.isNull(18)) null else cursor.getDouble(18),
                     suprailiacFoldMm = if (cursor.isNull(19)) null else cursor.getDouble(19),
                     abdominalFoldMm = if (cursor.isNull(20)) null else cursor.getDouble(20),
-                    thighFoldMm = if (cursor.isNull(21)) null else cursor.getDouble(21)
+                    thighFoldMm = if (cursor.isNull(21)) null else cursor.getDouble(21),
+                    bioimpedanceBodyFatPercent = if (cursor.isNull(22)) null else cursor.getDouble(22),
+                    bioimpedanceLeanMassKg = if (cursor.isNull(23)) null else cursor.getDouble(23),
+                    bioimpedanceDevice = cursor.getString(24)
                 )
             }
         }
@@ -325,7 +338,7 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Assessment>()
         readableDatabase.query(
             "assessments",
-            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm"),
+            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm", "bia_body_fat_percent", "bia_lean_mass_kg", "bia_device"),
             null, null, null, null, "date DESC, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) result += Assessment(
@@ -346,7 +359,10 @@ class LocalDatabase(context: Context) :
                 axillaryFoldMm = if (cursor.isNull(18)) null else cursor.getDouble(18),
                 suprailiacFoldMm = if (cursor.isNull(19)) null else cursor.getDouble(19),
                 abdominalFoldMm = if (cursor.isNull(20)) null else cursor.getDouble(20),
-                thighFoldMm = if (cursor.isNull(21)) null else cursor.getDouble(21)
+                thighFoldMm = if (cursor.isNull(21)) null else cursor.getDouble(21),
+                bioimpedanceBodyFatPercent = if (cursor.isNull(22)) null else cursor.getDouble(22),
+                bioimpedanceLeanMassKg = if (cursor.isNull(23)) null else cursor.getDouble(23),
+                bioimpedanceDevice = cursor.getString(24)
             )
         }
         return result
@@ -375,7 +391,10 @@ class LocalDatabase(context: Context) :
         axillaryFoldMm: Double? = null,
         suprailiacFoldMm: Double? = null,
         abdominalFoldMm: Double? = null,
-        thighFoldMm: Double? = null
+        thighFoldMm: Double? = null,
+        bioimpedanceBodyFatPercent: Double? = null,
+        bioimpedanceLeanMassKg: Double? = null,
+        bioimpedanceDevice: String = ""
     ): Long {
         require(student(studentId) != null) { "Aluno não encontrado." }
         require(validDate(date)) { "Informe uma data válida para a avaliação." }
@@ -385,6 +404,9 @@ class LocalDatabase(context: Context) :
         require(sex in listOf("Masculino", "Feminino")) { "Escolha o sexo para a avaliação." }
         require(ageYears == null || ageYears in 18..100) { "Confira a idade da avaliação." }
         require(listOf(tricepsFoldMm, subscapularFoldMm, chestFoldMm, axillaryFoldMm, suprailiacFoldMm, abdominalFoldMm, thighFoldMm).all { it == null || it in 1.0..100.0 }) { "Confira as dobras cutâneas (1 a 100 mm)." }
+        require(bioimpedanceBodyFatPercent == null || bioimpedanceBodyFatPercent in 1.0..70.0) { "Confira a gordura corporal informada pela bioimpedância." }
+        require(bioimpedanceLeanMassKg == null || bioimpedanceLeanMassKg in 2.0..500.0) { "Confira a massa livre de gordura da bioimpedância." }
+        require(bioimpedanceDevice.length <= 120) { "Informe um nome de aparelho com até 120 caracteres." }
         val values = ContentValues().apply {
             put("student_id", studentId)
             put("date", date)
@@ -405,6 +427,9 @@ class LocalDatabase(context: Context) :
                 "fold_suprailiac_mm" to suprailiacFoldMm, "fold_abdominal_mm" to abdominalFoldMm,
                 "fold_thigh_mm" to thighFoldMm
             ).forEach { (column, value) -> if (value == null) putNull(column) else put(column, value) }
+            if (bioimpedanceBodyFatPercent == null) putNull("bia_body_fat_percent") else put("bia_body_fat_percent", bioimpedanceBodyFatPercent)
+            if (bioimpedanceLeanMassKg == null) putNull("bia_lean_mass_kg") else put("bia_lean_mass_kg", bioimpedanceLeanMassKg)
+            put("bia_device", bioimpedanceDevice.trim())
             put("notes", notes.trim())
         }
         return if (id == null) writableDatabase.insertOrThrow("assessments", null, values)
@@ -531,7 +556,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun exportBackupJson(): String {
         val db = readableDatabase
-        val root = JSONObject().put("format", "evolufisico-native-backup").put("schema", 3)
+        val root = JSONObject().put("format", "evolufisico-native-backup").put("schema", 4)
         fun rows(table: String, columns: Array<String>): JSONArray {
             val result = JSONArray()
             db.query(table, columns, null, null, null, null, null).use { cursor ->
@@ -551,7 +576,7 @@ class LocalDatabase(context: Context) :
             return result
         }
         root.put("students", rows("students", arrayOf("id","name","phone","email","birth_date","created_at")))
-        root.put("assessments", rows("assessments", arrayOf("id","student_id","date","weight_kg","height_cm","waist_cm","hip_cm","notes","body_fat_percent","neck_cm","chest_cm","arm_cm","thigh_cm","sex","age_years","fold_triceps_mm","fold_subscapular_mm","fold_chest_mm","fold_axillary_mm","fold_suprailiac_mm","fold_abdominal_mm","fold_thigh_mm")))
+        root.put("assessments", rows("assessments", arrayOf("id","student_id","date","weight_kg","height_cm","waist_cm","hip_cm","notes","body_fat_percent","neck_cm","chest_cm","arm_cm","thigh_cm","sex","age_years","fold_triceps_mm","fold_subscapular_mm","fold_chest_mm","fold_axillary_mm","fold_suprailiac_mm","fold_abdominal_mm","fold_thigh_mm","bia_body_fat_percent","bia_lean_mass_kg","bia_device")))
         root.put("appointments", rows("appointments", arrayOf("id","title","date","time","location","notes","kind")))
         root.put("tasks", rows("tasks", arrayOf("id","title","due_date","completed")))
         root.put("intake_forms", rows("intake_forms", arrayOf("id","student_id","template","date","responses")))
@@ -562,7 +587,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun restoreBackupJson(json: String) {
         val root = JSONObject(json)
-        require(root.optString("format") == "evolufisico-native-backup" && root.optInt("schema") in 1..3) { "Arquivo de backup incompatível." }
+        require(root.optString("format") == "evolufisico-native-backup" && root.optInt("schema") in 1..4) { "Arquivo de backup incompatível." }
         val db = writableDatabase
         db.beginTransaction()
         try {
