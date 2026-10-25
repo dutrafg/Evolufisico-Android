@@ -135,6 +135,7 @@ internal fun ChargeScreen(
     students: List<Student>,
     maskValues: Boolean,
     onAdd: () -> Unit,
+    onEdit: (ChargeRecord) -> Unit,
     onReceive: (Long) -> Unit,
     onDelete: (Long) -> Unit
 ) {
@@ -158,6 +159,7 @@ internal fun ChargeScreen(
                     }
                     Text(if (maskValues) "Valor oculto" else "R$ " + String.format(Locale("pt","BR"), "%.2f", charge.amount), fontWeight = FontWeight.Medium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { onEdit(charge) }) { Text("Editar") }
                         if (charge.status == "Pendente") Button(onClick = { onReceive(charge.id) }) { Text("Receber") }
                         else Text("Recebido", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 10.dp))
                         TextButton(onClick = { onDelete(charge.id) }) { Text("Excluir") }
@@ -227,17 +229,23 @@ internal fun TaskFormDialog(initial: TaskRecord?, onDismiss: () -> Unit, onSave:
 }
 
 @Composable
-internal fun ChargeFormDialog(students: List<Student>, initialStudentId: Long? = null, onDismiss: () -> Unit, onSave: (Long?, String, Double, String, String) -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var amount by rememberSaveable { mutableStateOf("") }
-    var dueDate by rememberSaveable { mutableStateOf(todayNativeIso()) }
-    var notes by rememberSaveable { mutableStateOf("") }
-    var selectedStudentId by rememberSaveable(initialStudentId) { mutableStateOf(initialStudentId) }
+internal fun ChargeFormDialog(
+    students: List<Student>,
+    initial: ChargeRecord? = null,
+    initialStudentId: Long? = null,
+    onDismiss: () -> Unit,
+    onSave: (Long?, Long?, String, Double, String, String) -> Unit
+) {
+    var title by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
+    var amount by rememberSaveable(initial?.id) { mutableStateOf(initial?.amount?.let { String.format(Locale.ROOT, "%.2f", it) }.orEmpty()) }
+    var dueDate by rememberSaveable(initial?.id) { mutableStateOf(initial?.dueDate ?: todayNativeIso()) }
+    var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
+    var selectedStudentId by rememberSaveable(initial?.id, initialStudentId) { mutableStateOf(initial?.studentId ?: initialStudentId) }
     val student = students.firstOrNull { it.id == selectedStudentId }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova cobrança") },
+        title = { Text(if (initial == null) "Nova cobrança" else "Editar cobrança") },
         text = {
             Column(Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 StudentPicker(students, student, { selectedStudentId = it?.id })
@@ -252,8 +260,8 @@ internal fun ChargeFormDialog(students: List<Student>, initialStudentId: Long? =
             val parsed = amount.trim().replace(",", ".").toDoubleOrNull()
             if (title.isBlank() || parsed == null || parsed <= 0.0) error = "Informe descrição e valor maior que zero."
             else if (!validIsoDate(dueDate)) error = "Informe uma data válida."
-            else onSave(student?.id, title, parsed, dueDate, notes)
-        }) { Text("Salvar") } },
+            else onSave(initial?.id, student?.id, title, parsed, dueDate, notes)
+        }) { Text(if (initial == null) "Salvar cobrança" else "Salvar alterações") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
