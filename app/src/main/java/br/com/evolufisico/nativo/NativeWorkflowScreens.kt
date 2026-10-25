@@ -109,13 +109,15 @@ internal fun AnalyticsScreen(
         selected.all { it.waistCm != null },
         selected.all { it.hipCm != null },
         selected.all { it.bodyFatPercent != null },
-        selected.all { it.pollock7 != null }
+        selected.all { it.pollock7 != null },
+        selected.all { it.bioimpedanceBodyFatPercent != null },
+        selected.all { it.bioimpedanceLeanMassKg != null }
     ).count { it }
     val presentSlots = selected.sumOf { row ->
-        listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent)
+        listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent, row.bioimpedanceBodyFatPercent, row.bioimpedanceLeanMassKg)
             .count { it != null }
     }
-    val totalSlots = selected.size * 6
+    val totalSlots = selected.size * 8
     val completeness = AnalysisMath.completeness(totalSlots, presentSlots)
     val metrics: List<Triple<String, String, List<Double?>>> = listOf(
         Triple("Peso", "kg", selected.map { it.weightKg }),
@@ -123,7 +125,9 @@ internal fun AnalyticsScreen(
         Triple("Cintura", "cm", selected.map { it.waistCm }),
         Triple("Quadril", "cm", selected.map { it.hipCm }),
         Triple("Gordura registrada · método não informado", "%", selected.map { it.bodyFatPercent }),
-        Triple("Gordura estimada · Pollock 7", "%", selected.map { it.pollock7?.bodyFatPercent })
+        Triple("Gordura estimada · Pollock 7", "%", selected.map { it.pollock7?.bodyFatPercent }),
+        Triple("Gordura por bioimpedância", "%", selected.map { it.bioimpedanceBodyFatPercent }),
+        Triple("Massa livre por bioimpedância", "kg", selected.map { it.bioimpedanceLeanMassKg })
     )
     val trendResults = metrics.map { (label, unit, values) ->
         Triple(label, unit, AnalysisMath.trend(dateKeys, values))
@@ -181,7 +185,7 @@ internal fun AnalyticsScreen(
                                 Text(selectedStudent?.name.orEmpty(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 Text("Período: " + displayNativeDate(dateKeys.first()) + " a " + displayNativeDate(dateKeys.last()) + " · $spanDays dias")
                                 HorizontalDivider()
-                                Text("Indicadores completos em todas as datas: $comparableCount de 6")
+                                Text("Indicadores completos em todas as datas: $comparableCount de 8")
                                 Text("Completude documental: ${completeness ?: 0}% ($presentSlots de $totalSlots campos possíveis)")
                                 Text("Completude mede preenchimento, não validade, precisão ou confiança clínica.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -206,9 +210,12 @@ internal fun AnalyticsScreen(
                         }
                         item {
                             SectionCard("Qualidade documental e limites") {
-                                Text("Métodos comparáveis em todas as datas: $comparableCount de 6 indicadores.")
-                                Text("Percentual de gordura digitado é mostrado separado da estimativa Pollock 7, pois o método da medida informada não fica registrado.")
-                                Text("Bioimpedância ainda não é registrada no formulário Android; portanto, não há comparador Pollock/BIA.")
+                                Text("Indicadores com dados em todas as datas selecionadas: $comparableCount de 8.")
+                                Text("Percentual de gordura informado permanece separado de Pollock 7 e BIA, pois sua origem é desconhecida.")
+                                val pairedEvidence = AnalysisMath.pairedEvidence(selected)
+                                if (pairedEvidence.isEmpty()) Text("Informe BIA e sete dobras na mesma avaliação para calcular a diferença entre métodos.")
+                                else pairedEvidence.forEach { Text("${displayNativeDate(it.date)} · Pollock ${formatNativeNumber(it.pollockPercent)}% · BIA ${formatNativeNumber(it.bioimpedancePercent)}% · diferença ${formatNativeNumber(it.differencePoints)} p.p.") }
+                                Text("Pollock e BIA são métodos diferentes; a diferença não valida nenhum deles e não constitui diagnóstico.")
                                 Text("Confirme método, equipamento e condições de coleta antes de interpretar mudanças. O módulo não diagnostica e não prescreve.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
