@@ -1,21 +1,19 @@
-# EvoluFísico Android nativo — Beta 1
+# EvoluFísico Android nativo — Beta 2
 
-Base nativa independente inspirada no EvoluFísico2 3.0.0 publicado na branch `main` (referência: `version.json`, commit `4c4d28fbb5a8fa8bab226fdafcf5359bf80d8733`). O app é escrito em Kotlin e Jetpack Compose, sem WebView.
+Aplicativo nativo em Kotlin e Jetpack Compose, baseado no EvoluFísico2 3.0.0 publicado na branch `main` (referência: `version.json`, commit `4c4d28fbb5a8fa8bab226fdafcf5359bf80d8733`). Não usa WebView.
 
-## Beta 1
+## Beta 2
 
-- Dashboard com contagem real de alunos e avaliações locais e estados vazios sem dados fictícios.
-- Cadastro e listagem de alunos com telefone, e-mail e nascimento.
-- Perfil Unificado por ID permanente do aluno.
-- Inclusão, consulta e exclusão de avaliações vinculadas ao perfil.
-- Cálculo de IMC com validação de entradas; medidas ausentes não são inventadas.
-- Calculadora de IMC separada.
-- Tema claro/escuro persistido.
-- Banco SQLite local, sem permissão de Internet.
+- Dashboard compacto com paleta verde, cartões menores e estados ligados aos dados locais.
+- Navegação inferior com cores próprias do EvoluFísico e correção do espaçamento causado por insets repetidos.
+- Cadastro de alunos, Perfil Unificado, histórico de avaliações e cálculo de IMC.
+- Agenda funcional para criar, consultar e excluir atendimentos, com data, hora, local e observações.
+- Migração SQLite para a Agenda preserva alunos e avaliações já existentes.
+- Tema claro/escuro persistido; dados permanecem no aparelho.
 
-## Limites desta Beta
+## Próximas etapas
 
-Agenda, tarefas, cobranças, análises, formulários, exportação de relatórios, backup/restauração, cofre e migração de dados ainda não fazem parte da Beta 1. Os módulos não implementados aparecem identificados como planejados. Não importe dados reais sem um backup externo.
+Tarefas, cobranças, análises, formulários, exportação, backup/restauração, cofre e migração de dados ainda precisam de implementação nativa. Os módulos pendentes permanecem identificados no aplicativo.
 
 ## Compilar
 
@@ -25,8 +23,8 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-O CI publica o APK debug de cada compilação aprovada como artefato do GitHub Actions. APK debug é para teste e pode não atualizar instalações assinadas com outra chave.
+O CI publica o APK debug de cada compilação como artefato do GitHub Actions. APK debug é para teste e pode não atualizar instalações assinadas com outra chave.
 
-## Fonte e planejamento
+## Fonte
 
-A referência funcional é o código fonte do EvoluFísico2, atualmente em `src/app.template.html`, junto do `README.md` e do QA 3.0. A versão nativa será portada por fluxos, com validação específica no Android; QA do aplicativo web não comprova o comportamento nativo.
+A referência funcional é o código do EvoluFísico2 em `src/app.template.html`, junto do `README.md` e do QA 3.0. A versão nativa está sendo portada por fluxos com validação específica para Android.

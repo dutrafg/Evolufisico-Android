@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -65,6 +63,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.nativo.data.Assessment
+import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.Student
@@ -75,8 +74,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val Graphite = Color(0xFF263238)
-private val Teal = Color(0xFF168A7A)
+private val Graphite = Color(0xFF112B25)
+private val Teal = Color(0xFF107454)
+private val Fog = Color(0xFFF2F8F4)
+private val Muted = Color(0xFF647970)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,7 +111,7 @@ private fun EvoluFisicoTheme(dark: Boolean, content: @Composable () -> Unit) {
         lightColorScheme(
             primary = Teal,
             secondary = Graphite,
-            background = Color(0xFFF5F7F6),
+            background = Fog,
             surface = Color.White
         )
     }
@@ -149,7 +150,9 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     var selectedStudentId by rememberSaveable { mutableStateOf<Long?>(null) }
     var students by remember { mutableStateOf<List<Student>>(emptyList()) }
     var profileAssessments by remember { mutableStateOf<List<Assessment>>(emptyList()) }
+    var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var counts by remember { mutableStateOf(0 to 0) }
+    var appointmentDialog by remember { mutableStateOf(false) }
     var studentDialog by remember { mutableStateOf(false) }
     var assessmentDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -157,11 +160,12 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     fun refresh() {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                Triple(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty())
+                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments())
             }
-            students = result.first
-            counts = result.second
-            profileAssessments = result.third
+            students = result[0] as List<Student>
+            counts = result[1] as Pair<Int, Int>
+            profileAssessments = result[2] as List<Assessment>
+            appointments = result[3] as List<Appointment>
         }
     }
 
@@ -179,7 +183,7 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
@@ -202,7 +206,7 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, contentColor = Graphite, tonalElevation = 0.dp) {
                 destinations.forEachIndexed { index, destination ->
                     NavigationBarItem(
                         selected = selected == index && selectedStudentId == null && activeModule == null,
@@ -212,7 +216,8 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                             activeModule = null
                         },
                         icon = { Icon(destination.icon, contentDescription = destination.title) },
-                        label = { Text(destination.title) }
+                        label = { Text(destination.title) },
+                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFE1F2EA), selectedIconColor = Teal, selectedTextColor = Teal, unselectedIconColor = Muted, unselectedTextColor = Muted)
                     )
                 }
             }
@@ -266,17 +271,33 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                     subtitle = "Abra o perfil para consultar o histórico de avaliações."
                 )
                 activeModule == "Calculadora" -> CalculatorScreen()
+                activeModule == "Agenda" || selected == 2 -> AgendaScreen(appointments = appointments, onAdd = { appointmentDialog = true }, onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } })
                 activeModule != null -> ModulePlaceholder(activeModule.orEmpty())
                 selected == 0 -> HomeScreen(
                     studentCount = counts.first,
                     assessmentCount = counts.second,
+                    todayAppointments = appointments.filter { it.date == todayIso() },
                     onOpen = { activeModule = it },
                     onAddStudent = { studentDialog = true }
                 )
-                selected == 2 -> ModulePlaceholder("Agenda")
                 else -> ModuleListScreen(onOpen = { activeModule = it })
             }
         }
+    }
+
+    if (appointmentDialog) {
+        AppointmentFormDialog(onDismiss = { appointmentDialog = false }, onSave = { title, date, time, location, notes ->
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) { database.saveAppointment(title, date, time, location, notes) }
+                    appointmentDialog = false
+                    errorMessage = null
+                    refresh()
+                } catch (exception: Exception) {
+                    errorMessage = exception.message ?: "Não foi possível salvar o atendimento."
+                }
+            }
+        })
     }
 
     if (studentDialog) {
@@ -329,69 +350,46 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun HomeScreen(
-    studentCount: Int,
-    assessmentCount: Int,
-    onOpen: (String) -> Unit,
-    onAddStudent: () -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+private fun HomeScreen(studentCount: Int, assessmentCount: Int, todayAppointments: List<Appointment>, onOpen: (String) -> Unit, onAddStudent: () -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Dashboard Secretária", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
-                MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
-            }
-        }
-        item {
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Agenda de hoje", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("A agenda ainda está vazia.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = Color(0xFF155E49))) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Dashboard Secretária", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = Color(0xFFE0F1E9), style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
                 }
             }
         }
-        item {
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Central de atenção", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    HorizontalDivider()
-                    Text(
-                        if (studentCount == 0) "Cadastre o primeiro aluno para iniciar o acompanhamento."
-                        else "As pendências serão calculadas a partir dos dados cadastrados.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Button(onClick = onAddStudent) { Text("Cadastrar aluno") }
-                }
+        item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
+            MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
+        } }
+        item { SectionCard("Agenda de hoje") {
+            if (todayAppointments.isEmpty()) Text("A agenda ainda está vazia.", color = Muted)
+            else todayAppointments.take(3).forEach { Text(it.time + "  ·  " + it.title, color = Graphite) }
+            Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
+        } }
+        item { SectionCard("Central de atenção") {
+            Text(if (studentCount == 0) "Cadastre o primeiro aluno para iniciar o acompanhamento." else "Acesse os alunos para revisar perfis e avaliações.", color = Muted)
+            Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
+                Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
             }
-        }
-        item { Text("Acesso rápido", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
-                QuickAction("Avaliações", Icons.Default.FitnessCenter, Modifier.weight(1f)) { onOpen("Avaliações") }
-            }
-        }
+        } }
+        item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
+            QuickAction("Avaliações", Icons.Default.FitnessCenter, Modifier.weight(1f)) { onOpen("Avaliações") }
+        } }
     }
 }
 
 @Composable
 private fun MetricCard(label: String, value: String, detail: String, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = Muted)
         }
     }
 }
@@ -643,7 +641,7 @@ private fun ModuleListScreen(onOpen: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Módulos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Recursos que serão ativados em etapas da Beta.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Acesso rápido às áreas do EvoluFísico.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(moduleNames) { module ->
             Card(
@@ -652,7 +650,7 @@ private fun ModuleListScreen(onOpen: (String) -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -676,7 +674,7 @@ private fun ModulePlaceholder(title: String) {
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Text("Este módulo está planejado para uma próxima etapa da Beta.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Esta área será liberada em uma próxima atualização.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -693,7 +691,7 @@ private fun SettingsScreen(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
         Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Os dados desta Beta ficam no armazenamento local do aplicativo. Backup e restauração serão adicionados antes da versão estável.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         HorizontalDivider()
-        Text("EvoluFísico Android — Beta 1", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("EvoluFísico Android — Beta 2", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -706,6 +704,93 @@ private fun EmptyCard(title: String, body: String) {
         }
     }
 }
+
+
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            content()
+        }
+    }
+}
+
+@Composable
+private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onDelete: (Long) -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("Agenda", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Organize os próximos atendimentos.", color = Muted)
+            Spacer(Modifier.height(6.dp))
+            Button(onClick = onAdd) { Text("Novo atendimento") }
+        }
+        if (appointments.isEmpty()) item { EmptyCard("Agenda vazia", "Cadastre um atendimento para organizar sua rotina.") }
+        items(appointments, key = { it.id }) { appointment ->
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(appointment.title, fontWeight = FontWeight.SemiBold)
+                            Text(displayDate(appointment.date) + "  ·  " + appointment.time, color = Teal)
+                        }
+                        TextButton(onClick = { onDelete(appointment.id) }) { Text("Excluir") }
+                    }
+                    if (appointment.location.isNotBlank()) Text(appointment.location, color = Muted)
+                    if (appointment.notes.isNotBlank()) Text(appointment.notes, color = Muted)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppointmentFormDialog(onDismiss: () -> Unit, onSave: (String, String, String, String, String) -> Unit) {
+    var title by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(todayIso()) }
+    var time by rememberSaveable { mutableStateOf("") }
+    var location by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Novo atendimento") },
+        text = {
+            Column(modifier = Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(title, { title = it; error = null }, label = { Text("Motivo *") }, singleLine = true)
+                OutlinedTextField(date, { date = it; error = null }, label = { Text("Data (AAAA-MM-DD)") }, singleLine = true)
+                OutlinedTextField(time, { time = it; error = null }, label = { Text("Horário (HH:MM)") }, singleLine = true)
+                OutlinedTextField(location, { location = it }, label = { Text("Local") }, singleLine = true)
+                OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
+                if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val validDate = runCatching {
+                    val parser = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply { isLenient = false }
+                    parser.parse(date)?.let { parser.format(it) == date } == true
+                }.getOrDefault(false)
+                val validTime = runCatching {
+                    val parser = SimpleDateFormat("HH:mm", Locale.ROOT).apply { isLenient = false }
+                    parser.parse(time)?.let { parser.format(it) == time } == true
+                }.getOrDefault(false)
+                if (title.isBlank()) error = "Informe o motivo do atendimento."
+                else if (!validDate) error = "Informe uma data válida no formato AAAA-MM-DD."
+                else if (!validTime) error = "Informe um horário válido no formato HH:MM."
+                else onSave(title, date, time, location, notes)
+            }) { Text("Salvar") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+private fun todayIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
+
+private fun displayDate(value: String): String = runCatching {
+    val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(value)
+    parsed?.let { SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(it) } ?: value
+}.getOrDefault(value)
 
 private fun formatNumber(value: Double): String =
     String.format(Locale("pt", "BR"), "%.1f", value)

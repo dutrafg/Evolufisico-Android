@@ -26,10 +26,10 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - name: Build Beta 1 debug APK
+      - name: Build Beta 2 debug APK
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: evolufisico-android-beta1-debug
+          name: evolufisico-android-beta2-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error

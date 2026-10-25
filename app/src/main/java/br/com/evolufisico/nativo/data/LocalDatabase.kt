@@ -13,6 +13,15 @@ data class Student(
     val birthDate: String
 )
 
+data class Appointment(
+    val id: Long,
+    val title: String,
+    val date: String,
+    val time: String,
+    val location: String,
+    val notes: String
+)
+
 data class Assessment(
     val id: Long,
     val studentId: Long,
@@ -27,7 +36,7 @@ data class Assessment(
 }
 
 class LocalDatabase(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 1) {
+    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 2) {
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -59,9 +68,66 @@ class LocalDatabase(context: Context) :
         )
         db.execSQL("CREATE INDEX index_assessments_student_date ON assessments(student_id, date DESC, id DESC)")
         db.execSQL("CREATE INDEX index_students_name ON students(name COLLATE NOCASE)")
+        createAppointments(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createAppointments(db)
+    }
+
+    private fun createAppointments(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS appointments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                location TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT ''
+            )"""
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_appointments_date_time ON appointments(date, time)")
+    }
+
+    @Synchronized
+    fun appointments(date: String? = null): List<Appointment> {
+        val result = mutableListOf<Appointment>()
+        readableDatabase.query(
+            "appointments",
+            arrayOf("id", "title", "date", "time", "location", "notes"),
+            if (date == null) null else "date=?",
+            if (date == null) null else arrayOf(date),
+            null, null, "date ASC, time ASC, id ASC"
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                result += Appointment(
+                    cursor.getLong(0), cursor.getString(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4), cursor.getString(5)
+                )
+            }
+        }
+        return result
+    }
+
+    @Synchronized
+    fun saveAppointment(title: String, date: String, time: String, location: String, notes: String): Long {
+        require(title.isNotBlank()) { "Informe o motivo do atendimento." }
+        require(date.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Confira a data do atendimento." }
+        require(time.matches(Regex("\\d{2}:\\d{2}"))) { "Confira o horário do atendimento." }
+        val values = ContentValues().apply {
+            put("title", title.trim())
+            put("date", date)
+            put("time", time)
+            put("location", location.trim())
+            put("notes", notes.trim())
+        }
+        return writableDatabase.insertOrThrow("appointments", null, values)
+    }
+
+    @Synchronized
+    fun deleteAppointment(id: Long) {
+        writableDatabase.delete("appointments", "id=?", arrayOf(id.toString()))
+    }
 
     @Synchronized
     fun students(): List<Student> {
