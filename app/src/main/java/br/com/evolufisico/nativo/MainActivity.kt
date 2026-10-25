@@ -731,11 +731,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             studentName = selectedStudent.name,
             initial = editingAssessment,
             onDismiss = { assessmentDialog = false; editingAssessment = null },
-            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes ->
+            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id)
+                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold)
                         }
                         assessmentDialog = false
                         editingAssessment = null
@@ -1359,7 +1359,7 @@ private fun AssessmentFormDialog(
     studentName: String,
     initial: Assessment? = null,
     onDismiss: () -> Unit,
-    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String) -> Unit
+    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?) -> Unit
 ) {
     var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
     var weight by rememberSaveable(initial?.id) { mutableStateOf(initial?.weightKg?.let(::formatNumber).orEmpty()) }
@@ -1371,6 +1371,15 @@ private fun AssessmentFormDialog(
     var chest by rememberSaveable(initial?.id) { mutableStateOf(initial?.chestCm?.let(::formatNumber).orEmpty()) }
     var arm by rememberSaveable(initial?.id) { mutableStateOf(initial?.armCm?.let(::formatNumber).orEmpty()) }
     var thigh by rememberSaveable(initial?.id) { mutableStateOf(initial?.thighCm?.let(::formatNumber).orEmpty()) }
+    var sex by rememberSaveable(initial?.id) { mutableStateOf(initial?.sex ?: "Masculino") }
+    var age by rememberSaveable(initial?.id) { mutableStateOf(initial?.ageYears?.toString().orEmpty()) }
+    var tricepsFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.tricepsFoldMm?.let(::formatNumber).orEmpty()) }
+    var subscapularFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.subscapularFoldMm?.let(::formatNumber).orEmpty()) }
+    var chestFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.chestFoldMm?.let(::formatNumber).orEmpty()) }
+    var axillaryFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.axillaryFoldMm?.let(::formatNumber).orEmpty()) }
+    var suprailiacFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.suprailiacFoldMm?.let(::formatNumber).orEmpty()) }
+    var abdominalFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.abdominalFoldMm?.let(::formatNumber).orEmpty()) }
+    var thighFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.thighFoldMm?.let(::formatNumber).orEmpty()) }
     var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
@@ -1388,6 +1397,21 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(chest, { chest = it; error = null }, label = { Text("Peitoral (cm)") }, singleLine = true)
                 OutlinedTextField(arm, { arm = it; error = null }, label = { Text("Braço (cm)") }, singleLine = true)
                 OutlinedTextField(thigh, { thigh = it; error = null }, label = { Text("Coxa (cm)") }, singleLine = true)
+                Text("Dobras cutâneas · Pollock 7", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("Masculino", "Feminino").forEach { option ->
+                        if (sex == option) Button(onClick = { sex = option }, modifier = Modifier.weight(1f)) { Text(option) }
+                        else androidx.compose.material3.OutlinedButton(onClick = { sex = option }, modifier = Modifier.weight(1f)) { Text(option) }
+                    }
+                }
+                OutlinedTextField(age, { age = it.filter(Char::isDigit); error = null }, label = { Text("Idade (anos)") }, singleLine = true)
+                OutlinedTextField(tricepsFold, { tricepsFold = it; error = null }, label = { Text("Tríceps (mm)") }, singleLine = true)
+                OutlinedTextField(subscapularFold, { subscapularFold = it; error = null }, label = { Text("Subescapular (mm)") }, singleLine = true)
+                OutlinedTextField(chestFold, { chestFold = it; error = null }, label = { Text("Peitoral (mm)") }, singleLine = true)
+                OutlinedTextField(axillaryFold, { axillaryFold = it; error = null }, label = { Text("Axilar média (mm)") }, singleLine = true)
+                OutlinedTextField(suprailiacFold, { suprailiacFold = it; error = null }, label = { Text("Supra-ilíaca (mm)") }, singleLine = true)
+                OutlinedTextField(abdominalFold, { abdominalFold = it; error = null }, label = { Text("Abdominal (mm)") }, singleLine = true)
+                OutlinedTextField(thighFold, { thighFold = it; error = null }, label = { Text("Coxa (mm)") }, singleLine = true)
                 OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
@@ -1407,15 +1431,19 @@ private fun AssessmentFormDialog(
                 val parsedChest = if (chest.isBlank()) null else AssessmentMath.parseNumber(chest)
                 val parsedArm = if (arm.isBlank()) null else AssessmentMath.parseNumber(arm)
                 val parsedThigh = if (thigh.isBlank()) null else AssessmentMath.parseNumber(thigh)
-                val optionalInputs = listOf(waist to parsedWaist, hip to parsedHip, bodyFat to parsedBodyFat, neck to parsedNeck, chest to parsedChest, arm to parsedArm, thigh to parsedThigh)
+                val parsedAge = if (age.isBlank()) null else age.toIntOrNull()
+                val rawFolds = listOf(tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold)
+                val folds = rawFolds.map { if (it.isBlank()) null else AssessmentMath.parseNumber(it) }
+                val optionalInputs = listOf(waist to parsedWaist, hip to parsedHip, bodyFat to parsedBodyFat, neck to parsedNeck, chest to parsedChest, arm to parsedArm, thigh to parsedThigh) + rawFolds.zip(folds)
                 val invalidOptional = optionalInputs.any { (raw, parsed) -> raw.isNotBlank() && parsed == null } ||
                     (parsedBodyFat != null && parsedBodyFat !in 1.0..70.0) ||
-                    listOf(parsedNeck, parsedChest, parsedArm, parsedThigh).any { it != null && it !in 1.0..300.0 }
+                    listOf(parsedNeck, parsedChest, parsedArm, parsedThigh).any { it != null && it !in 1.0..300.0 } ||
+                    (age.isNotBlank() && parsedAge !in 18..100) || folds.any { it != null && it !in 1.0..100.0 }
                 if (!validDate) error = "Informe uma data válida no formato AAAA-MM-DD."
                 else if (parsedWeight == null || parsedHeight == null || invalidOptional ||
                     AssessmentMath.bmi(parsedWeight ?: 0.0, parsedHeight ?: 0.0) == null
                 ) error = "Confira os valores. Peso e altura são obrigatórios; use números válidos."
-                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes)
+                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6])
             }) { Text(if (initial == null) "Salvar avaliação" else "Salvar alterações") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
@@ -1431,6 +1459,8 @@ private fun CalculatorScreen() {
     var neck by rememberSaveable { mutableStateOf("") }
     var age by rememberSaveable { mutableStateOf("") }
     var sex by rememberSaveable { mutableStateOf("Masculino") }
+    val foldLabels = listOf("Tríceps", "Subescapular", "Peitoral", "Axilar média", "Supra-ilíaca", "Abdominal", "Coxa")
+    val foldInputs = foldLabels.map { label -> rememberSaveable(label) { mutableStateOf("") } }
     var activityIndex by rememberSaveable { mutableIntStateOf(2) }
     val activityOptions = listOf("Sedentária", "Leve", "Moderada", "Alta")
     val activityFactors = listOf(1.2, 1.375, 1.55, 1.725)
@@ -1445,6 +1475,7 @@ private fun CalculatorScreen() {
     val waistHipRatio = if (waistValue != null && hipValue != null) waistValue / hipValue else null
     val navy = if (heightValue != null && waistValue != null && neckValue != null) AssessmentMath.navyBodyFat(sex, heightValue, waistValue, neckValue, hipValue) else null
     val rfm = if (heightValue != null && waistValue != null) AssessmentMath.rfmBodyFat(sex, heightValue, waistValue) else null
+    val pollock7 = if (weightValue != null && ageValue != null) AssessmentMath.pollock7(sex, ageValue, weightValue, foldInputs.map { AssessmentMath.parseNumber(it.value) }) else null
     val harris = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.harrisBenedict(sex, weightValue, heightValue, ageValue) else null
     val mifflin = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.mifflinStJeor(sex, weightValue, heightValue, ageValue) else null
     val heartRateMax = ageValue?.let(AssessmentMath::maximumHeartRate)
@@ -1471,12 +1502,23 @@ private fun CalculatorScreen() {
             }
         }
         item {
+            SectionCard("Dobras cutâneas · Pollock 7") {
+                Text("Informe as sete dobras em milímetros para estimar o percentual de gordura.")
+                foldInputs.forEachIndexed { index, state ->
+                    OutlinedTextField(state.value, { state.value = it }, modifier = Modifier.fillMaxWidth(), label = { Text("${foldLabels[index]} (mm)") }, singleLine = true)
+                }
+            }
+        }
+        item {
             SectionCard("Índices e composição corporal") {
                 Text("IMC: " + (bmi?.let(::formatNumber) ?: "—"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Cintura/estatura: " + (waistHeightRatio?.let(::formatNumber) ?: "—"))
                 Text("Cintura/quadril: " + (waistHipRatio?.let(::formatNumber) ?: "—"))
                 Text("Gordura corporal estimada · Navy: " + (navy?.let { formatNumber(it) + "%" } ?: "Informe as medidas necessárias"))
                 Text("Gordura corporal estimada · RFM: " + (rfm?.let { formatNumber(it) + "%" } ?: "Informe altura e cintura"))
+                Text("Pollock 7 · soma: " + (pollock7?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e sete dobras"))
+                Text("Gordura corporal · Pollock 7: " + (pollock7?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
+                if (pollock7 != null) Text("Massa de gordura: ${formatNumber(pollock7.fatMassKg)} kg · Massa livre de gordura: ${formatNumber(pollock7.leanMassKg)} kg${if (pollock7.wasClamped) " · estimativa limitada ao intervalo do método" else ""}")
                 if (navy != null && rfm != null) Text("Diferença entre métodos: " + formatNumber(kotlin.math.abs(navy - rfm)) + " pontos percentuais.")
                 Text("Métodos estimativos. A comparação não substitui protocolo de medição padronizado.", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
