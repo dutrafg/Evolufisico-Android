@@ -1385,8 +1385,6 @@ private fun StudentFormDialog(initial: Student?, onDismiss: () -> Unit, onSave: 
 }
 
 @Composable
-
-@Composable
 private fun AssessmentPhotoGallery(photos: List<String>, onRemove: ((Int) -> Unit)? = null) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -1414,6 +1412,7 @@ private fun AssessmentPhotoGallery(photos: List<String>, onRemove: ((Int) -> Uni
     }
 }
 
+@Composable
 private fun AssessmentFormDialog(
     studentName: String,
     initial: Assessment? = null,
