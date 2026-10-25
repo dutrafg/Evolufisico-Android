@@ -251,6 +251,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         mutableStateOf(preferences.getStringSet("favorite_modules", emptySet()).orEmpty().toSet())
     }
     var maskFinancial by remember { mutableStateOf(preferences.getBoolean("mask_financial", false)) }
+    var reevaluationIntervalDays by remember { mutableIntStateOf(preferences.getInt("reevaluation_interval_days", 90).coerceIn(30, 90)) }
     fun toggleFavorite(module: String) {
         val next = favoriteModules.toMutableSet()
         if (!next.add(module)) next.remove(module)
@@ -286,7 +287,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     fun refresh() {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments(), database.studentsWithoutAssessment(), database.reevaluationsDue(), database.tasks(), database.intakeForms(), database.charges(), database.allAssessments())
+                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments(), database.studentsWithoutAssessment(), database.reevaluationsDue(reevaluationIntervalDays), database.tasks(), database.intakeForms(), database.charges(), database.allAssessments())
             }
             students = result[0] as List<Student>
             counts = result[1] as Pair<Int, Int>
@@ -301,7 +302,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         }
     }
 
-    LaunchedEffect(Unit) { refresh() }
+    LaunchedEffect(reevaluationIntervalDays) { refresh() }
     LaunchedEffect(selectedStudentId) {
         profileAssessments = if (selectedStudentId == null) emptyList()
         else withContext(Dispatchers.IO) { database.assessments(selectedStudentId!!) }
@@ -380,6 +381,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onDarkChange = onDarkChange,
                     maskFinancial = maskFinancial,
                     onMaskFinancialChange = { maskFinancial = it; preferences.edit().putBoolean("mask_financial", it).apply() },
+                    reevaluationIntervalDays = reevaluationIntervalDays,
+                    onReevaluationIntervalChange = { days -> reevaluationIntervalDays = days; preferences.edit().putInt("reevaluation_interval_days", days).apply() },
                     onBackup = { exportBackup.launch("EvoluFisico-Backup.json") },
                     onRestore = { importBackup.launch(arrayOf("application/json", "text/plain")) }
                 )
@@ -431,6 +434,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     studentCount = counts.first,
                     studentsWithoutAssessment = studentsWithoutAssessment,
                     reevaluationsDue = reevaluationsDue,
+                    reevaluationIntervalDays = reevaluationIntervalDays,
                     students = students,
                     assessments = allAssessments,
                     appointments = appointments,
@@ -531,10 +535,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
 
     if (appointmentDialog) {
-        AppointmentFormDialog(initial = editingAppointment, onDismiss = { appointmentDialog = false; editingAppointment = null }, onSave = { id, title, date, time, location, notes ->
+        AppointmentFormDialog(initial = editingAppointment, onDismiss = { appointmentDialog = false; editingAppointment = null }, onSave = { id, title, date, time, location, notes, kind ->
             scope.launch {
                 try {
-                    withContext(Dispatchers.IO) { database.saveAppointment(id, title, date, time, location, notes) }
+                    withContext(Dispatchers.IO) { database.saveAppointment(id, title, date, time, location, notes, kind) }
                     appointmentDialog = false
                     editingAppointment = null
                     errorMessage = null
@@ -653,6 +657,7 @@ private fun HomeScreen(
     studentCount: Int,
     studentsWithoutAssessment: Int,
     reevaluationsDue: Int,
+    reevaluationIntervalDays: Int,
     students: List<Student>,
     assessments: List<Assessment>,
     appointments: List<Appointment>,
@@ -678,18 +683,21 @@ private fun HomeScreen(
     val pendingTasks = tasks.filterNot { it.completed }.sortedBy { it.dueDate }
     val pendingCharges = charges.filter { it.status == "Pendente" }
     val todayAppointments = appointments.filter { it.date == today }
-    val scheduledEvaluations = todayAppointments.count { it.title.contains("avalia", ignoreCase = true) }
+    val scheduledEvaluations = todayAppointments.count { it.kind == "Avaliação" }
     val amountLabel = if (maskFinancial) "••••" else NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(pendingCharges.sumOf { it.amount })
     val latestAssessments = remember(students, assessments) {
         assessments.groupBy { it.studentId }.mapValues { (_, values) -> values.maxByOrNull { it.date } }
     }
-    val overdueStudents = remember(students, latestAssessments) {
+    val overdueStudents = remember(students, latestAssessments, reevaluationIntervalDays) {
         students.mapNotNull { student ->
             val latest = latestAssessments[student.id] ?: return@mapNotNull null
             val days = runCatching { ChronoUnit.DAYS.between(LocalDate.parse(latest.date), LocalDate.now()) }.getOrNull() ?: return@mapNotNull null
-            if (days >= 90) Triple(student, latest, days) else null
+            if (days >= reevaluationIntervalDays) Triple(student, latest, days) else null
         }.sortedByDescending { it.third }
     }
+    val upcomingReturns = appointments.filter { appointment ->
+        appointment.kind == "Retorno" && appointment.date >= today && appointment.date <= LocalDate.now().plusDays(14).toString()
+    }.sortedWith(compareBy<Appointment> { it.date }.thenBy { it.time })
     val appointmentsOnSelectedDate = appointments.filter { it.date == selectedDate }.sortedBy { it.time }
     val nextAppointments = appointments.filter { it.date >= today }.sortedWith(compareBy<Appointment> { it.date }.thenBy { it.time }).take(3)
     val hasNoStudents = studentCount == 0
@@ -776,15 +784,27 @@ private fun HomeScreen(
                         Text("Cadastre o primeiro aluno para iniciar o acompanhamento.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Button(onClick = onAddStudent) { Text("Cadastrar aluno") }
                     }
-                    overdueStudents.isEmpty() && studentsWithoutAssessment == 0 && pendingTasks.isEmpty() && pendingCharges.isEmpty() ->
+                    overdueStudents.isEmpty() && upcomingReturns.isEmpty() && studentsWithoutAssessment == 0 && pendingTasks.isEmpty() && pendingCharges.isEmpty() ->
                         Text("Tudo em dia. Nenhum alerta precisa de atenção agora.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> {
                         if (studentsWithoutAssessment > 0) {
                             Text("$studentsWithoutAssessment aluno(s) ainda não têm avaliação registrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             TextButton(onClick = { onOpen("Perfil Unificado") }) { Text("Ver alunos") }
                         }
+                        if (upcomingReturns.isNotEmpty()) {
+                            Text("Retornos nos próximos 14 dias", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            upcomingReturns.take(3).forEach { appointment ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(appointment.title, fontWeight = FontWeight.Medium)
+                                        Text("${displayDate(appointment.date)} · ${appointment.time}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    TextButton(onClick = { onOpen("Agenda") }) { Text("Agenda") }
+                                }
+                            }
+                        }
                         if (overdueStudents.isNotEmpty()) {
-                            Text("Reavaliações a acompanhar", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text("Reavaliações a acompanhar · prazo de $reevaluationIntervalDays dias", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                             overdueStudents.take(3).forEach { (student, last, days) ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
@@ -1329,6 +1349,8 @@ private fun SettingsScreen(
     onDarkChange: (Boolean) -> Unit,
     maskFinancial: Boolean,
     onMaskFinancialChange: (Boolean) -> Unit,
+    reevaluationIntervalDays: Int,
+    onReevaluationIntervalChange: (Int) -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit
 ) {
@@ -1379,6 +1401,21 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
+            Text("Acompanhamento", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(6.dp))
+            Text("Prazo padrão para sinalizar reavaliações a acompanhar.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(30, 60, 90).forEach { days ->
+                    if (days == reevaluationIntervalDays) {
+                        Button(onClick = { onReevaluationIntervalChange(days) }, modifier = Modifier.weight(1f)) { Text("$days dias") }
+                    } else {
+                        androidx.compose.material3.OutlinedButton(onClick = { onReevaluationIntervalChange(days) }, modifier = Modifier.weight(1f)) { Text("$days dias") }
+                    }
+                }
+            }
+        }
+        item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+        item {
             Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             Text(
@@ -1403,7 +1440,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 14", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 15", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -1462,19 +1499,30 @@ private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onE
 }
 
 @Composable
-private fun AppointmentFormDialog(initial: Appointment?, onDismiss: () -> Unit, onSave: (Long?, String, String, String, String, String) -> Unit) {
+private fun AppointmentFormDialog(initial: Appointment?, onDismiss: () -> Unit, onSave: (Long?, String, String, String, String, String, String) -> Unit) {
     var title by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
     var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
     var time by rememberSaveable(initial?.id) { mutableStateOf(initial?.time.orEmpty()) }
     var location by rememberSaveable(initial?.id) { mutableStateOf(initial?.location.orEmpty()) }
     var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
+    var kind by rememberSaveable(initial?.id) { mutableStateOf(initial?.kind ?: "Atendimento") }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Novo atendimento" else "Editar atendimento") },
+        title = { Text(if (initial == null) "Novo compromisso" else "Editar compromisso") },
         text = {
             Column(modifier = Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(title, { title = it; error = null }, label = { Text("Motivo *") }, singleLine = true)
+                Text("Tipo do compromisso", style = MaterialTheme.typography.labelLarge)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf("Atendimento", "Avaliação", "Retorno").forEach { option ->
+                        if (kind == option) {
+                            Button(onClick = { kind = option }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp)) { Text("✓ $option", style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                        } else {
+                            androidx.compose.material3.OutlinedButton(onClick = { kind = option }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp)) { Text(option, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                        }
+                    }
+                }
+                OutlinedTextField(title, { title = it; error = null }, label = { Text("Descrição *") }, singleLine = true)
                 OutlinedTextField(date, { date = it; error = null }, label = { Text("Data (AAAA-MM-DD)") }, singleLine = true)
                 OutlinedTextField(time, { time = it; error = null }, label = { Text("Horário (HH:MM)") }, singleLine = true)
                 OutlinedTextField(location, { location = it }, label = { Text("Local") }, singleLine = true)
@@ -1492,10 +1540,10 @@ private fun AppointmentFormDialog(initial: Appointment?, onDismiss: () -> Unit, 
                     val parser = SimpleDateFormat("HH:mm", Locale.ROOT).apply { isLenient = false }
                     parser.parse(time)?.let { parser.format(it) == time } == true
                 }.getOrDefault(false)
-                if (title.isBlank()) error = "Informe o motivo do atendimento."
+                if (title.isBlank()) error = "Informe a descrição do compromisso."
                 else if (!validDate) error = "Informe uma data válida no formato AAAA-MM-DD."
                 else if (!validTime) error = "Informe um horário válido no formato HH:MM."
-                else onSave(initial?.id, title, date, time, location, notes)
+                else onSave(initial?.id, title, date, time, location, notes, kind)
             }) { Text("Salvar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
