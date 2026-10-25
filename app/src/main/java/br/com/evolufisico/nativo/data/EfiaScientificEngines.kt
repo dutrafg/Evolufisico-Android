@@ -68,7 +68,12 @@ internal object EfiaScientificEngines {
             appendLine("EF79 — diferenças observadas; não representam mudança mínima detectável sem SEM documentado")
             ef79Changes.forEach { (key, delta) ->
                 val label = measures[key]?.first ?: key
-                appendLine("• " + label + ": " + (delta.change?.let { format(it) + " " + (measures[key]?.second ?: "") } ?: "indisponível") + " — " + delta.reason)
+                val change = delta.change?.let { format(it) + " " + (measures[key]?.second ?: "") } ?: "indisponível"
+                val mdc = delta.mdc95?.let {
+                    "; MDC95 informado: " + format(it) + " " + (measures[key]?.second ?: "") +
+                        "; diferença acima do limiar: " + (if (delta.detectable == true) "sim" else "não")
+                } ?: ""
+                appendLine("• " + label + ": " + change + mdc + " — " + delta.reason)
             }
             appendLine("EF80 — coerência e procedência")
             if (ef80Balances.isEmpty()) appendLine("Nenhuma relação de composição verificável registrada.")
