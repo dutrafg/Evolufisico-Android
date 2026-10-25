@@ -167,8 +167,20 @@ object AnalysisMath {
     fun pairedEvidence(assessments: List<Assessment>): List<LabEvidence> = assessments.mapNotNull { row ->
         val pollock = row.pollock7?.bodyFatPercent ?: return@mapNotNull null
         val bia = row.bioimpedanceBodyFatPercent ?: return@mapNotNull null
+        if (row.bioimpedanceDevice.isBlank()) return@mapNotNull null
         LabEvidence(row.date, pollock, bia, roundOne(kotlin.math.abs(pollock - bia)))
     }.sortedBy { it.date }
+
+    /** Protocol provenance is required before longitudinal BIA data is compared. */
+    fun comparableBiaSource(rows: List<Assessment>): Boolean {
+        if (rows.isEmpty()) return false
+        val devices = rows.map { it.bioimpedanceDevice.trim() }
+        return devices.all { it.isNotBlank() } && devices.distinct().size == 1 &&
+            rows.none { it.bioimpedanceLeanMassKg?.let { lean -> lean > it.weightKg } == true }
+    }
+
+    fun comparablePollock7Source(rows: List<Assessment>): Boolean =
+        rows.isNotEmpty() && rows.map { it.sex }.distinct().size == 1
 
     fun completeness(total: Int, present: Int): Int? {
         if (total <= 0 || present !in 0..total) return null
@@ -229,8 +241,14 @@ object AnalysisMath {
             )
             lines += "Mudanças descritivas (primeira → última avaliação; taxa por 30 dias é aritmética, sem projeção):"
             measures.forEach { (label, unit, values) ->
-                val result = trend(dates, values)
-                if (result == null) lines += "$label: dados incompletos para comparar todas as datas."
+                val protocolComparable = when (label) {
+                    "Gordura corporal registrada (método não informado)" -> false
+                    "Gordura estimada por Pollock 7" -> comparablePollock7Source(rows)
+                    "Gordura por bioimpedância", "Massa livre por bioimpedância" -> comparableBiaSource(rows)
+                    else -> true
+                }
+                val result = if (protocolComparable) trend(dates, values) else null
+                if (result == null) lines += "$label: dados insuficientes ou métodos/equipamentos não comparáveis entre as datas."
                 else {
                     val sign = if (result.absoluteChange > 0) "+" else ""
                     val suffix = if (unit.isBlank()) "" else " $unit"
@@ -240,7 +258,7 @@ object AnalysisMath {
             }
         }
         val paired = pairedEvidence(rows)
-        if (paired.isEmpty()) lines += "Sem datas com Pollock 7 e bioimpedância registrados juntos; nenhuma diferença entre métodos foi calculada."
+        if (paired.isEmpty()) lines += "Sem datas com Pollock 7 e BIA com aparelho identificado na mesma avaliação; nenhuma diferença entre métodos foi calculada."
         else {
             lines += "Pollock 7 e bioimpedância registrados na mesma data (diferenças absolutas, em pontos percentuais; não são medições independentes):"
             paired.forEach { lines += "${it.date}: Pollock ${number(it.pollockPercent)}% · BIA ${number(it.bioimpedancePercent)}% · diferença ${number(it.differencePoints)} p.p." }
