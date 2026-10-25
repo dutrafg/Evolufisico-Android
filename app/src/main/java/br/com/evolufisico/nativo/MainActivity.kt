@@ -95,6 +95,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -181,8 +182,8 @@ class MainActivity : ComponentActivity() {
 private fun EvoluFisicoTheme(dark: Boolean, accentIndex: Int, content: @Composable () -> Unit) {
     val colors = if (dark) {
         darkColorScheme(
-            primary = accents[accentIndex].second.copy(alpha = 0.9f),
-            secondary = accents[accentIndex].second,
+            primary = lerp(accents[accentIndex].second, Color.White, 0.42f),
+            secondary = lerp(accents[accentIndex].second, Color.White, 0.32f),
             background = Color(0xFF07100D),
             surface = Color(0xFF142D31),
             surfaceVariant = Color(0xFF203A45)
@@ -1129,9 +1130,9 @@ private fun moduleIcon(module: String): ImageVector = when (module) {
 private fun MetricCard(label: String, value: String, detail: String, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = Muted)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -1293,13 +1294,13 @@ private fun ProfileScreen(
                         val waistDelta = current.waistCm - previous.waistCm
                         Text("Cintura: " + (if (waistDelta > 0) "+" else "") + formatNumber(waistDelta) + " cm")
                     }
-                    Text("Comparação descritiva. Considere diferenças de método e condições de medição.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text("Comparação descritiva. Considere diferenças de método e condições de medição.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             item {
                 SectionCard("Variação do peso") {
                     WeightTrendChart(assessments.take(6).reversed())
-                    Text("Gráfico descritivo. Compare avaliações feitas em condições semelhantes.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text("Gráfico descritivo. Compare avaliações feitas em condições semelhantes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -1711,7 +1712,7 @@ private fun CalculatorScreen() {
                 Text("Gordura corporal · Pollock 7: " + (pollock7?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
                 if (pollock7 != null) Text("Massa de gordura: ${formatNumber(pollock7.fatMassKg)} kg · Massa livre de gordura: ${formatNumber(pollock7.leanMassKg)} kg${if (pollock7.wasClamped) " · estimativa limitada ao intervalo do método" else ""}")
                 if (navy != null && rfm != null) Text("Diferença entre métodos: " + formatNumber(kotlin.math.abs(navy - rfm)) + " pontos percentuais.")
-                Text("Métodos estimativos. A comparação não substitui protocolo de medição padronizado.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                Text("Métodos estimativos. A comparação não substitui protocolo de medição padronizado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
@@ -1732,7 +1733,7 @@ private fun CalculatorScreen() {
                         Text("Zona ${zone.first}–${zone.last}%: ${heartRateMax * zone.first / 100}–${heartRateMax * zone.last / 100} bpm")
                     }
                 }
-                Text("Estimativas gerais para adultos; não são prescrição clínica nem plano alimentar.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                Text("Estimativas gerais para adultos; não são prescrição clínica nem plano alimentar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -1951,7 +1952,7 @@ private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onE
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Agenda", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Organize os próximos atendimentos.", color = Muted)
+            Text("Organize os próximos atendimentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(6.dp))
             Button(onClick = onAdd) { Text("Novo atendimento") }
         }
@@ -1962,15 +1963,15 @@ private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onE
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(appointment.title, fontWeight = FontWeight.SemiBold)
-                            Text(displayDate(appointment.date) + "  ·  " + appointment.time, color = Teal)
+                            Text(displayDate(appointment.date) + "  ·  " + appointment.time, color = MaterialTheme.colorScheme.primary)
                         }
                         Row {
                             TextButton(onClick = { onEdit(appointment) }) { Text("Editar") }
                             TextButton(onClick = { onDelete(appointment.id) }) { Text("Excluir") }
                         }
                     }
-                    if (appointment.location.isNotBlank()) Text(appointment.location, color = Muted)
-                    if (appointment.notes.isNotBlank()) Text(appointment.notes, color = Muted)
+                    if (appointment.location.isNotBlank()) Text(appointment.location, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (appointment.notes.isNotBlank()) Text(appointment.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
