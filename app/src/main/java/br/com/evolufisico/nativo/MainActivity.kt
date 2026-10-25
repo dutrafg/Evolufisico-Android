@@ -1397,9 +1397,10 @@ private fun AssessmentPhotoGallery(photos: List<String>, onRemove: ((Int) -> Uni
                 val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, key1 = photo) {
                     value = withContext(Dispatchers.IO) { AssessmentPhoto.decode(photo) }
                 }
-                if (bitmap != null) {
+                val loadedBitmap = bitmap
+                if (loadedBitmap != null) {
                     Image(
-                        bitmap = bitmap.asImageBitmap(),
+                        bitmap = loadedBitmap.asImageBitmap(),
                         contentDescription = "Foto da avaliação ${index + 1}",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(96.dp).clip(RoundedCornerShape(12.dp))
