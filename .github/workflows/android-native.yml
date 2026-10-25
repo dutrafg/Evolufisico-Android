@@ -1,4 +1,4 @@
-name: Android native build
+name: Android native verification
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  debug-build:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,10 +26,5 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - name: Build Beta 15 debug APK
-        run: gradle --no-daemon :app:assembleDebug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: evolufisico-android-beta15
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+      - name: Run unit and database tests
+        run: gradle --no-daemon :app:testDebugUnitTest
