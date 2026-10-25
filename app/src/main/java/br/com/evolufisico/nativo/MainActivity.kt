@@ -110,6 +110,7 @@ import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
+import br.com.evolufisico.nativo.data.ChartMath
 import br.com.evolufisico.nativo.data.BackupInspector
 import br.com.evolufisico.nativo.data.AssessmentPhoto
 import br.com.evolufisico.nativo.data.DailyBackupScheduler
@@ -1265,7 +1266,7 @@ private fun ProfileScreen(
                     Text("Peso: " + formatNumber(latest.weightKg) + " kg  ·  Altura: " + formatNumber(latest.heightCm) + " cm")
                     Text("IMC: " + (latest.bmi?.let(::formatNumber) ?: "—"))
                     if (latest.waistCm != null) Text("Cintura: " + formatNumber(latest.waistCm) + " cm")
-                    if (latest.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(latest.bodyFatPercent) + "%")
+                    if (latest.bodyFatPercent != null) Text("Gordura informada · método não registrado: " + formatNumber(latest.bodyFatPercent) + "%")
                     latest.pollock3?.let { Text("Gordura · Jackson–Pollock 3 dobras: " + formatNumber(it.bodyFatPercent) + "%") }
                     latest.pollock7?.let { Text("Gordura · Jackson–Pollock 7 dobras: " + formatNumber(it.bodyFatPercent) + "%") }
                 }
@@ -1404,6 +1405,8 @@ private fun ProfileScreen(
 @Composable
 private fun WeightTrendChart(history: List<Assessment>) {
     val values = history.map { it.weightKg.toFloat() }
+    val positions = ChartMath.datePositions(history.map { it.date })
+        ?: history.indices.map { it.toFloat() / (history.lastIndex.coerceAtLeast(1)).toFloat() }
     val lineColor = MaterialTheme.colorScheme.primary
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Canvas(Modifier.fillMaxWidth().height(150.dp)) {
@@ -1414,7 +1417,7 @@ private fun WeightTrendChart(history: List<Assessment>) {
             val inset = 12f
             val points = values.mapIndexed { index, value ->
                 Offset(
-                    x = inset + (size.width - inset * 2) * index / values.lastIndex.toFloat(),
+                    x = inset + (size.width - inset * 2) * positions[index],
                     y = size.height - inset - (value - minValue) / range * (size.height - inset * 2)
                 )
             }
