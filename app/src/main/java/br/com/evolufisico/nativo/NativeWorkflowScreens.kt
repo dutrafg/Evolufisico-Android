@@ -88,31 +88,52 @@ internal fun EvolutionScreen(students: List<Student>, assessments: List<Assessme
 }
 
 @Composable
-internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessment>, onOpenStudent: (Long) -> Unit) {
+internal fun AnalyticsScreen(
+    students: List<Student>,
+    assessments: List<Assessment>,
+    onOpenStudent: (Long) -> Unit,
+    onExportReportPdf: (Student, List<Assessment>, String) -> Unit
+) {
     var selectedStudent by remember(students) { mutableStateOf(students.firstOrNull()) }
     val history = assessments.filter { it.studentId == selectedStudent?.id }
         .distinctBy { it.date }.sortedBy { it.date }
     var selectedDates by remember(selectedStudent?.id) { mutableStateOf(history.takeLast(3).map { it.date }) }
     val selected = history.filter { it.date in selectedDates }.sortedBy { it.date }
-    val start = selected.firstOrNull()
-    val latest = selected.lastOrNull()
-    val spanDays = if (start != null && latest != null) runCatching {
-        ChronoUnit.DAYS.between(LocalDate.parse(start.date), LocalDate.parse(latest.date)).toInt()
-    }.getOrDefault(0) else 0
-    val qualified = selected.size in 3..4 && spanDays >= 21
+    val dateKeys = selected.map { it.date }
+    val spanDays = AnalysisMath.coverageDays(dateKeys)?.toInt() ?: 0
+    val qualified = AnalysisMath.isEligibleWindow(dateKeys)
     val comparableCount = listOf(
         selected.all { it.weightKg > 0 },
-        selected.all { it.heightCm > 0 },
+        selected.all { it.bmi != null },
         selected.all { it.waistCm != null },
         selected.all { it.hipCm != null },
         selected.all { it.bodyFatPercent != null },
-        selected.all { it.neckCm != null },
-        selected.all { it.chestCm != null }
+        selected.all { it.pollock7 != null }
     ).count { it }
+    val presentSlots = selected.sumOf { row ->
+        listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent)
+            .count { it != null }
+    }
+    val totalSlots = selected.size * 6
+    val completeness = AnalysisMath.completeness(totalSlots, presentSlots)
+    val metrics: List<Triple<String, String, List<Double?>>> = listOf(
+        Triple("Peso", "kg", selected.map { it.weightKg }),
+        Triple("IMC", "", selected.map { it.bmi }),
+        Triple("Cintura", "cm", selected.map { it.waistCm }),
+        Triple("Quadril", "cm", selected.map { it.hipCm }),
+        Triple("Gordura registrada · método não informado", "%", selected.map { it.bodyFatPercent }),
+        Triple("Gordura estimada · Pollock 7", "%", selected.map { it.pollock7?.bodyFatPercent })
+    )
+    val trendResults = metrics.map { (label, unit, values) ->
+        Triple(label, unit, AnalysisMath.trend(dateKeys, values))
+    }
+    val reportText = selectedStudent?.let { AnalysisMath.report(it.name, selected) }.orEmpty()
+    var reportDraft by remember(selectedStudent?.id, selectedDates, reportText) { mutableStateOf(reportText) }
+
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Análises Completas", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Compare de três a quatro avaliações do mesmo aluno. Os resultados são descritivos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Compare três ou quatro avaliações do mesmo aluno. Resultados descritivos; não são diagnóstico nem previsão.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (students.isEmpty()) item { WorkflowEmpty("Sem alunos", "Cadastre um aluno e registre avaliações para iniciar o acompanhamento.") }
         else {
@@ -127,7 +148,7 @@ internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessme
                 else {
                     item {
                         SectionCard("Escolher datas para comparar") {
-                            Text("Marque três datas obrigatórias e, se necessário, uma quarta. O intervalo precisa cobrir pelo menos 21 dias.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Marque três datas obrigatórias e, se necessário, uma quarta. São exigidos ao menos 21 dias entre a primeira e a última avaliação.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             history.forEach { assessment ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Checkbox(
@@ -143,33 +164,68 @@ internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessme
                                     }
                                 }
                             }
-                            Text(selected.size.toString() + " data(s) selecionada(s) · " + spanDays + " dias entre a primeira e a última")
+                            Text("${selected.size} data(s) selecionada(s) · $spanDays dias entre a primeira e a última")
                         }
                     }
-                    item {
-                        if (!qualified) {
-                            WorkflowEmpty("Análise preliminar", "Selecione três ou quatro datas distintas e um intervalo mínimo de 21 dias. A ficha continua disponível.")
-                        } else {
+                    if (!qualified) {
+                        item {
+                            WorkflowEmpty(
+                                "Análise preliminar",
+                                "Índices, tendências e emissão de relatório exigem três ou quatro datas válidas, distintas e cobrindo pelo menos 21 dias. A ficha do aluno permanece disponível."
+                            )
+                        }
+                    } else {
+                        item {
                             SectionCard("Resumo da trajetória física") {
                                 Text(selectedStudent?.name.orEmpty(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                Text("Período: " + displayNativeDate(start!!.date) + " a " + displayNativeDate(latest!!.date) + " · " + spanDays + " dias")
+                                Text("Período: " + displayNativeDate(dateKeys.first()) + " a " + displayNativeDate(dateKeys.last()) + " · $spanDays dias")
                                 HorizontalDivider()
-                                Text(deltaLabel("Peso", start.weightKg, latest.weightKg, "kg"))
-                                Text(deltaLabel("IMC", start.bmi, latest.bmi, ""))
-                                Text(deltaLabel("Cintura", start.waistCm, latest.waistCm, "cm"))
-                                Text(deltaLabel("Quadril", start.hipCm, latest.hipCm, "cm"))
-                                Text(deltaLabel("Gordura estimada", start.bodyFatPercent, latest.bodyFatPercent, "%"))
-                                Text("Indicadores comparáveis em todas as datas: " + comparableCount + " de 7")
-                                Text("A completude informa somente quais medidas estão disponíveis; não representa precisão clínica.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Indicadores completos em todas as datas: $comparableCount de 6")
+                                Text("Completude documental: ${completeness ?: 0}% ($presentSlots de $totalSlots campos possíveis)")
+                                Text("Completude mede preenchimento, não validade, precisão ou confiança clínica.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                    }
-                    if (qualified) {
                         item {
-                            SectionCard("Qualidade e limites dos dados") {
-                                Text("As datas selecionadas pertencem ao mesmo aluno e cobrem pelo menos 21 dias.")
-                                Text("Confirme se os métodos, equipamentos e condições de coleta foram consistentes antes de interpretar as diferenças.")
-                                Text("A análise não diagnostica condições de saúde e não substitui avaliação profissional.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            SectionCard("Tendências observadas") {
+                                trendResults.forEach { (label, unit, result) ->
+                                    HorizontalDivider()
+                                    Text(label, fontWeight = FontWeight.SemiBold)
+                                    if (result == null) {
+                                        Text("Dados incompletos para comparar todas as datas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    } else {
+                                        val suffix = if (unit.isBlank()) "" else " $unit"
+                                        val sign = if (result.absoluteChange > 0) "+" else ""
+                                        Text("${formatNativeNumber(result.first)}$suffix → ${formatNativeNumber(result.latest)}$suffix")
+                                        Text("Variação observada: $sign${formatNativeNumber(result.absoluteChange)}$suffix · taxa aritmética por 30 dias: ${formatNativeNumber(result.changePer30Days)}$suffix")
+                                        if (result.directionChanged) Text("A direção variou entre intervalos; confira as datas e o protocolo.", color = MaterialTheme.colorScheme.tertiary)
+                                    }
+                                }
+                                Text("A taxa por 30 dias descreve o intervalo observado; não projeta resultados futuros.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        item {
+                            SectionCard("Qualidade documental e limites") {
+                                Text("Métodos comparáveis em todas as datas: $comparableCount de 6 indicadores.")
+                                Text("Percentual de gordura digitado é mostrado separado da estimativa Pollock 7, pois o método da medida informada não fica registrado.")
+                                Text("Bioimpedância ainda não é registrada no formulário Android; portanto, não há comparador Pollock/BIA.")
+                                Text("Confirme método, equipamento e condições de coleta antes de interpretar mudanças. O módulo não diagnostica e não prescreve.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        item {
+                            SectionCard("Relatório descritivo") {
+                                Text("Revise o texto antes de exportar. A edição deste rascunho não altera as avaliações.")
+                                OutlinedTextField(
+                                    value = reportDraft,
+                                    onValueChange = { reportDraft = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text("Rascunho do relatório") },
+                                    minLines = 6
+                                )
+                                Button(
+                                    onClick = { selectedStudent?.let { onExportReportPdf(it, selected, reportDraft) } },
+                                    enabled = selectedStudent != null && reportDraft.isNotBlank(),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Exportar análise em PDF") }
                             }
                         }
                     }
