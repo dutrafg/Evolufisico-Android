@@ -179,6 +179,7 @@ internal fun FormsScreen(
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(form.template, fontWeight = FontWeight.SemiBold)
                     Text(name + " · " + displayNativeDate(form.date), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Respostas", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Text(form.responses, maxLines = 8)
                     TextButton(onClick = { onDelete(form.id) }) { Text("Excluir") }
                 }
@@ -325,16 +326,18 @@ private val formTemplates = listOf(
     "Avançado · Reavaliação",
     "Personalizado"
 )
-private val formQuestions = formTemplates.associateWith { template ->
-    when {
-        template.contains("saúde", true) -> "Saúde atual · Diagnósticos relatados · Medicamentos · Alergias · Restrições"
-        template.contains("Hábitos", true) || template.contains("Alimentação", true) -> "Rotina · Alimentação · Sono · Hidratação · Objetivos"
-        template.contains("Mobilidade", true) -> "Lesões anteriores · Dores relatadas · Limitações · Mobilidade"
-        template.contains("treinamento", true) -> "Experiência de treino · Frequência · Equipamentos · Preferências"
-        template.contains("Reavaliação", true) -> "Objetivo inicial · Mudanças percebidas · Dificuldades · Próximas metas"
-        else -> "Objetivo · Histórico de saúde · Rotina de atividade física · Observações"
-    }
-}
+private val formQuestions = mapOf(
+    "Iniciante · Anamnese geral" to "Objetivo principal · Rotina diária · Atividade física atual · Preferências · Observações",
+    "Iniciante · Histórico de saúde" to "Condições relatadas · Medicamentos · Alergias · Cirurgias · Restrições para exercício",
+    "Iniciante · Hábitos e objetivos" to "Sono · Hidratação · Alimentação relatada · Hábitos de movimento · Objetivos",
+    "Intermediário · Rotina e treinamento" to "Experiência · Frequência semanal · Duração · Equipamentos disponíveis · Preferências",
+    "Intermediário · Alimentação e sono" to "Rotina alimentar relatada · Horários · Qualidade do sono · Hidratação · Dificuldades",
+    "Intermediário · Mobilidade e lesões" to "Lesões anteriores · Dores relatadas · Limitações de movimento · Mobilidade · Cuidados",
+    "Avançado · Anamnese completa" to "Histórico de saúde · Atividade física · Rotina · Objetivos · Restrições · Observações",
+    "Avançado · Acompanhamento físico" to "Adesão · Resposta percebida · Barreiras · Mudanças de rotina · Próximos passos",
+    "Avançado · Reavaliação" to "Objetivo inicial · Mudanças percebidas · Dificuldades · Ajustes necessários · Próximas metas",
+    "Personalizado" to "Use este roteiro livre para registrar informações adicionais do atendimento."
+)
 
 private fun todayNativeIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
 private fun displayNativeDate(value: String): String = runCatching {
