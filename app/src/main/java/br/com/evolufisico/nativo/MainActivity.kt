@@ -108,6 +108,7 @@ import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
+import br.com.evolufisico.nativo.data.BackupInspector
 import br.com.evolufisico.nativo.data.AssessmentPhoto
 import br.com.evolufisico.nativo.data.DailyBackupScheduler
 import br.com.evolufisico.nativo.data.LocalDatabase
@@ -289,6 +290,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var assessmentDialog by remember { mutableStateOf(false) }
     var editingAssessment by remember { mutableStateOf<Assessment?>(null) }
     var restoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var restorePreview by remember { mutableStateOf<BackupInspector.Summary?>(null) }
     var pendingPdf by remember { mutableStateOf<ByteArray?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -315,7 +317,21 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         }
     }
     val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) restoreUri = uri
+        if (uri != null) scope.launch {
+            try {
+                val summary = withContext(Dispatchers.IO) {
+                    val json = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        ?: error("Não foi possível ler o arquivo selecionado.")
+                    BackupInspector.inspect(json)
+                }
+                restorePreview = summary
+                restoreUri = uri
+            } catch (e: Exception) {
+                restorePreview = null
+                restoreUri = null
+                errorMessage = e.message ?: "O arquivo de backup não passou na verificação."
+            }
+        }
     }
     val chooseBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -707,7 +723,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         AlertDialog(
             onDismissRequest = { restoreUri = null },
             title = { Text("Restaurar backup?") },
-            text = { Text("A restauração substitui os dados locais atuais por alunos, avaliações, agenda, formulários, tarefas e cobranças presentes no arquivo.") },
+            text = {
+                Text("A restauração substitui todos os dados locais. " +
+                    (restorePreview?.asText() ?: "Arquivo sem prévia disponível.") +
+                    " Faça uma exportação de segurança antes de confirmar.")
+            },
             confirmButton = { TextButton(onClick = {
                 restoreUri = null
                 scope.launch {
