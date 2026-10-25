@@ -390,6 +390,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     studentCount = counts.first,
                     assessmentCount = counts.second,
                     todayAppointments = appointments.filter { it.date == todayIso() },
+                    pendingTasks = tasks.filterNot { it.completed },
+                    pendingCharges = charges.count { it.status == "Pendente" },
                     studentsWithoutAssessment = studentsWithoutAssessment,
                     reevaluationsDue = reevaluationsDue,
                     favoriteModules = favoriteModules.sorted(),
@@ -526,6 +528,8 @@ private fun HomeScreen(
     studentCount: Int,
     assessmentCount: Int,
     todayAppointments: List<Appointment>,
+    pendingTasks: List<TaskRecord>,
+    pendingCharges: Int,
     studentsWithoutAssessment: Int,
     reevaluationsDue: Int,
     favoriteModules: List<String>,
@@ -575,6 +579,21 @@ private fun HomeScreen(
                 Text(message, color = Muted)
                 Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
                     Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
+                }
+                if (pendingTasks.isNotEmpty()) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Text("Tarefas pendentes", fontWeight = FontWeight.SemiBold)
+                    pendingTasks.take(2).forEach { task ->
+                        Text(task.title + " · " + displayDate(task.dueDate), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    TextButton(onClick = { onOpen("Tarefas") }) {
+                        Text("Ver todas as ${pendingTasks.size} tarefas")
+                    }
+                }
+                if (pendingCharges > 0) {
+                    TextButton(onClick = { onOpen("Cobranças") }) {
+                        Text("$pendingCharges cobrança(s) pendente(s)")
+                    }
                 }
             }
         }
@@ -1031,7 +1050,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 4", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 5", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
