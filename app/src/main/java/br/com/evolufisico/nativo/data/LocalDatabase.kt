@@ -23,7 +23,8 @@ data class Appointment(
     val date: String,
     val time: String,
     val location: String,
-    val notes: String
+    val notes: String,
+    val kind: String = "Atendimento"
 )
 
 data class TaskRecord(val id: Long, val title: String, val dueDate: String, val completed: Boolean)
@@ -49,7 +50,7 @@ data class Assessment(
 }
 
 class LocalDatabase(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 4) {
+    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 5) {
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -97,6 +98,9 @@ class LocalDatabase(context: Context) :
             listOf("body_fat_percent REAL", "neck_cm REAL", "chest_cm REAL", "arm_cm REAL", "thigh_cm REAL")
                 .forEach { column -> db.execSQL("ALTER TABLE assessments ADD COLUMN $column") }
         }
+        if (oldVersion in 2..4) {
+            db.execSQL("ALTER TABLE appointments ADD COLUMN kind TEXT NOT NULL DEFAULT 'Atendimento'")
+        }
     }
 
     private fun createBeta3Tables(db: SQLiteDatabase) {
@@ -133,7 +137,8 @@ class LocalDatabase(context: Context) :
                 date TEXT NOT NULL,
                 time TEXT NOT NULL,
                 location TEXT NOT NULL DEFAULT '',
-                notes TEXT NOT NULL DEFAULT ''
+                notes TEXT NOT NULL DEFAULT '',
+                kind TEXT NOT NULL DEFAULT 'Atendimento'
             )"""
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS index_appointments_date_time ON appointments(date, time)")
@@ -144,7 +149,7 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Appointment>()
         readableDatabase.query(
             "appointments",
-            arrayOf("id", "title", "date", "time", "location", "notes"),
+            arrayOf("id", "title", "date", "time", "location", "notes", "kind"),
             if (date == null) null else "date=?",
             if (date == null) null else arrayOf(date),
             null, null, "date ASC, time ASC, id ASC"
@@ -152,7 +157,7 @@ class LocalDatabase(context: Context) :
             while (cursor.moveToNext()) {
                 result += Appointment(
                     cursor.getLong(0), cursor.getString(1), cursor.getString(2),
-                    cursor.getString(3), cursor.getString(4), cursor.getString(5)
+                    cursor.getString(3), cursor.getString(4), cursor.getString(5), cursor.getString(6)
                 )
             }
         }
@@ -160,7 +165,7 @@ class LocalDatabase(context: Context) :
     }
 
     @Synchronized
-    fun saveAppointment(id: Long?, title: String, date: String, time: String, location: String, notes: String): Long {
+    fun saveAppointment(id: Long?, title: String, date: String, time: String, location: String, notes: String, kind: String = "Atendimento"): Long {
         require(title.isNotBlank()) { "Informe o motivo do atendimento." }
         require(validDate(date)) { "Confira a data do atendimento." }
         require(time.matches(Regex("\\d{2}:\\d{2}")) && time.substring(0, 2).toInt() in 0..23 && time.substring(3, 5).toInt() in 0..59) { "Confira o horário do atendimento." }
@@ -170,6 +175,7 @@ class LocalDatabase(context: Context) :
             put("time", time)
             put("location", location.trim())
             put("notes", notes.trim())
+            put("kind", kind)
         }
         return if (id == null) writableDatabase.insertOrThrow("appointments", null, values)
         else {
@@ -457,7 +463,7 @@ class LocalDatabase(context: Context) :
         }
         root.put("students", rows("students", arrayOf("id","name","phone","email","birth_date","created_at")))
         root.put("assessments", rows("assessments", arrayOf("id","student_id","date","weight_kg","height_cm","waist_cm","hip_cm","notes","body_fat_percent","neck_cm","chest_cm","arm_cm","thigh_cm")))
-        root.put("appointments", rows("appointments", arrayOf("id","title","date","time","location","notes")))
+        root.put("appointments", rows("appointments", arrayOf("id","title","date","time","location","notes","kind")))
         root.put("tasks", rows("tasks", arrayOf("id","title","due_date","completed")))
         root.put("intake_forms", rows("intake_forms", arrayOf("id","student_id","template","date","responses")))
         root.put("charges", rows("charges", arrayOf("id","student_id","title","amount","due_date","status","notes")))
