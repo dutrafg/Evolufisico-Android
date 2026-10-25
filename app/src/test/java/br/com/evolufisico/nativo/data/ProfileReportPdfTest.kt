@@ -32,7 +32,7 @@ class ProfileReportPdfTest {
         val pdf = String(bytes, StandardCharsets.ISO_8859_1)
         fun hex(text: String) = text.toByteArray(java.nio.charset.Charset.forName("windows-1252"))
             .joinToString("") { "%02X".format(it.toInt() and 0xFF) }
-        assertTrue(pdf.contains("<${hex("Dobras cutâneas · Pollock 7")}>"))
+        assertTrue(pdf.contains("<${hex("Dobras cutâneas · protocolos Jackson–Pollock")}>"))
         assertTrue(pdf.contains("<${hex("Tríceps: 10,0 mm")}>"))
         assertTrue(pdf.contains("<${hex("Sexo: Masculino · idade: 30 anos")}>"))
     }
