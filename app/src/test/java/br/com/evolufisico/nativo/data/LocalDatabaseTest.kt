@@ -188,4 +188,16 @@ class LocalDatabaseTest {
         assertEquals(1, database.allAssessments().size)
     }
 
+    @Test fun diagnosticsAreReadOnlyAndVerifySqliteReferences() {
+        val studentId = database.saveStudent("Diagnóstico", "", "", "")
+        database.saveAssessment(studentId, "2026-03-01", 81.0, 181.0, null, null, "")
+        val before = database.exportBackupJson()
+        val result = database.diagnosticReport()
+        assertTrue(result.contains("SQLite: íntegro"))
+        assertTrue(result.contains("Referências inválidas: 0"))
+        assertTrue(result.contains("Alunos: 1"))
+        assertTrue(result.contains("Avaliações: 1"))
+        assertEquals(before, database.exportBackupJson())
+    }
+
 }
