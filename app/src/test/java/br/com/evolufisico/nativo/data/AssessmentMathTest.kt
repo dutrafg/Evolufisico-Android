@@ -85,6 +85,21 @@ class AssessmentMathTest {
         assertNull(AnalysisMath.trend(listOf("2026-01-01", "2026-01-02", "2026-01-03"), listOf(70.0, 69.0, 68.0)))
     }
 
+    @Test fun pairedPollockAndBioimpedanceAreComparedOnlyWhenBothAreRecorded() {
+        val row = Assessment(
+            id = 1, studentId = 7, date = "2026-01-10", weightKg = 80.0, heightCm = 180.0,
+            waistCm = 88.0, hipCm = 100.0, notes = "", sex = "Masculino", ageYears = 30,
+            tricepsFoldMm = 10.0, subscapularFoldMm = 20.0, chestFoldMm = 30.0,
+            axillaryFoldMm = 40.0, suprailiacFoldMm = 50.0, abdominalFoldMm = 60.0, thighFoldMm = 70.0,
+            bioimpedanceBodyFatPercent = 28.8, bioimpedanceDevice = "BIA InBody"
+        )
+        val evidence = AnalysisMath.pairedEvidence(listOf(row)).single()
+        assertEquals("2026-01-10", evidence.date)
+        assertEquals(28.8, evidence.bioimpedancePercent, 0.0)
+        assertEquals(4.3, evidence.differencePoints, 0.1)
+        assertTrue(AnalysisMath.pairedEvidence(listOf(row.copy(bioimpedanceBodyFatPercent = null))).isEmpty())
+    }
+
     @Test fun analysisCompletenessAndReportStateTheirLimits() {
         assertEquals(50, AnalysisMath.completeness(6, 3))
         assertNull(AnalysisMath.completeness(0, 0))
