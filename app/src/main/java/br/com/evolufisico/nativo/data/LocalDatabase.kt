@@ -663,6 +663,35 @@ class LocalDatabase(context: Context) :
         }
     }
 
+    /**
+     * Read-only local maintenance diagnostics. Never attempts automatic deletion or repair.
+     */
+    @Synchronized
+    fun diagnosticReport(): String {
+        val db = readableDatabase
+        val integrity = db.rawQuery("PRAGMA quick_check", null).use { c ->
+            if (c.moveToFirst()) c.getString(0) else "sem resultado"
+        }
+        val brokenReferences = db.rawQuery("PRAGMA foreign_key_check", null).use { it.count }
+        val assessmentCount = db.rawQuery("SELECT COUNT(*) FROM assessments", null)
+            .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        val studentCount = db.rawQuery("SELECT COUNT(*) FROM students", null)
+            .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        val chargeCount = db.rawQuery("SELECT COUNT(*) FROM charges", null)
+            .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        val formCount = db.rawQuery("SELECT COUNT(*) FROM intake_forms", null)
+            .use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        return listOf(
+            "SQLite: " + (if (integrity == "ok") "íntegro" else "inconsistência: " + integrity),
+            "Referências inválidas: $brokenReferences",
+            "Alunos: $studentCount",
+            "Avaliações: $assessmentCount",
+            "Formulários: $formCount",
+            "Cobranças: $chargeCount",
+            "Diagnóstico somente leitura: nenhum dado foi alterado."
+        ).joinToString("\n")
+    }
+
     @Synchronized
     fun studentsWithoutAssessment(): Int =
         readableDatabase.rawQuery(
