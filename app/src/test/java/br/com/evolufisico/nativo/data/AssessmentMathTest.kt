@@ -117,4 +117,16 @@ class AssessmentMathTest {
         assertNull(AssessmentMath.maximumHeartRate(101))
         assertNull(AssessmentMath.harrisBenedict("Masculino", 70.0, 175.0, 17))
     }
+    @Test fun threeSiteEquationIsSeparateAndRespectsValidatedAgeRanges() {
+        val male = AssessmentMath.pollock3("Masculino", 30, 80.0, 12.0, 18.0, null, null, 22.0)
+        val female = AssessmentMath.pollock3("Feminino", 28, 60.0, null, null, 10.0, 14.0, 20.0)
+        assertTrue(male != null && male.bodyFatPercent in 3.0..60.0)
+        assertTrue(female != null && female.bodyFatPercent in 3.0..60.0)
+        assertEquals(52.0, male!!.sumMm, 0.0)
+        assertEquals(44.0, female!!.sumMm, 0.0)
+        assertNull(AssessmentMath.pollock3("Masculino", 62, 80.0, 12.0, 18.0, null, null, 22.0))
+        assertNull(AssessmentMath.pollock3("Feminino", 56, 60.0, null, null, 10.0, 14.0, 20.0))
+        assertNull(AssessmentMath.pollock3("Feminino", 28, 60.0, null, null, 10.0, null, 20.0))
+    }
+
 }
