@@ -11,6 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.EventRepeat
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.key
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +57,19 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 internal data class MiniApp(val id: String, val title: String, val category: String, val description: String)
+
+private fun miniAppIcon(id: String): ImageVector = when (id) {
+    "list" -> Icons.Default.Assignment
+    "agenda" -> Icons.Default.CalendarMonth
+    "charges" -> Icons.Default.ReceiptLong
+    "students" -> Icons.Default.Groups
+    "rechecks" -> Icons.Default.EventRepeat
+    "assessments" -> Icons.Default.FactCheck
+    "bmi" -> Icons.Default.Calculate
+    "forms" -> Icons.Default.Description
+    "evolution" -> Icons.Default.ShowChart
+    else -> Icons.Default.Psychology
+}
 internal object EvoMiniCatalog {
     val entries = listOf(
         MiniApp("list", "Minha Lista", "Rotina", "Concluir e editar tarefas sem abrir outro módulo."),
@@ -90,7 +117,10 @@ internal fun EvoStoreScreen(installed: Set<String>, onToggle: (String) -> Unit) 
         items(visible, key = { it.id }) { app ->
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(app.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(miniAppIcon(app.id), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text(app.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    }
                     Text(app.category, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                     Text(app.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (app.id in installed) OutlinedButton(onClick = { onToggle(app.id) }) { Text("Desinstalar") }
@@ -118,10 +148,14 @@ internal fun EvoMiniWidgets(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Miniaplicativos instalados", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         EvoMiniCatalog.entries.filter { it.id in installed }.forEach { app ->
+            key(app.id) {
             Card(Modifier.fillMaxWidth().height(270.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(app.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(miniAppIcon(app.id), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text(app.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    }
                     Text(app.description, style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                     when (app.id) {
@@ -266,6 +300,7 @@ internal fun EvoMiniWidgets(
                         }
                     }
                 }
+            }
             }
         }
     }
