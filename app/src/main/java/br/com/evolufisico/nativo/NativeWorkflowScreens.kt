@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.nativo.data.Assessment
+import br.com.evolufisico.nativo.data.AnalysisMath
 import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Student
