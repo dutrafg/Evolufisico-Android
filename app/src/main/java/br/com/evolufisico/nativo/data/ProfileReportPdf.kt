@@ -13,6 +13,7 @@ internal object ProfileReportPdf {
     private data class Page(val lines: List<DrawLine>, val photos: List<Photo> = emptyList())
 
     fun assessment(student: Student, assessment: Assessment, professionalName: String, registration: String): ByteArray {
+        require(assessment.studentId == student.id) { "A avaliação deve pertencer ao aluno do relatório." }
         val lines = mutableListOf(
             Line("Dados do aluno", true),
             Line("Nome: " + student.name),
@@ -76,6 +77,7 @@ internal object ProfileReportPdf {
     }
 
     fun intakeForm(student: Student, form: IntakeForm, professionalName: String, registration: String): ByteArray {
+        require(form.studentId == student.id) { "A anamnese deve pertencer ao aluno do relatório." }
         val lines = listOf(
             Line("Dados do aluno", true),
             Line("Nome: " + student.name),
