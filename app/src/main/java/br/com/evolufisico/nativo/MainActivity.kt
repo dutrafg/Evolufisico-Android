@@ -252,6 +252,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
     var maskFinancial by remember { mutableStateOf(preferences.getBoolean("mask_financial", false)) }
     var reevaluationIntervalDays by remember { mutableIntStateOf(preferences.getInt("reevaluation_interval_days", 90).coerceIn(30, 90)) }
+    var professionalName by remember { mutableStateOf(preferences.getString("professional_name", "").orEmpty()) }
+    var professionalRegistration by remember { mutableStateOf(preferences.getString("professional_registration", "").orEmpty()) }
     fun toggleFavorite(module: String) {
         val next = favoriteModules.toMutableSet()
         if (!next.add(module)) next.remove(module)
@@ -392,6 +394,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onMaskFinancialChange = { maskFinancial = it; preferences.edit().putBoolean("mask_financial", it).apply() },
                     reevaluationIntervalDays = reevaluationIntervalDays,
                     onReevaluationIntervalChange = { days -> reevaluationIntervalDays = days; preferences.edit().putInt("reevaluation_interval_days", days).apply() },
+                    professionalName = professionalName,
+                    onProfessionalNameChange = { professionalName = it; preferences.edit().putString("professional_name", it).apply() },
+                    professionalRegistration = professionalRegistration,
+                    onProfessionalRegistrationChange = { professionalRegistration = it; preferences.edit().putString("professional_registration", it).apply() },
                     onBackup = { exportBackup.launch("EvoluFisico-Backup.json") },
                     onRestore = { importBackup.launch(arrayOf("application/json", "text/plain")) }
                 )
@@ -1413,6 +1419,10 @@ private fun SettingsScreen(
     onMaskFinancialChange: (Boolean) -> Unit,
     reevaluationIntervalDays: Int,
     onReevaluationIntervalChange: (Int) -> Unit,
+    professionalName: String,
+    onProfessionalNameChange: (String) -> Unit,
+    professionalRegistration: String,
+    onProfessionalRegistrationChange: (String) -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit
 ) {
@@ -1460,6 +1470,14 @@ private fun SettingsScreen(
                 Spacer(Modifier.height(8.dp))
             }
             Text("Selecionada: " + accents[accentIndex].first, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
+        item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+        item {
+            Text("Dados profissionais", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(6.dp))
+            Text("Identificação usada para personalizar relatórios futuros.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(professionalName, onProfessionalNameChange, modifier = Modifier.fillMaxWidth(), label = { Text("Nome profissional") }, singleLine = true)
+            OutlinedTextField(professionalRegistration, onProfessionalRegistrationChange, modifier = Modifier.fillMaxWidth(), label = { Text("CREF / registro") }, singleLine = true)
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
