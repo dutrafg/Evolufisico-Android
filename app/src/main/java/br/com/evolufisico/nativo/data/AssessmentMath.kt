@@ -110,7 +110,9 @@ object AnalysisMath {
     fun coverageDays(dates: List<String>): Long? {
         val parsed = dates.map { runCatching { java.time.LocalDate.parse(it) }.getOrNull() ?: return null }
         if (parsed.size < 2 || parsed.distinct().size != parsed.size) return null
-        return java.time.temporal.ChronoUnit.DAYS.between(parsed.minOrNull(), parsed.maxOrNull())
+        val first = parsed.minOrNull() ?: return null
+        val last = parsed.maxOrNull() ?: return null
+        return java.time.temporal.ChronoUnit.DAYS.between(first, last)
     }
 
     fun isEligibleWindow(dates: List<String>): Boolean =
