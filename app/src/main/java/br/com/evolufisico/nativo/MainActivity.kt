@@ -1359,36 +1359,78 @@ private fun CalculatorScreen() {
     var height by rememberSaveable { mutableStateOf("") }
     var waist by rememberSaveable { mutableStateOf("") }
     var hip by rememberSaveable { mutableStateOf("") }
+    var neck by rememberSaveable { mutableStateOf("") }
+    var age by rememberSaveable { mutableStateOf("") }
+    var sex by rememberSaveable { mutableStateOf("Masculino") }
+    var activityIndex by rememberSaveable { mutableIntStateOf(2) }
+    val activityOptions = listOf("Sedentária", "Leve", "Moderada", "Alta")
+    val activityFactors = listOf(1.2, 1.375, 1.55, 1.725)
     val weightValue = AssessmentMath.parseNumber(weight)
     val heightValue = AssessmentMath.parseNumber(height)
     val waistValue = AssessmentMath.parseNumber(waist)
     val hipValue = AssessmentMath.parseNumber(hip)
+    val neckValue = AssessmentMath.parseNumber(neck)
+    val ageValue = age.toIntOrNull()
     val bmi = if (weightValue != null && heightValue != null) AssessmentMath.bmi(weightValue, heightValue) else null
-    val waistHeightRatio = if (waistValue != null && heightValue != null && waistValue > 0 && heightValue > 0) waistValue / heightValue else null
-    val waistHipRatio = if (waistValue != null && hipValue != null && waistValue > 0 && hipValue > 0) waistValue / hipValue else null
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
+    val waistHeightRatio = if (waistValue != null && heightValue != null) waistValue / heightValue else null
+    val waistHipRatio = if (waistValue != null && hipValue != null) waistValue / hipValue else null
+    val navy = if (heightValue != null && waistValue != null && neckValue != null) AssessmentMath.navyBodyFat(sex, heightValue, waistValue, neckValue, hipValue) else null
+    val rfm = if (heightValue != null && waistValue != null) AssessmentMath.rfmBodyFat(sex, heightValue, waistValue) else null
+    val harris = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.harrisBenedict(sex, weightValue, heightValue, ageValue) else null
+    val mifflin = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.mifflinStJeor(sex, weightValue, heightValue, ageValue) else null
+    val heartRateMax = ageValue?.let(AssessmentMath::maximumHeartRate)
+    val tdee = mifflin?.times(activityFactors[activityIndex])
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Calculadora e laboratório", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Índices antropométricos derivados dos valores inseridos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Estimativas antropométricas e energéticas a partir dos dados informados.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            SectionCard("Medidas") {
-                OutlinedTextField(weight, { weight = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Peso (kg)") }, singleLine = true)
+            SectionCard("Dados de entrada") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("Masculino", "Feminino").forEach { option ->
+                        if (sex == option) Button(onClick = { sex = option }, modifier = Modifier.weight(1f)) { Text(option) }
+                        else androidx.compose.material3.OutlinedButton(onClick = { sex = option }, modifier = Modifier.weight(1f)) { Text(option) }
+                    }
+                }
+                OutlinedTextField(age, { age = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth(), label = { Text("Idade (anos)") }, singleLine = true)
                 OutlinedTextField(height, { height = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Altura (cm)") }, singleLine = true)
+                OutlinedTextField(weight, { weight = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Peso (kg)") }, singleLine = true)
+                OutlinedTextField(neck, { neck = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Pescoço (cm)") }, singleLine = true)
                 OutlinedTextField(waist, { waist = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Cintura (cm)") }, singleLine = true)
                 OutlinedTextField(hip, { hip = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Quadril (cm)") }, singleLine = true)
             }
         }
         item {
-            SectionCard("Resultados") {
-                Text("IMC: " + (bmi?.let(::formatNumber) ?: "—"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            SectionCard("Índices e composição corporal") {
+                Text("IMC: " + (bmi?.let(::formatNumber) ?: "—"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Cintura/estatura: " + (waistHeightRatio?.let(::formatNumber) ?: "—"))
                 Text("Cintura/quadril: " + (waistHipRatio?.let(::formatNumber) ?: "—"))
-                Text("São índices matemáticos estimados e não constituem diagnóstico. Interprete com os métodos e limites próprios.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                Text("Gordura corporal estimada · Navy: " + (navy?.let { formatNumber(it) + "%" } ?: "Informe as medidas necessárias"))
+                Text("Gordura corporal estimada · RFM: " + (rfm?.let { formatNumber(it) + "%" } ?: "Informe altura e cintura"))
+                if (navy != null && rfm != null) Text("Diferença entre métodos: " + formatNumber(kotlin.math.abs(navy - rfm)) + " pontos percentuais.")
+                Text("Métodos estimativos. A comparação não substitui protocolo de medição padronizado.", style = MaterialTheme.typography.bodySmall, color = Muted)
+            }
+        }
+        item {
+            SectionCard("Energia e frequência cardíaca") {
+                Text("Fator de atividade")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    activityOptions.forEachIndexed { index, label ->
+                        if (activityIndex == index) Button(onClick = { activityIndex = index }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)) { Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                        else androidx.compose.material3.OutlinedButton(onClick = { activityIndex = index }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)) { Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                    }
+                }
+                Text("Metabolismo basal · Harris-Benedict: " + (harris?.let { formatNumber(it) + " kcal/dia" } ?: "Informe idade, peso e altura"))
+                Text("Metabolismo basal · Mifflin-St Jeor: " + (mifflin?.let { formatNumber(it) + " kcal/dia" } ?: "Informe idade, peso e altura"))
+                Text("Gasto diário estimado · Mifflin × atividade: " + (tdee?.let { formatNumber(it) + " kcal/dia" } ?: "—"))
+                Text("Frequência cardíaca máxima estimada: " + (heartRateMax?.let { "$it bpm" } ?: "Informe idade entre 18 e 100 anos"))
+                if (heartRateMax != null) {
+                    listOf(50..60, 60..70, 70..80, 80..90, 90..100).forEach { zone ->
+                        Text("Zona ${zone.first}–${zone.last}%: ${heartRateMax * zone.first / 100}–${heartRateMax * zone.last / 100} bpm")
+                    }
+                }
+                Text("Estimativas gerais para adultos; não são prescrição clínica nem plano alimentar.", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
         }
     }
