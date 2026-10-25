@@ -1209,7 +1209,8 @@ private fun ProfileScreen(
                     Text("IMC: " + (latest.bmi?.let(::formatNumber) ?: "—"))
                     if (latest.waistCm != null) Text("Cintura: " + formatNumber(latest.waistCm) + " cm")
                     if (latest.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(latest.bodyFatPercent) + "%")
-                    latest.pollock7?.let { Text("Gordura · Pollock 7: " + formatNumber(it.bodyFatPercent) + "%") }
+                    latest.pollock3?.let { Text("Gordura · Jackson–Pollock 3 dobras: " + formatNumber(it.bodyFatPercent) + "%") }
+                    latest.pollock7?.let { Text("Gordura · Jackson–Pollock 7 dobras: " + formatNumber(it.bodyFatPercent) + "%") }
                 }
             }
         }
@@ -1270,9 +1271,11 @@ private fun ProfileScreen(
                         .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
                     val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
                     if (folds.any { it.second != null }) {
-                        Text("Dobras cutâneas · Pollock 7", fontWeight = FontWeight.SemiBold)
+                        Text("Dobras cutâneas · Jackson–Pollock 3/7", fontWeight = FontWeight.SemiBold)
                         folds.forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " mm") }
-                        assessment.pollock7?.let { Text("Estimativa: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
+                        assessment.pollock3?.let { Text("3 dobras: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
+                        assessment.pollock7?.let { Text("7 dobras: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
+                        if (assessment.contextEvent.isNotBlank()) Text("Evento informado: " + assessment.contextEvent + " · sem inferir causalidade")
                     }
                     if (assessment.notes.isNotBlank()) Text(assessment.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -1476,7 +1479,7 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(chest, { chest = it; error = null }, label = { Text("Peitoral (cm)") }, singleLine = true)
                 OutlinedTextField(arm, { arm = it; error = null }, label = { Text("Braço (cm)") }, singleLine = true)
                 OutlinedTextField(thigh, { thigh = it; error = null }, label = { Text("Coxa (cm)") }, singleLine = true)
-                Text("Dobras cutâneas · Pollock 7", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Dobras cutâneas · Jackson–Pollock 3/7", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("Masculino", "Feminino").forEach { option ->
                         if (sex == option) Button(onClick = { sex = option }, modifier = Modifier.weight(1f)) { Text(option) }
@@ -1583,6 +1586,12 @@ private fun CalculatorScreen() {
     val navy = if (heightValue != null && waistValue != null && neckValue != null) AssessmentMath.navyBodyFat(sex, heightValue, waistValue, neckValue, hipValue) else null
     val rfm = if (heightValue != null && waistValue != null) AssessmentMath.rfmBodyFat(sex, heightValue, waistValue) else null
     val pollock7 = if (weightValue != null && ageValue != null) AssessmentMath.pollock7(sex, ageValue, weightValue, foldInputs.map { AssessmentMath.parseNumber(it) }) else null
+    val pollock3 = if (weightValue != null && ageValue != null) AssessmentMath.pollock3(
+        sex, ageValue, weightValue,
+        AssessmentMath.parseNumber(foldInputs[2]), AssessmentMath.parseNumber(foldInputs[5]),
+        AssessmentMath.parseNumber(foldInputs[0]), AssessmentMath.parseNumber(foldInputs[4]),
+        AssessmentMath.parseNumber(foldInputs[6])
+    ) else null
     val harris = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.harrisBenedict(sex, weightValue, heightValue, ageValue) else null
     val mifflin = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.mifflinStJeor(sex, weightValue, heightValue, ageValue) else null
     val heartRateMax = ageValue?.let(AssessmentMath::maximumHeartRate)
@@ -1609,8 +1618,8 @@ private fun CalculatorScreen() {
             }
         }
         item {
-            SectionCard("Dobras cutâneas · Pollock 7") {
-                Text("Informe as sete dobras em milímetros para estimar o percentual de gordura.")
+            SectionCard("Dobras cutâneas · Jackson–Pollock 3/7") {
+                Text("3 dobras: masculino (peitoral, abdominal, coxa); feminino (tríceps, supra-ilíaca, coxa). Para 7 dobras, informe todos os locais. Resultados de protocolos distintos não são intercambiáveis.")
                 foldInputs.forEachIndexed { index, value ->
                     OutlinedTextField(value, { foldInputs[index] = it }, modifier = Modifier.fillMaxWidth(), label = { Text("${foldLabels[index]} (mm)") }, singleLine = true)
                 }
@@ -1623,7 +1632,10 @@ private fun CalculatorScreen() {
                 Text("Cintura/quadril: " + (waistHipRatio?.let(::formatNumber) ?: "—"))
                 Text("Gordura corporal estimada · Navy: " + (navy?.let { formatNumber(it) + "%" } ?: "Informe as medidas necessárias"))
                 Text("Gordura corporal estimada · RFM: " + (rfm?.let { formatNumber(it) + "%" } ?: "Informe altura e cintura"))
-                Text("Pollock 7 · soma: " + (pollock7?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e sete dobras"))
+                Text("Jackson–Pollock 3 · soma: " + (pollock3?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e as três dobras do protocolo"))
+                Text("Gordura corporal · Pollock 3: " + (pollock3?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
+                if (pollock3 != null) Text("Pollock 3 · gordura: ${formatNumber(pollock3.fatMassKg)} kg · massa livre: ${formatNumber(pollock3.leanMassKg)} kg" + if (pollock3.wasClamped) " · estimativa limitada" else "")
+                Text("Pollock 7 · soma: " + (pollock7?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e sete dobras")
                 Text("Gordura corporal · Pollock 7: " + (pollock7?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
                 if (pollock7 != null) Text("Massa de gordura: ${formatNumber(pollock7.fatMassKg)} kg · Massa livre de gordura: ${formatNumber(pollock7.leanMassKg)} kg${if (pollock7.wasClamped) " · estimativa limitada ao intervalo do método" else ""}")
                 if (navy != null && rfm != null) Text("Diferença entre métodos: " + formatNumber(kotlin.math.abs(navy - rfm)) + " pontos percentuais.")
