@@ -265,6 +265,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var taskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskRecord?>(null) }
     var chargeDialog by remember { mutableStateOf(false) }
+    var editingCharge by remember { mutableStateOf<ChargeRecord?>(null) }
     var intakeDialog by remember { mutableStateOf(false) }
     var editingForm by remember { mutableStateOf<IntakeForm?>(null) }
     var studentDialog by remember { mutableStateOf(false) }
@@ -372,7 +373,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onAddForm = { editingForm = null; intakeDialog = true },
                     onEditForm = { editingForm = it; intakeDialog = true },
                     onDeleteForm = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } },
-                    onAddCharge = { chargeDialog = true },
+                    onAddCharge = { editingCharge = null; chargeDialog = true },
+                    onEditCharge = { editingCharge = it; chargeDialog = true },
                     onReceiveCharge = { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } },
                     onDeleteCharge = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } },
                     onDeleteStudent = {
@@ -439,7 +441,15 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onEdit = { editingForm = it; intakeDialog = true },
                     onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } }
                 )
-                activeModule == "Cobranças" -> ChargeScreen(charges, students, maskFinancial, { chargeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } })
+                activeModule == "Cobranças" -> ChargeScreen(
+                    charges = charges,
+                    students = students,
+                    maskValues = maskFinancial,
+                    onAdd = { editingCharge = null; chargeDialog = true },
+                    onEdit = { editingCharge = it; chargeDialog = true },
+                    onReceive = { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } },
+                    onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } }
+                )
                 activeModule == "Tarefas" -> TaskScreen(
                     tasks = tasks,
                     onAdd = { editingTask = null; taskDialog = true },
@@ -587,10 +597,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 
     if (chargeDialog) ChargeFormDialog(
         students = students,
+        initial = editingCharge,
         initialStudentId = selectedStudentId,
-        onDismiss = { chargeDialog = false },
-        onSave = { studentId, title, amount, dueDate, notes -> scope.launch {
-            try { withContext(Dispatchers.IO) { database.saveCharge(studentId, title, amount, dueDate, notes) }; chargeDialog = false; refresh() }
+        onDismiss = { chargeDialog = false; editingCharge = null },
+        onSave = { id, studentId, title, amount, dueDate, notes -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveCharge(studentId, title, amount, dueDate, notes, id) }; chargeDialog = false; editingCharge = null; refresh() }
             catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar a cobrança." }
         } }
     )
@@ -1073,6 +1084,7 @@ private fun ProfileScreen(
     onEditForm: (IntakeForm) -> Unit,
     onDeleteForm: (Long) -> Unit,
     onAddCharge: () -> Unit,
+    onEditCharge: (ChargeRecord) -> Unit,
     onReceiveCharge: (Long) -> Unit,
     onDeleteCharge: (Long) -> Unit,
     onDeleteStudent: () -> Unit,
@@ -1193,6 +1205,7 @@ private fun ProfileScreen(
                     Text("${displayDate(charge.dueDate)} · ${if (charge.status == "Pendente") "Pendente" else "Recebida"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!maskFinancial) Text(NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(charge.amount))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { onEditCharge(charge) }) { Text("Editar") }
                         if (charge.status == "Pendente") Button(onClick = { onReceiveCharge(charge.id) }) { Text("Receber") }
                         TextButton(onClick = { onDeleteCharge(charge.id) }) { Text("Excluir") }
                     }
