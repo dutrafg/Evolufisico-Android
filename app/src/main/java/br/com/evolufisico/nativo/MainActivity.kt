@@ -1610,7 +1610,7 @@ private fun EmptyCard(title: String, body: String) {
 
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+internal fun SectionCard(title: String, content: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
