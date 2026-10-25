@@ -8,7 +8,7 @@ Android nativo em Kotlin e Jetpack Compose, baseado no EvoluFisico2 3.0.0 Releas
 - **Perfil Unificado:** cadastro editável, resumo da última avaliação, histórico com comparação de medidas e gráfico de peso, anamneses e cobranças vinculadas.
 - **Avaliações:** registro e edição de peso, altura, perímetros, percentual de gordura informado, sete dobras cutâneas, sexo e idade da avaliação; estimativa Pollock 7 registrada no histórico local.
 - **Relatórios do Perfil:** exportação em PDF de avaliações e anamneses, com identificação do aluno, dados disponíveis, observações e dados profissionais definidos em Configurações. Anamneses longas são paginadas.
-- **Evolução e Análises Completas:** seleção de aluno, comparação descritiva e sinalização de dados ausentes ou de baixa comparabilidade.
+- **Evolução e Análises Completas:** seleção de três ou quatro datas (mínimo de 21 dias), tendências descritivas por indicador, completude documental, avisos quando há mudança de direção, rascunho revisável e exportação PDF protegida por aluno/período.
 - **Calculadora:** IMC, estimativas Navy/RFM e Pollock 7 (soma, densidade, percentual e massas), Harris-Benedict, Mifflin-St Jeor, gasto diário e zonas de frequência cardíaca, com validação de limites.
 - **Anamnese:** nove modelos, formulários personalizados, vínculo com aluno, edição, exclusão e exportação em PDF.
 - **Cobranças:** cadastro, edição, recebimento, exclusão e vínculo opcional com aluno.
@@ -17,13 +17,13 @@ Android nativo em Kotlin e Jetpack Compose, baseado no EvoluFisico2 3.0.0 Releas
 
 ## Verificação automatizada
 
-O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 18 casos: fórmulas e validação do Laboratório incluindo Pollock 7, persistência e restauração das sete dobras, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, conteúdo e paginação dos PDFs, e cálculo do próximo horário do backup diário.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 23 casos: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências e completude das análises, persistência/restauração das sete dobras, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs e agendamento do backup diário.
 
 A verificação não substitui homologação visual em aparelhos físicos. Nenhum APK foi gerado nesta etapa.
 
 ## Diferenças em relação ao EvoluFisico2 3.0.0
 
-Pollock 7 está implementado como estimativa de composição corporal. Ainda faltam outros protocolos de dobras, comparadores e relatórios completos EF68/EF70/EF77, fotografias nas avaliações, notificações e sincronização entre aparelhos. A área de Análises no Android oferece comparações descritivas básicas, não os relatórios analíticos completos do aplicativo web. Percentual de gordura informado é separado das estimativas Navy/RFM e não constitui diagnóstico.
+Pollock 7 está implementado como estimativa de composição corporal. Análises Android agora compara tendências documentadas e gera PDF, mas ainda não porta todos os motores EF68/EF70/EF77 nem a interpretação por correlações do aplicativo web. Ainda faltam outros protocolos de dobras, registros de bioimpedância e fotografias, notificações e sincronização entre aparelhos. Percentual de gordura informado é separado das estimativas Navy/RFM e não constitui diagnóstico.
 
 ## Compilação e dados
 
