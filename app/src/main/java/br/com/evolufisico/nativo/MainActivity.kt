@@ -100,6 +100,7 @@ import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
 import br.com.evolufisico.nativo.data.LocalDatabase
+import br.com.evolufisico.nativo.data.ProfileReportPdf
 import br.com.evolufisico.nativo.data.Student
 import br.com.evolufisico.nativo.data.TaskRecord
 import androidx.core.view.WindowCompat
@@ -273,6 +274,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var assessmentDialog by remember { mutableStateOf(false) }
     var editingAssessment by remember { mutableStateOf<Assessment?>(null) }
     var restoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pendingPdf by remember { mutableStateOf<ByteArray?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -285,8 +287,24 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             } catch (e: Exception) { errorMessage = e.message ?: "Falha ao exportar o backup." }
         }
     }
+    val exportPdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+        val content = pendingPdf
+        pendingPdf = null
+        if (uri != null && content != null) scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(content) }
+                        ?: error("Não foi possível criar o arquivo PDF.")
+                }
+            } catch (e: Exception) { errorMessage = e.message ?: "Falha ao exportar o relatório." }
+        }
+    }
     val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) restoreUri = uri
+    }
+    fun requestPdf(content: ByteArray, fileName: String) {
+        pendingPdf = content
+        exportPdf.launch(fileName)
     }
 
     fun refresh() {
@@ -367,6 +385,22 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     forms = forms.filter { it.studentId == selectedStudent.id },
                     charges = charges.filter { it.studentId == selectedStudent.id },
                     maskFinancial = maskFinancial,
+                    onExportAssessmentPdf = { assessment ->
+                        try {
+                            requestPdf(
+                                ProfileReportPdf.assessment(selectedStudent, assessment, professionalName, professionalRegistration),
+                                "Avaliacao-" + selectedStudent.name + "-" + assessment.date + ".pdf"
+                            )
+                        } catch (e: Exception) { errorMessage = e.message ?: "Falha ao preparar o relatório." }
+                    },
+                    onExportFormPdf = { form ->
+                        try {
+                            requestPdf(
+                                ProfileReportPdf.intakeForm(selectedStudent, form, professionalName, professionalRegistration),
+                                "Anamnese-" + selectedStudent.name + "-" + form.date + ".pdf"
+                            )
+                        } catch (e: Exception) { errorMessage = e.message ?: "Falha ao preparar o relatório." }
+                    },
                     onAddAssessment = { editingAssessment = null; assessmentDialog = true },
                     onEditAssessment = { editingAssessment = it; assessmentDialog = true },
                     onEditStudent = { editingStudent = selectedStudent; studentDialog = true },
@@ -1073,6 +1107,8 @@ private fun ProfileScreen(
     forms: List<IntakeForm>,
     charges: List<ChargeRecord>,
     maskFinancial: Boolean,
+    onExportAssessmentPdf: (Assessment) -> Unit,
+    onExportFormPdf: (IntakeForm) -> Unit,
     onAddAssessment: () -> Unit,
     onEditAssessment: (Assessment) -> Unit,
     onEditStudent: () -> Unit,
@@ -1161,6 +1197,7 @@ private fun ProfileScreen(
                         Text(displayDate(assessment.date), fontWeight = FontWeight.SemiBold)
                         Row {
                             TextButton(onClick = { onEditAssessment(assessment) }) { Text("Editar") }
+                            TextButton(onClick = { onExportAssessmentPdf(assessment) }) { Text("PDF") }
                             TextButton(onClick = { onDeleteAssessment(assessment.id) }) { Text("Excluir") }
                         }
                     }
@@ -1185,6 +1222,7 @@ private fun ProfileScreen(
                     Text(form.responses, maxLines = 4, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row {
                         TextButton(onClick = { onEditForm(form) }) { Text("Editar") }
+                        TextButton(onClick = { onExportFormPdf(form) }) { Text("PDF") }
                         TextButton(onClick = { onDeleteForm(form.id) }) { Text("Excluir") }
                     }
                 }
