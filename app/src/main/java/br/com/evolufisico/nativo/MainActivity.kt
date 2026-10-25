@@ -1189,6 +1189,7 @@ private fun ProfileScreen(
                     Text("IMC: " + (latest.bmi?.let(::formatNumber) ?: "—"))
                     if (latest.waistCm != null) Text("Cintura: " + formatNumber(latest.waistCm) + " cm")
                     if (latest.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(latest.bodyFatPercent) + "%")
+                    latest.pollock7?.let { Text("Gordura · Pollock 7: " + formatNumber(it.bodyFatPercent) + "%") }
                 }
             }
         }
@@ -1244,6 +1245,12 @@ private fun ProfileScreen(
                     if (assessment.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(assessment.bodyFatPercent) + "%")
                     listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
                         .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
+                    val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
+                    if (folds.any { it.second != null }) {
+                        Text("Dobras cutâneas · Pollock 7", fontWeight = FontWeight.SemiBold)
+                        folds.forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " mm") }
+                        assessment.pollock7?.let { Text("Estimativa: ${formatNumber(it.bodyFatPercent)}% · ${formatNumber(it.fatMassKg)} kg de gordura · ${formatNumber(it.leanMassKg)} kg de massa livre") }
+                    }
                     if (assessment.notes.isNotBlank()) Text(assessment.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
