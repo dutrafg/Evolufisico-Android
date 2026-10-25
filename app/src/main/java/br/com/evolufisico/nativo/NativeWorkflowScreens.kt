@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.nativo.data.Assessment
 import br.com.evolufisico.nativo.data.AnalysisMath
+import br.com.evolufisico.nativo.data.EfiaScientificEngines
 import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Student
@@ -102,7 +103,8 @@ internal fun AnalyticsScreen(
     val selected = history.filter { it.date in selectedDates }.sortedBy { it.date }
     val dateKeys = selected.map { it.date }
     val spanDays = AnalysisMath.coverageDays(dateKeys)?.toInt() ?: 0
-    val qualified = AnalysisMath.isEligibleWindow(dateKeys)
+    val scientificAudit = EfiaScientificEngines.analyze(selected)
+    val qualified = AnalysisMath.isEligibleWindow(dateKeys) && scientificAudit.eligible
     val comparableCount = listOf(
         selected.all { it.weightKg > 0 },
         selected.all { it.bmi != null },
@@ -153,7 +155,7 @@ internal fun AnalyticsScreen(
                 else {
                     item {
                         SectionCard("Escolher datas para comparar") {
-                            Text("Marque três datas obrigatórias e, se necessário, uma quarta. São exigidos ao menos 21 dias entre a primeira e a última avaliação.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Marque três datas obrigatórias e, se necessário, uma quarta. São exigidos pelo menos 21 dias totais e sete dias entre as duas últimas coletas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             history.forEach { assessment ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Checkbox(
@@ -176,7 +178,7 @@ internal fun AnalyticsScreen(
                         item {
                             WorkflowEmpty(
                                 "Análise preliminar",
-                                "Índices, tendências e emissão de relatório exigem três ou quatro datas válidas, distintas e cobrindo pelo menos 21 dias. A ficha do aluno permanece disponível."
+                                "Relatório e tendências exigem três ou quatro avaliações do mesmo aluno, 21 dias totais e sete dias entre as duas últimas coletas. A ficha permanece disponível."
                             )
                         }
                     } else {
@@ -217,6 +219,12 @@ internal fun AnalyticsScreen(
                                 else pairedEvidence.forEach { Text("${displayNativeDate(it.date)} · Pollock ${formatNativeNumber(it.pollockPercent)}% · BIA ${formatNativeNumber(it.bioimpedancePercent)}% · diferença ${formatNativeNumber(it.differencePoints)} p.p.") }
                                 Text("Pollock e BIA são métodos diferentes; a diferença não valida nenhum deles e não constitui diagnóstico.")
                                 Text("Confirme método, equipamento e condições de coleta antes de interpretar mudanças. O módulo não diagnostica e não prescreve.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        item {
+                            SectionCard("Auditoria científica EF78–EF82") {
+                                Text("EF78 qualidade · EF79 diferenças/MDC · EF80 coerência · EF81 contexto · EF82 tendências.")
+                                Text(scientificAudit.asText(), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                         item {
