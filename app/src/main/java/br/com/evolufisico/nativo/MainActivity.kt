@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +75,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -764,6 +766,14 @@ private fun ProfileScreen(
                 }
             }
         }
+        if (assessments.size >= 2) {
+            item {
+                SectionCard("Variação do peso") {
+                    WeightTrendChart(assessments.take(6).reversed())
+                    Text("Gráfico descritivo. Compare avaliações feitas em condições semelhantes.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+            }
+        }
         if (assessments.isEmpty()) {
             item { EmptyCard("Sem avaliações", "Registre a primeira avaliação para iniciar o acompanhamento.") }
         }
@@ -796,6 +806,34 @@ private fun ProfileScreen(
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } }
         )
+    }
+}
+
+@Composable
+private fun WeightTrendChart(history: List<Assessment>) {
+    val values = history.map { it.weightKg.toFloat() }
+    val lineColor = MaterialTheme.colorScheme.primary
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Canvas(Modifier.fillMaxWidth().height(150.dp)) {
+            if (values.size < 2) return@Canvas
+            val minValue = values.minOrNull() ?: return@Canvas
+            val maxValue = values.maxOrNull() ?: return@Canvas
+            val range = (maxValue - minValue).coerceAtLeast(0.5f)
+            val inset = 12f
+            val points = values.mapIndexed { index, value ->
+                Offset(
+                    x = inset + (size.width - inset * 2) * index / values.lastIndex.toFloat(),
+                    y = size.height - inset - (value - minValue) / range * (size.height - inset * 2)
+                )
+            }
+            points.zipWithNext().forEach { (start, end) -> drawLine(lineColor, start, end, strokeWidth = 5f) }
+            points.forEach { drawCircle(lineColor, radius = 7f, center = it) }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(displayDate(history.first().date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(displayDate(history.last().date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text("Peso: " + formatNumber(values.first().toDouble()) + " → " + formatNumber(values.last().toDouble()) + " kg", fontWeight = FontWeight.Medium)
     }
 }
 
@@ -1071,7 +1109,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 6", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 7", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
