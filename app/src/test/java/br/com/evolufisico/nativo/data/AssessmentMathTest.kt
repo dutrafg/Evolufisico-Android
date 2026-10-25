@@ -61,6 +61,39 @@ class AssessmentMathTest {
         assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.toMutableList().also { it[3] = 0.0 }))
     }
 
+    @Test fun analysisWindowRequiresThreeDistinctDatesAndTwentyOneDays() {
+        assertTrue(AnalysisMath.isEligibleWindow(listOf("2026-01-01", "2026-01-15", "2026-02-01")))
+        assertTrue(!AnalysisMath.isEligibleWindow(listOf("2026-01-01", "2026-02-01")))
+        assertTrue(!AnalysisMath.isEligibleWindow(listOf("2026-01-01", "2026-01-01", "2026-02-01")))
+        assertTrue(!AnalysisMath.isEligibleWindow(listOf("invalida", "2026-01-15", "2026-02-01")))
+    }
+
+    @Test fun analysisTrendReportsObservedChangeWithoutExtrapolation() {
+        val result = AnalysisMath.trend(
+            listOf("2026-02-01", "2026-01-01", "2026-01-15"), listOf(69.0, 70.0, 71.0)
+        )!!
+        assertEquals(70.0, result.first, 0.0)
+        assertEquals(69.0, result.latest, 0.0)
+        assertEquals(-1.0, result.absoluteChange, 0.0)
+        assertTrue(result.directionChanged)
+        assertEquals(-1.0, result.changePer30Days, 0.1)
+    }
+
+    @Test fun analysisTrendRejectsMissingValuesInvalidDatesAndShortSeries() {
+        assertNull(AnalysisMath.trend(listOf("2026-01-01", "2026-01-15", "2026-02-01"), listOf(70.0, null, 69.0)))
+        assertNull(AnalysisMath.trend(listOf("2026-01-01", "2026-01-15", "2026-02-01"), listOf(70.0, Double.NaN, 69.0)))
+        assertNull(AnalysisMath.trend(listOf("2026-01-01", "2026-01-02", "2026-01-03"), listOf(70.0, 69.0, 68.0)))
+    }
+
+    @Test fun analysisCompletenessAndReportStateTheirLimits() {
+        assertEquals(50, AnalysisMath.completeness(6, 3))
+        assertNull(AnalysisMath.completeness(0, 0))
+        val report = AnalysisMath.report("Ana", emptyList())
+        assertTrue(report.contains("Dados insuficientes"))
+        assertTrue(report.contains("não diagnóstico"))
+        assertTrue(report.contains("Bioimpedância não é registrada"))
+    }
+
     @Test fun basalMetabolicFormulasAndHeartRateRespectInputBounds() {
         assertEquals(1695.7, AssessmentMath.harrisBenedict("Masculino", 70.0, 175.0, 30)!!, 0.1)
         assertEquals(1648.8, AssessmentMath.mifflinStJeor("Masculino", 70.0, 175.0, 30)!!, 0.1)
