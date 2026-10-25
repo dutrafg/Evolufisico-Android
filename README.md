@@ -1,19 +1,21 @@
-# EvoluFísico Android nativo — Beta 3
+# EvoluFísico Android nativo — Beta 4
 
-Aplicativo Kotlin + Jetpack Compose baseado no EvoluFísico2 3.0. Início com dashboard compacto, cartões adaptáveis para celular/tablet, navegação inferior, Perfil Unificado, avaliações, calculadora de IMC e Agenda local.
+Aplicativo Android nativo em Kotlin e Jetpack Compose, com navegação e identidade visual inspiradas nas capturas do EvoluFisico2. Os registros ficam armazenados localmente.
 
-## Novidades da Beta 3
+## Nesta versão
 
-- Favoritar módulos na tela Módulos; os atalhos aparecem no Início e ficam salvos entre sessões.
-- Indicadores reais de alunos sem avaliação e reavaliações há 90 dias ou mais.
-- Dashboard responsivo: quatro indicadores em linha em telas largas e grade de duas colunas em celulares.
-- Agenda com criação, consulta e exclusão de atendimentos armazenados localmente.
-- Migração SQLite da Beta 2 preserva cadastros de alunos, avaliações e compromissos.
-- Tema claro/escuro persistido.
+- Dashboard adaptável a celulares e tablets, com alunos, avaliações, agenda, pendências e módulos favoritos.
+- Cadastro, busca, edição, perfil e exclusão de alunos; registro e histórico de avaliações.
+- Agenda local com criação, consulta e exclusão de atendimentos.
+- Tarefas, cobranças com ação de recebimento e opção para ocultar valores, e formulários de anamnese.
+- Análises descritivas de evolução e calculadora de IMC, cintura/estatura e cintura/quadril.
+- Preferências de tema claro/escuro e dez cores de destaque.
+- Exportação e restauração manual de backup JSON, incluindo alunos, avaliações, agenda, tarefas, formulários e cobranças.
+- Migração SQLite da Beta 3 preserva os dados existentes.
 
-## O que ainda falta portar
+## Comparação com EvoluFisico2 3.0.0
 
-Formulários, Análises, Cobranças, Tarefas, backup/restauração, exportação de relatórios e a personalização completa da interface do EvoluFisico2 ainda estão pendentes. Esses módulos aparecem no app, mas não têm todos os fluxos da versão web.
+A estrutura visual das telas apresentadas foi aproximada e as áreas principais agora têm fluxos nativos. Ainda há diferenças funcionais para a versão web: esta Beta não porta todos os métodos antropométricos, motores de análise e relatórios do EF68/EF70/EF77, os nove modelos de anamnese com campos próprios, fotos, notificações e integração de calendário. Ela também não sincroniza dados entre aparelhos. Por isso, o APK é uma beta de avaliação, não uma versão equivalente ou pronta para publicação.
 
 ## Compilação
 
@@ -23,8 +25,8 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-O CI publica um APK debug para cada compilação bem-sucedida. Esta variante é destinada a teste.
+O CI publica um APK debug para teste. O pacote e o identificador Android permanecem iguais às versões beta anteriores.
 
 ## Referência
 
-O EvoluFisico2 3.0 em `dutrafg/Evolufisico2` é a referência funcional. Esta versão nativa está sendo portada por etapas.
+O EvoluFisico2 3.0.0 em `dutrafg/Evolufisico2` é a referência funcional e visual.

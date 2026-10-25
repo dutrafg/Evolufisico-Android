@@ -2,6 +2,8 @@ package br.com.evolufisico.nativo
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -68,10 +71,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.nativo.data.Assessment
+import br.com.evolufisico.nativo.data.ChargeRecord
+import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
+import br.com.evolufisico.nativo.data.Assessment
 import br.com.evolufisico.nativo.data.AssessmentMath
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.Student
+import br.com.evolufisico.nativo.data.TaskRecord
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,6 +90,18 @@ private val Graphite = Color(0xFF112B25)
 private val Teal = Color(0xFF107454)
 private val Fog = Color(0xFFF2F8F4)
 private val Muted = Color(0xFF647970)
+private val accents = listOf(
+    "Verde-petróleo" to Color(0xFF107454),
+    "Azul" to Color(0xFF2563EB),
+    "Índigo" to Color(0xFF4F46E5),
+    "Roxo" to Color(0xFF7C3AED),
+    "Vinho" to Color(0xFF9F1239),
+    "Vermelho" to Color(0xFFDC2626),
+    "Laranja" to Color(0xFFC2410C),
+    "Âmbar" to Color(0xFFB45309),
+    "Oliva" to Color(0xFF4D7C0F),
+    "Grafite" to Color(0xFF475569)
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,12 +109,18 @@ class MainActivity : ComponentActivity() {
         val preferences = getSharedPreferences("appearance", MODE_PRIVATE)
         setContent {
             var dark by rememberSaveable { mutableStateOf(preferences.getBoolean("dark", false)) }
-            EvoluFisicoTheme(dark = dark) {
+            var accentIndex by rememberSaveable { mutableIntStateOf(preferences.getInt("accent", 0).coerceIn(0, accents.lastIndex)) }
+            EvoluFisicoTheme(dark = dark, accentIndex = accentIndex) {
                 EvoluFisicoApp(
                     dark = dark,
+                    accentIndex = accentIndex,
                     onDarkChange = {
                         dark = it
                         preferences.edit().putBoolean("dark", it).apply()
+                    },
+                    onAccentChange = {
+                        accentIndex = it
+                        preferences.edit().putInt("accent", it).apply()
                     }
                 )
             }
@@ -104,17 +129,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun EvoluFisicoTheme(dark: Boolean, content: @Composable () -> Unit) {
+private fun EvoluFisicoTheme(dark: Boolean, accentIndex: Int, content: @Composable () -> Unit) {
     val colors = if (dark) {
         darkColorScheme(
-            primary = Color(0xFF79D2BE),
-            secondary = Color(0xFF9CCFC4),
+            primary = accents[accentIndex].second.copy(alpha = 0.9f),
+            secondary = accents[accentIndex].second,
             background = Color(0xFF111719),
             surface = Color(0xFF1B2427)
         )
     } else {
         lightColorScheme(
-            primary = Teal,
+            primary = accents[accentIndex].second,
             secondary = Graphite,
             background = Fog,
             surface = Color.White
@@ -147,7 +172,7 @@ private val moduleNames = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
+private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boolean) -> Unit, onAccentChange: (Int) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val database = remember { LocalDatabase(context) }
     val scope = rememberCoroutineScope()
@@ -156,7 +181,11 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     var selectedStudentId by rememberSaveable { mutableStateOf<Long?>(null) }
     var students by remember { mutableStateOf<List<Student>>(emptyList()) }
     var profileAssessments by remember { mutableStateOf<List<Assessment>>(emptyList()) }
+    var allAssessments by remember { mutableStateOf<List<Assessment>>(emptyList()) }
     var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    var tasks by remember { mutableStateOf<List<TaskRecord>>(emptyList()) }
+    var forms by remember { mutableStateOf<List<IntakeForm>>(emptyList()) }
+    var charges by remember { mutableStateOf<List<ChargeRecord>>(emptyList()) }
     var counts by remember { mutableStateOf(0 to 0) }
     var studentsWithoutAssessment by remember { mutableIntStateOf(0) }
     var reevaluationsDue by remember { mutableIntStateOf(0) }
@@ -164,6 +193,7 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     var favoriteModules by remember {
         mutableStateOf(preferences.getStringSet("favorite_modules", emptySet()).orEmpty().toSet())
     }
+    var maskFinancial by remember { mutableStateOf(preferences.getBoolean("mask_financial", false)) }
     fun toggleFavorite(module: String) {
         val next = favoriteModules.toMutableSet()
         if (!next.add(module)) next.remove(module)
@@ -171,14 +201,33 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
         preferences.edit().putStringSet("favorite_modules", next).apply()
     }
     var appointmentDialog by remember { mutableStateOf(false) }
+    var taskDialog by remember { mutableStateOf(false) }
+    var chargeDialog by remember { mutableStateOf(false) }
+    var intakeDialog by remember { mutableStateOf(false) }
     var studentDialog by remember { mutableStateOf(false) }
+    var editingStudent by remember { mutableStateOf<Student?>(null) }
     var assessmentDialog by remember { mutableStateOf(false) }
+    var restoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(database.exportBackupJson().toByteArray(Charsets.UTF_8)) }
+                        ?: error("Não foi possível criar o arquivo.")
+                }
+            } catch (e: Exception) { errorMessage = e.message ?: "Falha ao exportar o backup." }
+        }
+    }
+    val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) restoreUri = uri
+    }
 
     fun refresh() {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments(), database.studentsWithoutAssessment(), database.reevaluationsDue())
+                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments(), database.studentsWithoutAssessment(), database.reevaluationsDue(), database.tasks(), database.intakeForms(), database.charges(), database.allAssessments())
             }
             students = result[0] as List<Student>
             counts = result[1] as Pair<Int, Int>
@@ -186,6 +235,10 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
             appointments = result[3] as List<Appointment>
             studentsWithoutAssessment = result[4] as Int
             reevaluationsDue = result[5] as Int
+            tasks = result[6] as List<TaskRecord>
+            forms = result[7] as List<IntakeForm>
+            charges = result[8] as List<ChargeRecord>
+            allAssessments = result[9] as List<Assessment>
         }
     }
 
@@ -237,7 +290,7 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                         },
                         icon = { Icon(destination.icon, contentDescription = destination.title) },
                         label = { Text(destination.title) },
-                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFE1F2EA), selectedIconColor = Teal, selectedTextColor = Teal, unselectedIconColor = Muted, unselectedTextColor = Muted)
+                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f), selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = Muted, unselectedTextColor = Muted)
                     )
                 }
             }
@@ -266,18 +319,29 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                         }
                     }
                 )
-                activeModule == "Configurações" -> SettingsScreen(dark, onDarkChange)
+                activeModule == "Configurações" -> SettingsScreen(
+                    dark = dark,
+                    accentIndex = accentIndex,
+                    onAccentChange = onAccentChange,
+                    onDarkChange = onDarkChange,
+                    maskFinancial = maskFinancial,
+                    onMaskFinancialChange = { maskFinancial = it; preferences.edit().putBoolean("mask_financial", it).apply() },
+                    onBackup = { exportBackup.launch("EvoluFisico-Backup.json") },
+                    onRestore = { importBackup.launch(arrayOf("application/json", "text/plain")) }
+                )
                 activeModule == "Perfil Unificado" || selected == 1 -> StudentsScreen(
                     students = students,
                     errorMessage = errorMessage,
-                    onAdd = { studentDialog = true },
+                    onAdd = { editingStudent = null; studentDialog = true },
+                    onEdit = { editingStudent = it; studentDialog = true },
                     onOpen = { selectedStudentId = it },
                     onClearError = { errorMessage = null }
                 )
                 activeModule == "Avaliações" -> StudentsScreen(
                     students = students,
                     errorMessage = errorMessage,
-                    onAdd = { studentDialog = true },
+                    onAdd = { editingStudent = null; studentDialog = true },
+                    onEdit = { editingStudent = it; studentDialog = true },
                     onOpen = { selectedStudentId = it },
                     onClearError = { errorMessage = null },
                     subtitle = "Escolha um aluno para registrar uma avaliação."
@@ -285,12 +349,17 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                 activeModule == "Evolução" -> StudentsScreen(
                     students = students,
                     errorMessage = errorMessage,
-                    onAdd = { studentDialog = true },
+                    onAdd = { editingStudent = null; studentDialog = true },
+                    onEdit = { editingStudent = it; studentDialog = true },
                     onOpen = { selectedStudentId = it },
                     onClearError = { errorMessage = null },
                     subtitle = "Abra o perfil para consultar o histórico de avaliações."
                 )
                 activeModule == "Calculadora" -> CalculatorScreen()
+                activeModule == "Formulários" -> FormsScreen(forms, students, { intakeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } })
+                activeModule == "Cobranças" -> ChargeScreen(charges, students, maskFinancial, { chargeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } })
+                activeModule == "Tarefas" -> TaskScreen(tasks, { taskDialog = true }, { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } })
+                activeModule == "Análises" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
                 activeModule == "Agenda" || selected == 2 -> AgendaScreen(appointments = appointments, onAdd = { appointmentDialog = true }, onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } })
                 activeModule != null -> ModulePlaceholder(activeModule.orEmpty())
                 selected == 0 -> HomeScreen(
@@ -327,14 +396,65 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
         })
     }
 
+    if (taskDialog) TaskFormDialog(
+        onDismiss = { taskDialog = false },
+        onSave = { title, dueDate -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveTask(null, title, dueDate) }; taskDialog = false; refresh() }
+            catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar a tarefa." }
+        } }
+    )
+
+    if (chargeDialog) ChargeFormDialog(
+        students = students,
+        onDismiss = { chargeDialog = false },
+        onSave = { studentId, title, amount, dueDate, notes -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveCharge(studentId, title, amount, dueDate, notes) }; chargeDialog = false; refresh() }
+            catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar a cobrança." }
+        } }
+    )
+
+    if (intakeDialog) IntakeFormDialog(
+        students = students,
+        onDismiss = { intakeDialog = false },
+        onSave = { studentId, template, answers -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveIntakeForm(studentId, template, todayIso(), answers) }; intakeDialog = false; refresh() }
+            catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar o formulário." }
+        } }
+    )
+
+    restoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { restoreUri = null },
+            title = { Text("Restaurar backup?") },
+            text = { Text("A restauração substitui os dados locais atuais por alunos, avaliações, agenda, formulários, tarefas e cobranças presentes no arquivo.") },
+            confirmButton = { TextButton(onClick = {
+                restoreUri = null
+                scope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { database.restoreBackupJson(it.readText()) }
+                                ?: error("Não foi possível ler o arquivo.")
+                        }
+                        refresh()
+                    } catch (e: Exception) { errorMessage = e.message ?: "Falha ao restaurar o backup." }
+                }
+            }) { Text("Restaurar dados") } },
+            dismissButton = { TextButton(onClick = { restoreUri = null }) { Text("Cancelar") } }
+        )
+    }
+
     if (studentDialog) {
         StudentFormDialog(
             onDismiss = { studentDialog = false },
             onSave = { name, phone, email, birthDate ->
                 scope.launch {
                     try {
-                        withContext(Dispatchers.IO) { database.saveStudent(name, phone, email, birthDate) }
+                        withContext(Dispatchers.IO) {
+                            if (id == null) database.saveStudent(name, phone, email, birthDate)
+                            else database.updateStudent(id, name, phone, email, birthDate)
+                        }
                         studentDialog = false
+                        editingStudent = null
                         errorMessage = null
                         refresh()
                     } catch (exception: Exception) {
@@ -387,32 +507,28 @@ private fun HomeScreen(
     onOpen: (String) -> Unit,
     onAddStudent: () -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = Color(0xFF155E49))) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Dashboard Secretária", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = Color(0xFFE0F1E9), style = MaterialTheme.typography.bodyMedium)
-                    Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
-                }
-            }
+            Text("Dashboard Secretária", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 if (maxWidth >= 600.dp) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
                         MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
                         MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
                         MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
                     }
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
                             MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
                             MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
                         }
@@ -420,23 +536,27 @@ private fun HomeScreen(
                 }
             }
         }
-        item { SectionCard("Agenda de hoje") {
-            if (todayAppointments.isEmpty()) Text("A agenda ainda está vazia.", color = Muted)
-            else todayAppointments.take(3).forEach { Text(it.time + "  ·  " + it.title, color = Graphite) }
-            Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
-        } }
-        item { SectionCard("Central de atenção") {
-            val message = when {
-                studentCount == 0 -> "Cadastre o primeiro aluno para iniciar o acompanhamento."
-                reevaluationsDue > 0 -> reevaluationsDue.toString() + " aluno(s) estão há 90 dias ou mais sem reavaliação."
-                studentsWithoutAssessment > 0 -> studentsWithoutAssessment.toString() + " aluno(s) ainda não têm avaliação registrada."
-                else -> "Todos os alunos têm avaliações recentes registradas."
+        item {
+            SectionCard("Agenda de hoje") {
+                if (todayAppointments.isEmpty()) Text("A agenda ainda está vazia.", color = Muted)
+                else todayAppointments.take(3).forEach { Text(it.time + "  ·  " + it.title, color = MaterialTheme.colorScheme.onSurface) }
+                Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
             }
-            Text(message, color = Muted)
-            Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
-                Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
+        }
+        item {
+            SectionCard("Central de atenção") {
+                val message = when {
+                    studentCount == 0 -> "Cadastre o primeiro aluno para iniciar o acompanhamento."
+                    reevaluationsDue > 0 -> "$reevaluationsDue aluno(s) estão há 90 dias ou mais sem reavaliação."
+                    studentsWithoutAssessment > 0 -> "$studentsWithoutAssessment aluno(s) ainda não têm avaliação registrada."
+                    else -> "Todos os alunos têm avaliações recentes registradas."
+                }
+                Text(message, color = Muted)
+                Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
+                    Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
+                }
             }
-        } }
+        }
         item {
             if (favoriteModules.isEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -491,10 +611,15 @@ private fun StudentsScreen(
     students: List<Student>,
     errorMessage: String?,
     onAdd: () -> Unit,
+    onEdit: (Student) -> Unit,
     onOpen: (Long) -> Unit,
     onClearError: () -> Unit,
     subtitle: String = "Cadastre e acesse o Perfil Unificado de cada aluno."
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val visibleStudents = students.filter {
+        query.isBlank() || it.name.contains(query, true) || it.phone.contains(query, true) || it.email.contains(query, true)
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(20.dp),
@@ -503,22 +628,23 @@ private fun StudentsScreen(
         item {
             Text("Alunos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Buscar aluno") }, singleLine = true)
+            Spacer(Modifier.height(8.dp))
             Button(onClick = onAdd) { Text("Adicionar aluno") }
             if (!errorMessage.isNullOrBlank()) {
                 Text(errorMessage, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
                 TextButton(onClick = onClearError) { Text("Fechar aviso") }
             }
         }
-        if (students.isEmpty()) {
+        if (visibleStudents.isEmpty()) {
             item {
                 EmptyCard(
-                    title = "Nenhum aluno cadastrado",
-                    body = "Os dados ficam salvos neste aparelho. Cadastre um aluno para começar."
+                    title = if (students.isEmpty()) "Nenhum aluno cadastrado" else "Nenhum resultado",
+                    body = if (students.isEmpty()) "Os dados ficam salvos neste aparelho. Cadastre um aluno para começar." else "Tente outro nome, telefone ou e-mail."
                 )
             }
         }
-        items(students, key = { it.id }) { student ->
+        items(visibleStudents, key = { it.id }) { student ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { onOpen(student.id) },
@@ -535,6 +661,7 @@ private fun StudentsScreen(
                         val contact = listOf(student.phone, student.email).filter { it.isNotBlank() }.joinToString(" · ")
                         Text(if (contact.isBlank()) "Perfil Unificado" else contact, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    IconButton(onClick = { onEdit(student) }) { Icon(Icons.Default.Edit, contentDescription = "Editar aluno") }
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Abrir perfil")
                 }
             }
@@ -579,6 +706,22 @@ private fun ProfileScreen(
         item {
             Text("Histórico de avaliações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         }
+        if (assessments.size >= 2) {
+            val latest = assessments[0]
+            val previous = assessments[1]
+            item {
+                SectionCard("Evolução entre as duas últimas avaliações") {
+                    val weightDelta = latest.weightKg - previous.weightKg
+                    Text("Peso: " + (if (weightDelta > 0) "+" else "") + formatNumber(weightDelta) + " kg")
+                    Text("IMC: " + (previous.bmi?.let(::formatNumber) ?: "—") + " → " + (latest.bmi?.let(::formatNumber) ?: "—"))
+                    if (latest.waistCm != null && previous.waistCm != null) {
+                        val waistDelta = latest.waistCm - previous.waistCm
+                        Text("Cintura: " + (if (waistDelta > 0) "+" else "") + formatNumber(waistDelta) + " cm")
+                    }
+                    Text("Comparação descritiva. Considere diferenças de método e condições de medição.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+            }
+        }
         if (assessments.isEmpty()) {
             item { EmptyCard("Sem avaliações", "Registre a primeira avaliação para iniciar o acompanhamento.") }
         }
@@ -612,15 +755,15 @@ private fun ProfileScreen(
 }
 
 @Composable
-private fun StudentFormDialog(onDismiss: () -> Unit, onSave: (String, String, String, String) -> Unit) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var phone by rememberSaveable { mutableStateOf("") }
-    var email by rememberSaveable { mutableStateOf("") }
-    var birthDate by rememberSaveable { mutableStateOf("") }
+private fun StudentFormDialog(initial: Student?, onDismiss: () -> Unit, onSave: (Long?, String, String, String, String) -> Unit) {
+    var name by rememberSaveable(initial?.id) { mutableStateOf(initial?.name.orEmpty()) }
+    var phone by rememberSaveable(initial?.id) { mutableStateOf(initial?.phone.orEmpty()) }
+    var email by rememberSaveable(initial?.id) { mutableStateOf(initial?.email.orEmpty()) }
+    var birthDate by rememberSaveable(initial?.id) { mutableStateOf(initial?.birthDate.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Novo aluno") },
+        title = { Text(if (initial == null) "Novo aluno" else "Editar aluno") },
         text = {
             Column(
                 modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
@@ -636,7 +779,7 @@ private fun StudentFormDialog(onDismiss: () -> Unit, onSave: (String, String, St
         confirmButton = {
             TextButton(onClick = {
                 if (name.isBlank()) error = "Informe o nome do aluno."
-                else onSave(name, phone, email, birthDate)
+                else onSave(initial?.id, name, phone, email, birthDate)
             }) { Text("Salvar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
@@ -697,22 +840,38 @@ private fun AssessmentFormDialog(
 private fun CalculatorScreen() {
     var weight by rememberSaveable { mutableStateOf("") }
     var height by rememberSaveable { mutableStateOf("") }
-    val bmi = AssessmentMath.parseNumber(weight)?.let { w ->
-        AssessmentMath.parseNumber(height)?.let { h -> AssessmentMath.bmi(w, h) }
-    }
-    Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    var waist by rememberSaveable { mutableStateOf("") }
+    var hip by rememberSaveable { mutableStateOf("") }
+    val weightValue = AssessmentMath.parseNumber(weight)
+    val heightValue = AssessmentMath.parseNumber(height)
+    val waistValue = AssessmentMath.parseNumber(waist)
+    val hipValue = AssessmentMath.parseNumber(hip)
+    val bmi = if (weightValue != null && heightValue != null) AssessmentMath.bmi(weightValue, heightValue) else null
+    val waistHeightRatio = if (waistValue != null && heightValue != null && waistValue > 0 && heightValue > 0) waistValue / heightValue else null
+    val waistHipRatio = if (waistValue != null && hipValue != null && waistValue > 0 && hipValue > 0) waistValue / hipValue else null
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("Calculadora", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("IMC — estimativa calculada com peso e altura.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(weight, { weight = it }, label = { Text("Peso (kg)") }, singleLine = true)
-        OutlinedTextField(height, { height = it }, label = { Text("Altura (cm)") }, singleLine = true)
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Resultado", style = MaterialTheme.typography.titleMedium)
-                Text(bmi?.let(::formatNumber) ?: "Preencha valores válidos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("O resultado é um índice matemático e não constitui diagnóstico.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            Text("Calculadora e laboratório", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Índices antropométricos derivados dos valores inseridos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            SectionCard("Medidas") {
+                OutlinedTextField(weight, { weight = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Peso (kg)") }, singleLine = true)
+                OutlinedTextField(height, { height = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Altura (cm)") }, singleLine = true)
+                OutlinedTextField(waist, { waist = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Cintura (cm)") }, singleLine = true)
+                OutlinedTextField(hip, { hip = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Quadril (cm)") }, singleLine = true)
+            }
+        }
+        item {
+            SectionCard("Resultados") {
+                Text("IMC: " + (bmi?.let(::formatNumber) ?: "—"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Cintura/estatura: " + (waistHeightRatio?.let(::formatNumber) ?: "—"))
+                Text("Cintura/quadril: " + (waistHipRatio?.let(::formatNumber) ?: "—"))
+                Text("São índices matemáticos estimados e não constituem diagnóstico. Interprete com os métodos e limites próprios.", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
         }
     }
@@ -763,24 +922,66 @@ private fun ModulePlaceholder(title: String) {
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Text("Esta área será liberada em uma próxima atualização.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Esta área está planejada para uma próxima etapa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun SettingsScreen(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Configurações", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Geral", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(if (dark) "Modo escuro" else "Modo claro")
-            Switch(checked = dark, onCheckedChange = onDarkChange)
+private fun SettingsScreen(
+    dark: Boolean,
+    accentIndex: Int,
+    onAccentChange: (Int) -> Unit,
+    onDarkChange: (Boolean) -> Unit,
+    maskFinancial: Boolean,
+    onMaskFinancialChange: (Boolean) -> Unit,
+    onBackup: () -> Unit,
+    onRestore: () -> Unit
+) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Text("Configurações", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+        item {
+            SectionCard("Geral") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (dark) "Modo escuro" else "Modo claro")
+                    Switch(checked = dark, onCheckedChange = onDarkChange)
+                }
+                Text("Cor de destaque", fontWeight = FontWeight.Medium)
+                accents.chunked(5).forEachIndexed { rowIndex, row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEachIndexed { columnIndex, accent ->
+                            val index = rowIndex * 5 + columnIndex
+                            Button(
+                                onClick = { onAccentChange(index) },
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                contentPadding = PaddingValues(0.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = accent.second)
+                            ) { Text((index + 1).toString(), color = Color.White, fontWeight = FontWeight.Bold) }
+                        }
+                    }
+                }
+                Text("Selecionada: " + accents[accentIndex].first, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
         }
-        HorizontalDivider()
-        Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text("Os dados desta Beta ficam no armazenamento local do aplicativo. Backup e restauração serão adicionados antes da versão estável.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        HorizontalDivider()
-        Text("EvoluFísico Android — Beta 2", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            SectionCard("Dados e privacidade") {
+                Text("Os registros ficam no aparelho. O backup completo inclui alunos, avaliações, agenda, formulários, tarefas e cobranças.")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Ocultar valores financeiros", modifier = Modifier.weight(1f))
+                    Switch(checked = maskFinancial, onCheckedChange = onMaskFinancialChange)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("Exportar backup") }
+                    TextButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("Restaurar") }
+                }
+                Text("A restauração substitui os dados locais pelos dados do arquivo selecionado.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        item {
+            SectionCard("Sobre") {
+                Text("EvoluFísico Android — Beta 4")
+                Text("Versão nativa inspirada no EvoluFisico2 3.0.0.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 
