@@ -11,8 +11,8 @@ android {
         applicationId = "br.com.evolufisico.nativo"
         minSdk = 29
         targetSdk = 36
-        versionCode = 721
-        versionName = "0.1.0-native-beta.17"
+        versionCode = 722
+        versionName = "0.1.0-native-beta.18"
     }
 
     val releaseKeystorePath = providers.environmentVariable("EF_RELEASE_KEYSTORE_FILE").orNull
