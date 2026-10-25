@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -207,6 +205,18 @@ private val moduleNames = listOf(
     "Cobranças",
     "Agenda",
     "Tarefas",
+    "Configurações"
+)
+
+private val primaryModuleNames = listOf(
+    "Início",
+    "Perfil Unificado",
+    "Avaliações",
+    "Evolução",
+    "Calculadora",
+    "Anamnese",
+    "Análises Completas",
+    "Cobranças",
     "Configurações"
 )
 
@@ -459,35 +469,35 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                             Icon(Icons.Default.Close, contentDescription = "Fechar")
                         }
                     }
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                    Column(
+                        modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(moduleNames.size) { index ->
-                            val module = moduleNames[index]
-                            Card(
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                                onClick = {
-                                    showModulePicker = false
-                                    selectedStudentId = null
-                                    when (module) {
-                                        "Início" -> { selected = 0; activeModule = null }
-                                        "Perfil Unificado" -> { selected = 1; activeModule = null }
-                                        "Agenda" -> { selected = 2; activeModule = null }
-                                        "Anamnese" -> { selected = 3; activeModule = "Formulários" }
-                                        "Análises Completas" -> { selected = 3; activeModule = "Análises" }
-                                        else -> { selected = 3; activeModule = module }
+                        primaryModuleNames.chunked(2).forEach { rowModules ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                rowModules.forEach { module ->
+                                    Card(
+                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                        onClick = {
+                                            showModulePicker = false
+                                            selectedStudentId = null
+                                            when (module) {
+                                                "Início" -> { selected = 0; activeModule = null }
+                                                "Perfil Unificado" -> { selected = 1; activeModule = null }
+                                                "Anamnese" -> { selected = 3; activeModule = "Formulários" }
+                                                "Análises Completas" -> { selected = 3; activeModule = "Análises" }
+                                                else -> { selected = 3; activeModule = module }
+                                            }
+                                        },
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                    ) {
+                                        Row(Modifier.padding(horizontal = 12.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(moduleIcon(module), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
+                                            Text(module, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                        }
                                     }
-                                },
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Row(Modifier.padding(horizontal = 12.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(moduleIcon(module), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
-                                    Text(module, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
                                 }
+                                if (rowModules.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
@@ -1194,7 +1204,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 12", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 13", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

@@ -1,4 +1,4 @@
-# EvoluFísico Android nativo — Beta 12
+# EvoluFísico Android nativo — Beta 13
 
 Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
 
@@ -7,7 +7,8 @@ Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Rele
 - Layout travado no modo compacto em celulares e tablets, com conteúdo central limitado a 600 dp.
 - Removida a variação de quatro indicadores em telas largas; o Início conserva sempre dois cartões.
 - Cada módulo agora usa um ícone correspondente à sua função.
-- Nenhum modo desktop, estendido ou dock está disponível nesta interface nativa.
+- O seletor flutuante lista apenas módulos principais; Agenda e Tarefas permanecem como funções acessadas pelo Início.
+- Nenhum modo desktop ou estendido está disponível nesta interface nativa.
 
 ## Funcionalidades das Betas 5 a 10
 
