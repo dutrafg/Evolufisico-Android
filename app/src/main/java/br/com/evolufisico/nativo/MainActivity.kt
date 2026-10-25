@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -180,9 +179,9 @@ private fun EvoluFisicoTheme(dark: Boolean, accentIndex: Int, content: @Composab
     MaterialTheme(
         colorScheme = colors,
         shapes = Shapes(
-            small = RoundedCornerShape(24.dp),
-            medium = RoundedCornerShape(18.dp),
-            large = RoundedCornerShape(24.dp)
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(16.dp),
+            large = RoundedCornerShape(20.dp)
         ),
         content = content
     )
@@ -316,7 +315,15 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                         }
                     } else {
-                        Icon(Icons.Default.FitnessCenter, contentDescription = null, modifier = Modifier.padding(horizontal = 16.dp), tint = MaterialTheme.colorScheme.primary)
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 12.dp).size(36.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("EF", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             )
