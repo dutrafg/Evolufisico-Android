@@ -342,7 +342,7 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Assessment>()
         readableDatabase.query(
             "assessments",
-            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm", "bia_body_fat_percent", "bia_lean_mass_kg", "bia_device"),
+            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm", "sex", "age_years", "fold_triceps_mm", "fold_subscapular_mm", "fold_chest_mm", "fold_axillary_mm", "fold_suprailiac_mm", "fold_abdominal_mm", "fold_thigh_mm", "bia_body_fat_percent", "bia_lean_mass_kg", "bia_device", "photo_data_json"),
             null, null, null, null, "date DESC, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) result += Assessment(
