@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +34,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Edit
@@ -327,7 +335,9 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             modifier = Modifier.fillMaxSize().padding(padding),
             color = MaterialTheme.colorScheme.background
         ) {
-            when {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                Box(Modifier.widthIn(max = 600.dp).fillMaxSize()) {
+                    when {
                 selectedStudent != null -> ProfileScreen(
                     student = selectedStudent,
                     assessments = profileAssessments,
@@ -412,6 +422,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onOpen = { activeModule = it },
                     onToggleFavorite = ::toggleFavorite
                 )
+                    }
+                }
             }
         }
     }
@@ -553,22 +565,9 @@ private fun HomeScreen(
             Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                if (maxWidth >= 600.dp) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
-                        MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
-                        MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
-                        MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
-                    }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
-                            MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
-                        }
-                    }
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
+                MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
             }
         }
         item {
@@ -611,7 +610,7 @@ private fun HomeScreen(
             if (favoriteModules.isEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
-                    QuickAction("Avaliações", Icons.Default.FitnessCenter, Modifier.weight(1f)) { onOpen("Avaliações") }
+                    QuickAction("Avaliações", moduleIcon("Avaliações"), Modifier.weight(1f)) { onOpen("Avaliações") }
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -631,8 +630,15 @@ private fun moduleIcon(module: String): ImageVector = when (module) {
     "Agenda" -> Icons.Default.CalendarMonth
     "Perfil Unificado" -> Icons.Default.Person
     "Alunos" -> Icons.Default.Groups
-    "Configurações" -> Icons.Default.MoreHoriz
-    else -> Icons.Default.FitnessCenter
+    "Avaliações" -> Icons.Default.Assignment
+    "Evolução" -> Icons.Default.ShowChart
+    "Calculadora" -> Icons.Default.Calculate
+    "Formulários" -> Icons.Default.Description
+    "Análises" -> Icons.Default.Analytics
+    "Cobranças" -> Icons.Default.ReceiptLong
+    "Tarefas" -> Icons.Default.Checklist
+    "Configurações" -> Icons.Default.Settings
+    else -> Icons.Default.MoreHoriz
 }
 
 @Composable
@@ -1004,7 +1010,7 @@ private fun ModuleListScreen(favorites: Set<String>, onOpen: (String) -> Unit, o
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(moduleIcon(module), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(module, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
                     IconButton(onClick = { onToggleFavorite(module) }) {
                         Icon(
@@ -1027,7 +1033,7 @@ private fun ModulePlaceholder(title: String) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(moduleIcon(title), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
@@ -1117,7 +1123,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 10", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 11", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

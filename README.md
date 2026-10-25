@@ -1,23 +1,29 @@
-# EvoluFísico Android nativo — Beta 10
+# EvoluFísico Android nativo — Beta 11
 
-Android nativo em Kotlin e Jetpack Compose, desenvolvido a partir da identidade visual do EvoluFisico2 3.0.0 Release.
+Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
 
-## Betas 5 a 10
+## Ajustes desta versão
 
-- **Beta 5:** Início exibe tarefas e cobranças pendentes com atalhos para os módulos.
-- **Beta 6:** avaliação recebe percentual de gordura estimado e medidas opcionais de pescoço, peitoral, braço e coxa; migração SQLite preserva as avaliações existentes.
-- **Beta 7:** Perfil Unificado exibe gráfico descritivo do histórico de peso.
-- **Beta 8:** os nove modelos de anamnese têm roteiros de perguntas próprios e respostas com hierarquia visual melhor.
-- **Beta 9:** tarefas podem ser editadas e as vencidas ficam sinalizadas.
-- **Beta 10:** datas e horários são validados com limites reais; cobranças vencidas são destacadas; backups novos usam schema 2 e continuam aceitando backups schema 1.
+- Layout travado no modo compacto em celulares e tablets, com conteúdo central limitado a 600 dp.
+- Removida a variação de quatro indicadores em telas largas; o Início conserva sempre dois cartões.
+- Cada módulo agora usa um ícone correspondente à sua função.
+- Nenhum modo desktop, estendido ou dock está disponível nesta interface nativa.
+
+## Funcionalidades das Betas 5 a 10
+
+- Início com tarefas e cobranças pendentes e atalhos.
+- Avaliações com peso, altura, cintura, quadril, percentual de gordura informado e medidas opcionais; migração preserva avaliações anteriores.
+- Gráfico descritivo de evolução do peso no Perfil Unificado.
+- Nove modelos de anamnese com roteiros próprios.
+- Tarefas editáveis, avisos de vencimento, validação de datas/horários e restauração de backups schema 1 e 2.
 
 ## Interface
 
-Tema claro/escuro, contraste das barras do sistema, dez cores de destaque acessíveis, navegação inferior e layout adaptável. Na versão móvel, a tela inicial conserva os dois indicadores principais, agenda e central de atenção do aplicativo de referência.
+Tema claro/escuro, dez cores de destaque acessíveis, barra inferior fixa e conteúdo em coluna compacta. Os ícones do sistema acompanham o tema.
 
 ## Diferenças conhecidas em relação ao EvoluFisico2 3.0.0
 
-Ainda faltam todos os métodos antropométricos, motores e relatórios EF68/EF70/EF77, impressão/exportação PDF dos formulários, fotografias da avaliação, notificações e sincronização entre aparelhos. As medidas adicionadas são entradas registradas; o percentual de gordura é informado pelo profissional e não calculado pelo app. O APK é uma beta de avaliação.
+Ainda faltam métodos antropométricos e relatórios EF68/EF70/EF77, exportação PDF de formulários, fotografias, notificações e sincronização entre aparelhos. O percentual de gordura é um valor informado pelo profissional, não calculado pelo app. O APK é beta de avaliação.
 
 ## Compilação e dados
 
@@ -27,4 +33,4 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-Os dados permanecem locais. Exporte um backup antes de instalar uma atualização ou restaurar um arquivo. O identificador Android foi preservado. Versão final: `0.1.0-native-beta.10`, código `714`.
+Os registros ficam no aparelho. Exporte um backup antes de atualizar ou restaurar. Versão `0.1.0-native-beta.11`, código `715`.
