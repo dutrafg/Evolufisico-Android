@@ -100,6 +100,12 @@ class LocalDatabase(context: Context) :
         }
         if (oldVersion < 5 && !hasColumn(db, "appointments", "kind")) {
             db.execSQL("ALTER TABLE appointments ADD COLUMN kind TEXT NOT NULL DEFAULT 'Atendimento'")
+            db.execSQL("""UPDATE appointments
+                SET kind = CASE
+                    WHEN lower(title) LIKE '%retorno%' OR lower(title) LIKE '%reavalia%' THEN 'Retorno'
+                    WHEN lower(title) LIKE '%avalia%' THEN 'Avaliação'
+                    ELSE 'Atendimento'
+                END""")
         }
     }
 
