@@ -36,13 +36,18 @@ data class Assessment(
     val heightCm: Double,
     val waistCm: Double?,
     val hipCm: Double?,
-    val notes: String
+    val notes: String,
+    val bodyFatPercent: Double? = null,
+    val neckCm: Double? = null,
+    val chestCm: Double? = null,
+    val armCm: Double? = null,
+    val thighCm: Double? = null
 ) {
     val bmi: Double? get() = AssessmentMath.bmi(weightKg, heightCm)
 }
 
 class LocalDatabase(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 3) {
+    SQLiteOpenHelper(context.applicationContext, "evolufisico-native.db", null, 4) {
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -69,6 +74,11 @@ class LocalDatabase(context: Context) :
                 height_cm REAL NOT NULL,
                 waist_cm REAL,
                 hip_cm REAL,
+                body_fat_percent REAL,
+                neck_cm REAL,
+                chest_cm REAL,
+                arm_cm REAL,
+                thigh_cm REAL,
                 notes TEXT NOT NULL DEFAULT ''
             )"""
         )
@@ -81,6 +91,10 @@ class LocalDatabase(context: Context) :
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) createAppointments(db)
         if (oldVersion < 3) createBeta3Tables(db)
+        if (oldVersion < 4) {
+            listOf("body_fat_percent REAL", "neck_cm REAL", "chest_cm REAL", "arm_cm REAL", "thigh_cm REAL")
+                .forEach { column -> db.execSQL("ALTER TABLE assessments ADD COLUMN $column") }
+        }
     }
 
     private fun createBeta3Tables(db: SQLiteDatabase) {
@@ -224,7 +238,7 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Assessment>()
         readableDatabase.query(
             "assessments",
-            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes"),
+            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm"),
             "student_id=?", arrayOf(studentId.toString()), null, null, "date DESC, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {
@@ -236,7 +250,12 @@ class LocalDatabase(context: Context) :
                     heightCm = cursor.getDouble(4),
                     waistCm = if (cursor.isNull(5)) null else cursor.getDouble(5),
                     hipCm = if (cursor.isNull(6)) null else cursor.getDouble(6),
-                    notes = cursor.getString(7)
+                    notes = cursor.getString(7),
+                    bodyFatPercent = if (cursor.isNull(8)) null else cursor.getDouble(8),
+                    neckCm = if (cursor.isNull(9)) null else cursor.getDouble(9),
+                    chestCm = if (cursor.isNull(10)) null else cursor.getDouble(10),
+                    armCm = if (cursor.isNull(11)) null else cursor.getDouble(11),
+                    thighCm = if (cursor.isNull(12)) null else cursor.getDouble(12)
                 )
             }
         }
@@ -248,14 +267,19 @@ class LocalDatabase(context: Context) :
         val result = mutableListOf<Assessment>()
         readableDatabase.query(
             "assessments",
-            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes"),
+            arrayOf("id", "student_id", "date", "weight_kg", "height_cm", "waist_cm", "hip_cm", "notes", "body_fat_percent", "neck_cm", "chest_cm", "arm_cm", "thigh_cm"),
             null, null, null, null, "date DESC, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) result += Assessment(
                 id = cursor.getLong(0), studentId = cursor.getLong(1), date = cursor.getString(2),
                 weightKg = cursor.getDouble(3), heightCm = cursor.getDouble(4),
                 waistCm = if (cursor.isNull(5)) null else cursor.getDouble(5),
-                hipCm = if (cursor.isNull(6)) null else cursor.getDouble(6), notes = cursor.getString(7)
+                hipCm = if (cursor.isNull(6)) null else cursor.getDouble(6), notes = cursor.getString(7),
+                bodyFatPercent = if (cursor.isNull(8)) null else cursor.getDouble(8),
+                neckCm = if (cursor.isNull(9)) null else cursor.getDouble(9),
+                chestCm = if (cursor.isNull(10)) null else cursor.getDouble(10),
+                armCm = if (cursor.isNull(11)) null else cursor.getDouble(11),
+                thighCm = if (cursor.isNull(12)) null else cursor.getDouble(12)
             )
         }
         return result
@@ -269,10 +293,17 @@ class LocalDatabase(context: Context) :
         heightCm: Double,
         waistCm: Double?,
         hipCm: Double?,
-        notes: String
+        notes: String,
+        bodyFatPercent: Double? = null,
+        neckCm: Double? = null,
+        chestCm: Double? = null,
+        armCm: Double? = null,
+        thighCm: Double? = null
     ): Long {
         require(student(studentId) != null) { "Aluno não encontrado." }
         require(AssessmentMath.bmi(weightKg, heightCm) != null) { "Confira peso e altura." }
+        require(bodyFatPercent == null || bodyFatPercent in 1.0..70.0) { "Confira o percentual de gordura." }
+        require(listOf(neckCm, chestCm, armCm, thighCm).all { it == null || it in 1.0..300.0 }) { "Confira as medidas opcionais." }
         val values = ContentValues().apply {
             put("student_id", studentId)
             put("date", date)
@@ -280,6 +311,11 @@ class LocalDatabase(context: Context) :
             put("height_cm", heightCm)
             if (waistCm == null) putNull("waist_cm") else put("waist_cm", waistCm)
             if (hipCm == null) putNull("hip_cm") else put("hip_cm", hipCm)
+            if (bodyFatPercent == null) putNull("body_fat_percent") else put("body_fat_percent", bodyFatPercent)
+            if (neckCm == null) putNull("neck_cm") else put("neck_cm", neckCm)
+            if (chestCm == null) putNull("chest_cm") else put("chest_cm", chestCm)
+            if (armCm == null) putNull("arm_cm") else put("arm_cm", armCm)
+            if (thighCm == null) putNull("thigh_cm") else put("thigh_cm", thighCm)
             put("notes", notes.trim())
         }
         return writableDatabase.insertOrThrow("assessments", null, values)
@@ -412,7 +448,7 @@ class LocalDatabase(context: Context) :
             return result
         }
         root.put("students", rows("students", arrayOf("id","name","phone","email","birth_date","created_at")))
-        root.put("assessments", rows("assessments", arrayOf("id","student_id","date","weight_kg","height_cm","waist_cm","hip_cm","notes")))
+        root.put("assessments", rows("assessments", arrayOf("id","student_id","date","weight_kg","height_cm","waist_cm","hip_cm","notes","body_fat_percent","neck_cm","chest_cm","arm_cm","thigh_cm")))
         root.put("appointments", rows("appointments", arrayOf("id","title","date","time","location","notes")))
         root.put("tasks", rows("tasks", arrayOf("id","title","due_date","completed")))
         root.put("intake_forms", rows("intake_forms", arrayOf("id","student_id","template","date","responses")))

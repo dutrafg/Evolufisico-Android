@@ -496,11 +496,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         AssessmentFormDialog(
             studentName = selectedStudent.name,
             onDismiss = { assessmentDialog = false },
-            onSave = { date, weight, height, waist, hip, notes ->
+            onSave = { date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes)
+                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh)
                         }
                         assessmentDialog = false
                         errorMessage = null
@@ -778,6 +778,9 @@ private fun ProfileScreen(
                     Text("IMC: " + (item.bmi?.let(::formatNumber) ?: "—"), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                     if (item.waistCm != null) Text("Cintura: " + formatNumber(item.waistCm) + " cm")
                     if (item.hipCm != null) Text("Quadril: " + formatNumber(item.hipCm) + " cm")
+                    if (item.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(item.bodyFatPercent) + "%")
+                    listOf("Pescoço" to item.neckCm, "Peitoral" to item.chestCm, "Braço" to item.armCm, "Coxa" to item.thighCm)
+                        .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
                     if (item.notes.isNotBlank()) Text(item.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -832,12 +835,17 @@ private fun StudentFormDialog(initial: Student?, onDismiss: () -> Unit, onSave: 
 private fun AssessmentFormDialog(
     studentName: String,
     onDismiss: () -> Unit,
-    onSave: (String, Double, Double, Double?, Double?, String) -> Unit
+    onSave: (String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String) -> Unit
 ) {
     var weight by rememberSaveable { mutableStateOf("") }
     var height by rememberSaveable { mutableStateOf("") }
     var waist by rememberSaveable { mutableStateOf("") }
     var hip by rememberSaveable { mutableStateOf("") }
+    var bodyFat by rememberSaveable { mutableStateOf("") }
+    var neck by rememberSaveable { mutableStateOf("") }
+    var chest by rememberSaveable { mutableStateOf("") }
+    var arm by rememberSaveable { mutableStateOf("") }
+    var thigh by rememberSaveable { mutableStateOf("") }
     var notes by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     val date = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date()) }
@@ -854,6 +862,11 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(height, { height = it; error = null }, label = { Text("Altura (cm) *") }, singleLine = true)
                 OutlinedTextField(waist, { waist = it }, label = { Text("Cintura (cm)") }, singleLine = true)
                 OutlinedTextField(hip, { hip = it }, label = { Text("Quadril (cm)") }, singleLine = true)
+                OutlinedTextField(bodyFat, { bodyFat = it; error = null }, label = { Text("Gordura corporal estimada (%)") }, singleLine = true)
+                OutlinedTextField(neck, { neck = it; error = null }, label = { Text("Pescoço (cm)") }, singleLine = true)
+                OutlinedTextField(chest, { chest = it; error = null }, label = { Text("Peitoral (cm)") }, singleLine = true)
+                OutlinedTextField(arm, { arm = it; error = null }, label = { Text("Braço (cm)") }, singleLine = true)
+                OutlinedTextField(thigh, { thigh = it; error = null }, label = { Text("Coxa (cm)") }, singleLine = true)
                 OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
@@ -864,13 +877,21 @@ private fun AssessmentFormDialog(
                 val parsedHeight = AssessmentMath.parseNumber(height)
                 val parsedWaist = if (waist.isBlank()) null else AssessmentMath.parseNumber(waist)
                 val parsedHip = if (hip.isBlank()) null else AssessmentMath.parseNumber(hip)
-                val invalidOptional = (waist.isNotBlank() && parsedWaist == null) || (hip.isNotBlank() && parsedHip == null)
+                val parsedBodyFat = if (bodyFat.isBlank()) null else AssessmentMath.parseNumber(bodyFat)
+                val parsedNeck = if (neck.isBlank()) null else AssessmentMath.parseNumber(neck)
+                val parsedChest = if (chest.isBlank()) null else AssessmentMath.parseNumber(chest)
+                val parsedArm = if (arm.isBlank()) null else AssessmentMath.parseNumber(arm)
+                val parsedThigh = if (thigh.isBlank()) null else AssessmentMath.parseNumber(thigh)
+                val optionalInputs = listOf(waist to parsedWaist, hip to parsedHip, bodyFat to parsedBodyFat, neck to parsedNeck, chest to parsedChest, arm to parsedArm, thigh to parsedThigh)
+                val invalidOptional = optionalInputs.any { (raw, parsed) -> raw.isNotBlank() && parsed == null } ||
+                    (parsedBodyFat != null && parsedBodyFat !in 1.0..70.0) ||
+                    listOf(parsedNeck, parsedChest, parsedArm, parsedThigh).any { it != null && it !in 1.0..300.0 }
                 if (parsedWeight == null || parsedHeight == null || invalidOptional ||
                     AssessmentMath.bmi(parsedWeight ?: 0.0, parsedHeight ?: 0.0) == null
                 ) {
                     error = "Confira os valores. Peso e altura são obrigatórios; use números positivos."
                 } else {
-                    onSave(date, parsedWeight, parsedHeight, parsedWaist, parsedHip, notes)
+                    onSave(date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes)
                 }
             }) { Text("Salvar avaliação") }
         },
@@ -1050,7 +1071,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 5", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 6", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
