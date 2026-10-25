@@ -1,12 +1,15 @@
 package br.com.evolufisico.nativo
 
 import android.os.Bundle
+import android.net.Uri
 import android.app.TimePickerDialog
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -86,9 +89,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -101,6 +107,7 @@ import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
+import br.com.evolufisico.nativo.data.AssessmentPhoto
 import br.com.evolufisico.nativo.data.DailyBackupScheduler
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.ProfileReportPdf
@@ -744,11 +751,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             studentName = selectedStudent.name,
             initial = editingAssessment,
             onDismiss = { assessmentDialog = false; editingAssessment = null },
-            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice ->
+            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice)
+                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos)
                         }
                         assessmentDialog = false
                         editingAssessment = null
@@ -1257,6 +1264,7 @@ private fun ProfileScreen(
                     if (assessment.bodyFatPercent != null) Text("Gordura informada · método não registrado: " + formatNumber(assessment.bodyFatPercent) + "%")
                     if (assessment.bioimpedanceBodyFatPercent != null) Text("Gordura por bioimpedância: " + formatNumber(assessment.bioimpedanceBodyFatPercent) + "%" + assessment.bioimpedanceDevice.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty())
                     if (assessment.bioimpedanceLeanMassKg != null) Text("Massa livre de gordura por bioimpedância: " + formatNumber(assessment.bioimpedanceLeanMassKg) + " kg")
+                    if (assessment.photoData.isNotEmpty()) AssessmentPhotoGallery(assessment.photoData)
                     listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
                         .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
                     val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
@@ -1377,11 +1385,40 @@ private fun StudentFormDialog(initial: Student?, onDismiss: () -> Unit, onSave: 
 }
 
 @Composable
+
+@Composable
+private fun AssessmentPhotoGallery(photos: List<String>, onRemove: ((Int) -> Unit)? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        photos.forEachIndexed { index, photo ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val bitmap = remember(photo) { AssessmentPhoto.decode(photo) }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Foto da avaliação ${index + 1}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(96.dp).clip(RoundedCornerShape(12.dp))
+                    )
+                } else {
+                    Surface(modifier = Modifier.size(96.dp), shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Box(contentAlignment = Alignment.Center) { Text("Foto indisponível") }
+                    }
+                }
+                onRemove?.let { remove -> TextButton(onClick = { remove(index) }) { Text("Remover") } }
+            }
+        }
+    }
+}
+
 private fun AssessmentFormDialog(
     studentName: String,
     initial: Assessment? = null,
     onDismiss: () -> Unit,
-    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String) -> Unit
+    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, List<String>) -> Unit
 ) {
     var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
     var weight by rememberSaveable(initial?.id) { mutableStateOf(initial?.weightKg?.let(::formatNumber).orEmpty()) }
@@ -1407,6 +1444,15 @@ private fun AssessmentFormDialog(
     var thighFold by rememberSaveable(initial?.id) { mutableStateOf(initial?.thighFoldMm?.let(::formatNumber).orEmpty()) }
     var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val photoData = remember(initial?.id) { mutableStateListOf<String>().apply { addAll(initial?.photoData.orEmpty()) } }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        uris.forEach { uri ->
+            if (photoData.size < 4) runCatching { AssessmentPhoto.fromUri(context, uri) }
+                .onSuccess { photoData.add(it); error = null }
+                .onFailure { error = it.message ?: "Não foi possível anexar esta foto." }
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text((if (initial == null) "Nova avaliação de " else "Editar avaliação de ") + studentName) },
@@ -1441,6 +1487,11 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(biaBodyFat, { biaBodyFat = it; error = null }, label = { Text("Gordura corporal por BIA (%)") }, singleLine = true)
                 OutlinedTextField(biaLeanMass, { biaLeanMass = it; error = null }, label = { Text("Massa livre de gordura por BIA (kg)") }, singleLine = true)
                 OutlinedTextField(biaDevice, { biaDevice = it.take(120); error = null }, label = { Text("Aparelho / método de BIA (opcional)") }, singleLine = true)
+                Text("Fotos da avaliação · até 4", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = { photoPicker.launch(arrayOf("image/*")) }, enabled = photoData.size < 4) {
+                    Text(if (photoData.isEmpty()) "Anexar fotos" else "Adicionar fotos · ${photoData.size}/4")
+                }
+                if (photoData.isNotEmpty()) AssessmentPhotoGallery(photoData, onRemove = { photoData.removeAt(it) })
                 OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
@@ -1476,7 +1527,7 @@ private fun AssessmentFormDialog(
                 else if (parsedWeight == null || parsedHeight == null || invalidOptional ||
                     AssessmentMath.bmi(parsedWeight ?: 0.0, parsedHeight ?: 0.0) == null
                 ) error = "Confira os valores. Peso e altura são obrigatórios; use números válidos."
-                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6], parsedBiaBodyFat, parsedBiaLeanMass, biaDevice.trim())
+                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6], parsedBiaBodyFat, parsedBiaLeanMass, biaDevice.trim(), photoData.toList())
             }) { Text(if (initial == null) "Salvar avaliação" else "Salvar alterações") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
