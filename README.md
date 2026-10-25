@@ -1,27 +1,32 @@
-# EvoluFísico Android nativo
+# EvoluFísico Android nativo — Beta 1
 
-Início de uma nova implementação Android nativa, baseada no **EvoluFísico2 3.0.0** da branch `main` do repositório web (`version.json`, commit `4c4d28fbb5a8fa8bab226fdafcf5359bf80d8733`). A referência funcional descreve a Dashboard Secretária, o Perfil Unificado, agenda, tarefas, reavaliações, cobranças, análises e privacidade financeira.
+Base nativa independente inspirada no EvoluFísico2 3.0.0 publicado na branch `main` (referência: `version.json`, commit `4c4d28fbb5a8fa8bab226fdafcf5359bf80d8733`). O app é escrito em Kotlin e Jetpack Compose, sem WebView.
 
-## Direção técnica
+## Beta 1
 
-- Kotlin e Jetpack Compose; sem WebView.
-- Operação offline como requisito de produto.
-- Layout adaptável a celulares e tablets.
-- Identificador do aplicativo mantido: `br.com.evolufisico.nativo`.
-- Dados fictícios não são inseridos. Até a conexão com persistência, a tela mostra estados vazios.
+- Dashboard com contagem real de alunos e avaliações locais e estados vazios sem dados fictícios.
+- Cadastro e listagem de alunos com telefone, e-mail e nascimento.
+- Perfil Unificado por ID permanente do aluno.
+- Inclusão, consulta e exclusão de avaliações vinculadas ao perfil.
+- Cálculo de IMC com validação de entradas; medidas ausentes não são inventadas.
+- Calculadora de IMC separada.
+- Tema claro/escuro persistido.
+- Banco SQLite local, sem permissão de Internet.
 
-## Estado desta base
+## Limites desta Beta
 
-A primeira etapa cria o projeto Gradle/Compose, tema grafite e verde-petróleo, navegação principal, dashboard inicial, lista de módulos e seletor de tema. Os módulos ainda são marcadores de navegação; cálculos, perfil persistido, banco local, agenda, backup, relatórios, migração e sincronização de versão ainda precisam ser implementados e homologados.
+Agenda, tarefas, cobranças, análises, formulários, exportação de relatórios, backup/restauração, cofre e migração de dados ainda não fazem parte da Beta 1. Os módulos não implementados aparecem identificados como planejados. Não importe dados reais sem um backup externo.
 
-## Próximas etapas sugeridas
+## Compilar
 
-1. Revisar design e navegação no celular e tablet.
-2. Definir modelo de dados e persistência local com Room; documentar importação e exportação antes de migrar dados.
-3. Implementar Perfil Unificado e cadastro/busca de alunos.
-4. Portar cálculos e regras de avaliação com casos de referência.
-5. Implementar agenda, cobranças, evolução, formulários e relatórios.
-6. Adicionar backup/restauração e cobrir migração de versões.
-7. Homologar APK atualizado em aparelho físico antes de distribuir.
+Requer JDK 17 e Android SDK 36:
 
-O código atual do EvoluFísico2 é a fonte funcional de referência; seus cálculos e regras devem ser portados e validados individualmente. A aprovação de QA web não equivale à homologação Android.
+```sh
+./gradlew :app:assembleDebug
+```
+
+O CI publica o APK debug de cada compilação aprovada como artefato do GitHub Actions. APK debug é para teste e pode não atualizar instalações assinadas com outra chave.
+
+## Fonte e planejamento
+
+A referência funcional é o código fonte do EvoluFísico2, atualmente em `src/app.template.html`, junto do `README.md` e do QA 3.0. A versão nativa será portada por fluxos, com validação específica no Android; QA do aplicativo web não comprova o comportamento nativo.
