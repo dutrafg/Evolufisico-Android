@@ -42,52 +42,108 @@ import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Student
 import br.com.evolufisico.nativo.data.TaskRecord
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
 @Composable
 internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessment>, onOpenStudent: (Long) -> Unit) {
+    var selectedStudent by remember(students) { mutableStateOf(students.firstOrNull()) }
+    val history = assessments.filter { it.studentId == selectedStudent?.id }
+        .distinctBy { it.date }.sortedBy { it.date }
+    var selectedDates by remember(selectedStudent?.id) { mutableStateOf(history.takeLast(3).map { it.date }) }
+    val selected = history.filter { it.date in selectedDates }.sortedBy { it.date }
+    val start = selected.firstOrNull()
+    val latest = selected.lastOrNull()
+    val spanDays = if (start != null && latest != null) runCatching {
+        ChronoUnit.DAYS.between(LocalDate.parse(start.date), LocalDate.parse(latest.date)).toInt()
+    }.getOrDefault(0) else 0
+    val qualified = selected.size in 3..4 && spanDays >= 21
+    val comparableCount = listOf(
+        selected.all { it.weightKg > 0 },
+        selected.all { it.heightCm > 0 },
+        selected.all { it.waistCm != null },
+        selected.all { it.hipCm != null },
+        selected.all { it.bodyFatPercent != null },
+        selected.all { it.neckCm != null },
+        selected.all { it.chestCm != null }
+    ).count { it }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Análises", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Resumo descritivo dos dados registrados, sem inferir diagnóstico.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item {
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text("Critério de série", fontWeight = FontWeight.SemiBold)
-                    Text("O resumo longitudinal requer pelo menos 3 avaliações em dias diferentes, distribuídas por 21 dias ou mais.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
+            Text("Análises Completas", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Compare de três a quatro avaliações do mesmo aluno. Os resultados são descritivos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (students.isEmpty()) item { WorkflowEmpty("Sem alunos", "Cadastre um aluno e registre avaliações para iniciar o acompanhamento.") }
-        items(students, key = { it.id }) { student ->
-            val history = assessments.filter { it.studentId == student.id }.distinctBy { it.date }.sortedByDescending { it.date }
-            val first = history.getOrNull(1)
-            val latest = history.firstOrNull()
-            val days = if (history.size >= 2) {
-                val a = runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(history.last().date)?.time }.getOrNull()
-                val b = runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(history.first().date)?.time }.getOrNull()
-                if (a != null && b != null) ((b - a) / 86_400_000L).toInt() else 0
-            } else 0
-            val qualified = history.size >= 3 && days >= 21
-            Card(onClick = { onOpenStudent(student.id) }, modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(student.name, fontWeight = FontWeight.SemiBold)
-                    if (latest == null) Text("Sem avaliações registradas", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    else {
-                        Text("Última avaliação: " + displayNativeDate(latest.date) + " · " + formatNativeNumber(latest.weightKg) + " kg")
-                        if (first != null) {
-                            val delta = latest.weightKg - first.weightKg
-                            Text("Variação de peso: " + (if (delta > 0) "+" else "") + formatNativeNumber(delta) + " kg entre as duas últimas avaliações.")
+        else {
+            item {
+                SectionCard("Selecionar aluno") {
+                    StudentPicker(students, selectedStudent, { selectedStudent = it })
+                    selectedStudent?.let { TextButton(onClick = { onOpenStudent(it.id) }) { Text("Abrir Perfil Unificado") } }
+                }
+            }
+            if (selectedStudent != null) {
+                if (history.isEmpty()) item { WorkflowEmpty("Sem avaliações", "Registre avaliações pelo Perfil Unificado para montar uma análise.") }
+                else {
+                    item {
+                        SectionCard("Escolher datas para comparar") {
+                            Text("Marque três datas obrigatórias e, se necessário, uma quarta. O intervalo precisa cobrir pelo menos 21 dias.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            history.forEach { assessment ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = assessment.date in selectedDates,
+                                        onCheckedChange = { checked ->
+                                            selectedDates = if (checked && assessment.date !in selectedDates && selectedDates.size < 4) selectedDates + assessment.date
+                                            else if (!checked) selectedDates - assessment.date else selectedDates
+                                        }
+                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text(displayNativeDate(assessment.date), fontWeight = FontWeight.Medium)
+                                        Text(formatNativeNumber(assessment.weightKg) + " kg" + (assessment.waistCm?.let { " · cintura " + formatNativeNumber(it) + " cm" } ?: ""), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                            Text(selected.size.toString() + " data(s) selecionada(s) · " + spanDays + " dias entre a primeira e a última")
                         }
-                        Text(if (qualified) "Série longitudinal disponível · " + history.size + " datas · " + days + " dias"
-                            else "Histórico inicial · " + history.size + " data(s) · " + days + " dias", color = MaterialTheme.colorScheme.primary)
+                    }
+                    item {
+                        if (!qualified) {
+                            WorkflowEmpty("Análise preliminar", "Selecione três ou quatro datas distintas e um intervalo mínimo de 21 dias. A ficha continua disponível.")
+                        } else {
+                            SectionCard("Resumo da trajetória física") {
+                                Text(selectedStudent?.name.orEmpty(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text("Período: " + displayNativeDate(start!!.date) + " a " + displayNativeDate(latest!!.date) + " · " + spanDays + " dias")
+                                HorizontalDivider()
+                                Text(deltaLabel("Peso", start.weightKg, latest.weightKg, "kg"))
+                                Text(deltaLabel("IMC", start.bmi, latest.bmi, ""))
+                                Text(deltaLabel("Cintura", start.waistCm, latest.waistCm, "cm"))
+                                Text(deltaLabel("Quadril", start.hipCm, latest.hipCm, "cm"))
+                                Text(deltaLabel("Gordura estimada", start.bodyFatPercent, latest.bodyFatPercent, "%"))
+                                Text("Indicadores comparáveis em todas as datas: " + comparableCount + " de 7")
+                                Text("A completude informa somente quais medidas estão disponíveis; não representa precisão clínica.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (qualified) {
+                        item {
+                            SectionCard("Qualidade e limites dos dados") {
+                                Text("As datas selecionadas pertencem ao mesmo aluno e cobrem pelo menos 21 dias.")
+                                Text("Confirme se os métodos, equipamentos e condições de coleta foram consistentes antes de interpretar as diferenças.")
+                                Text("A análise não diagnostica condições de saúde e não substitui avaliação profissional.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+private fun deltaLabel(label: String, initial: Double?, current: Double?, unit: String): String {
+    if (initial == null || current == null) return label + ": dados insuficientes"
+    val delta = current - initial
+    val signed = (if (delta > 0) "+" else "") + formatNativeNumber(delta)
+    return label + ": " + formatNativeNumber(initial) + " → " + formatNativeNumber(current) + " " + unit + " (" + signed + " " + unit + ")"
 }
 
 private fun formatNativeNumber(value: Double): String = String.format(Locale("pt","BR"), "%.1f", value)
