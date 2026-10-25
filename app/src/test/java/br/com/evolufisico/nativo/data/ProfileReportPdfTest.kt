@@ -25,5 +25,8 @@ class ProfileReportPdfTest {
         val prefix = String(bytes.take(8).toByteArray(), StandardCharsets.US_ASCII)
         assertTrue(prefix.startsWith("%PDF-"))
         assertTrue(bytes.size > 1500)
+        val pageCount = Regex("/Count (\\d+)").find(String(bytes, StandardCharsets.ISO_8859_1))
+            ?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        assertTrue("Long anamnesis should span multiple pages", pageCount > 1)
     }
 }
