@@ -92,6 +92,9 @@ class EfiaScientificEnginesTest {
             sem = mapOf("peso" to 0.2), semSources = mapOf("peso" to "estudo do instrumento"))
         assertEquals(0.55, supplied.ef79Changes.getValue("peso").mdc95!!, 0.01)
         assertEquals(true, supplied.ef79Changes.getValue("peso").detectable)
+        assertEquals("estudo do instrumento", supplied.ef79Changes.getValue("peso").semSource)
+        assertTrue(supplied.asText().contains("MDC95 informado"))
+        assertTrue(supplied.asText().contains("fonte informada: estudo do instrumento"))
     }
 
     @Test fun notesNeverBecomeInventedAdherenceEvents() {
