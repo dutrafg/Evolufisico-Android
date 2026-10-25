@@ -26,7 +26,7 @@ internal object ProfileReportPdf {
         )
         assessment.waistCm?.let { lines += Line("Cintura: " + number(it) + " cm") }
         assessment.hipCm?.let { lines += Line("Quadril: " + number(it) + " cm") }
-        assessment.bodyFatPercent?.let { lines += Line("Gordura corporal informada: " + number(it) + "%") }
+        assessment.bodyFatPercent?.let { lines += Line("Gordura corporal informada · método não registrado: " + number(it) + "%") }
         assessment.bioimpedanceBodyFatPercent?.let { lines += Line("Gordura por bioimpedância: " + number(it) + "%" + assessment.bioimpedanceDevice.takeIf(String::isNotBlank)?.let { device -> " · $device" }.orEmpty()) }
         assessment.bioimpedanceLeanMassKg?.let { lines += Line("Massa livre de gordura por bioimpedância: " + number(it) + " kg") }
         listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
