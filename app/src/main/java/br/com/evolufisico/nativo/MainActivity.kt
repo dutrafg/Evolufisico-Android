@@ -79,6 +79,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -1460,7 +1461,7 @@ private fun CalculatorScreen() {
     var age by rememberSaveable { mutableStateOf("") }
     var sex by rememberSaveable { mutableStateOf("Masculino") }
     val foldLabels = listOf("Tríceps", "Subescapular", "Peitoral", "Axilar média", "Supra-ilíaca", "Abdominal", "Coxa")
-    val foldInputs = foldLabels.map { label -> rememberSaveable(label) { mutableStateOf("") } }
+    val foldInputs = rememberSaveable { mutableStateListOf("", "", "", "", "", "", "") }
     var activityIndex by rememberSaveable { mutableIntStateOf(2) }
     val activityOptions = listOf("Sedentária", "Leve", "Moderada", "Alta")
     val activityFactors = listOf(1.2, 1.375, 1.55, 1.725)
@@ -1475,7 +1476,7 @@ private fun CalculatorScreen() {
     val waistHipRatio = if (waistValue != null && hipValue != null) waistValue / hipValue else null
     val navy = if (heightValue != null && waistValue != null && neckValue != null) AssessmentMath.navyBodyFat(sex, heightValue, waistValue, neckValue, hipValue) else null
     val rfm = if (heightValue != null && waistValue != null) AssessmentMath.rfmBodyFat(sex, heightValue, waistValue) else null
-    val pollock7 = if (weightValue != null && ageValue != null) AssessmentMath.pollock7(sex, ageValue, weightValue, foldInputs.map { AssessmentMath.parseNumber(it.value) }) else null
+    val pollock7 = if (weightValue != null && ageValue != null) AssessmentMath.pollock7(sex, ageValue, weightValue, foldInputs.map { AssessmentMath.parseNumber(it) }) else null
     val harris = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.harrisBenedict(sex, weightValue, heightValue, ageValue) else null
     val mifflin = if (weightValue != null && heightValue != null && ageValue != null) AssessmentMath.mifflinStJeor(sex, weightValue, heightValue, ageValue) else null
     val heartRateMax = ageValue?.let(AssessmentMath::maximumHeartRate)
@@ -1504,8 +1505,8 @@ private fun CalculatorScreen() {
         item {
             SectionCard("Dobras cutâneas · Pollock 7") {
                 Text("Informe as sete dobras em milímetros para estimar o percentual de gordura.")
-                foldInputs.forEachIndexed { index, state ->
-                    OutlinedTextField(state.value, { state.value = it }, modifier = Modifier.fillMaxWidth(), label = { Text("${foldLabels[index]} (mm)") }, singleLine = true)
+                foldInputs.forEachIndexed { index, value ->
+                    OutlinedTextField(value, { foldInputs[index] = it }, modifier = Modifier.fillMaxWidth(), label = { Text("${foldLabels[index]} (mm)") }, singleLine = true)
                 }
             }
         }
