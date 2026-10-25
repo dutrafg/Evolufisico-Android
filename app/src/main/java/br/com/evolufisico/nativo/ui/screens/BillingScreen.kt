@@ -17,7 +17,7 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun BillingScreen(repo: AppRepository, onPdf: () -> Unit,initialClientId:String="") {
+fun BillingScreen(repo: AppRepository, onPdf: () -> Unit,initialClientId:String="",onMonthlyPdf:(List<Charge>,String)->Unit) {
     var filterId by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
     var filterName by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(WorkspaceRules.latest(repo.evaluations.toList()).firstOrNull{it.studentId==initialClientId}?.name.orEmpty())}
     var editing by remember { mutableStateOf<Charge?>(null) }
@@ -34,6 +34,8 @@ fun BillingScreen(repo: AppRepository, onPdf: () -> Unit,initialClientId:String=
         ClientPicker(repo,filterId,filterName,emptyLabel="Todos os clientes",clearLabel="Todos os clientes"){id,name->filterId=id;filterName=name}
         val scoped=repo.charges.filter{filterId.isBlank() || it.studentId==filterId || it.secondStudentId==filterId}
         if(filterId.isNotBlank())Text("Cobranças conjuntas entram pelo valor integral, sem rateio.",style=MaterialTheme.typography.bodySmall)
+        MonthlyLedgerPanel(scoped){period->onMonthlyPdf(scoped.toList(),period)}
+        HorizontalDivider()
         val total=scoped.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
         val received=scoped.filter { it.paid && !it.exempt }.sumOf { Financial.billable(it.amountCents,it.discountCents,it.exempt) }
         val pending=total-received

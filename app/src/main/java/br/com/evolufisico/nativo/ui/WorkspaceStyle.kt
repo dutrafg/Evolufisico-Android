@@ -10,26 +10,26 @@ val LocalCompactWorkspace=staticCompositionLocalOf{false}
 
 data class WorkspacePalette(val label:String,val light:Long,val dark:Long)
 val workspacePalettes=listOf(
-    WorkspacePalette("Azul profundo",0xFF163654,0xFFADCBE8),WorkspacePalette("Azul clássico",0xFF204C74,0xFFA5CDF4),
-    WorkspacePalette("Azul intenso",0xFF255A87,0xFFACD1F0),WorkspacePalette("Azul aço",0xFF315F7D,0xFFB5D5EB),
-    WorkspacePalette("Azul petróleo",0xFF234861,0xFFA5CEE7),WorkspacePalette("Petróleo escuro",0xFF123E47,0xFF9AD4DE),
-    WorkspacePalette("Verde floresta",0xFF244C3C,0xFFA7D9BB),WorkspacePalette("Ameixa",0xFF4E3D68,0xFFD1BDEA),
-    WorkspacePalette("Vinho",0xFF583849,0xFFE4BACA),WorkspacePalette("Grafite",0xFF3E464F,0xFFC6CFD9))
+    WorkspacePalette("Verde",0xFF086849,0xFF75D7A9),WorkspacePalette("Azul",0xFF235CBD,0xFF73AEF9),
+    WorkspacePalette("Roxo",0xFF6244BA,0xFFAD95FF),WorkspacePalette("Laranja",0xFFA85517,0xFFF9B276),
+    WorkspacePalette("Rosa",0xFFA53C71,0xFFF3A5C5),WorkspacePalette("Azul-marinho",0xFF233F68,0xFF85A9E4),
+    WorkspacePalette("Petróleo",0xFF145C68,0xFF71C1C9),WorkspacePalette("Esmeralda",0xFF17624E,0xFF76C8A3),
+    WorkspacePalette("Índigo",0xFF343F79,0xFF9FAAF0),WorkspacePalette("Ameixa",0xFF653A65,0xFFD2A4D0))
 
 fun workspaceColors(tone:Int,dark:Boolean):ColorScheme {
     val p=workspacePalettes[tone.coerceIn(workspacePalettes.indices)]
     val base=Color(p.light);val accent=Color(p.dark)
-    return if(dark)darkColorScheme(primary=accent,onPrimary=Color(0xFF10212C),
+    return if(dark)darkColorScheme(primary=accent,onPrimary=Color(0xFF04150D),
         primaryContainer=lerp(base,Color.Black,0.3f),onPrimaryContainer=accent,
-        secondary=accent,onSecondary=Color(0xFF10212C),secondaryContainer=Color(0xFF26333D),onSecondaryContainer=Color(0xFFDCE7F0),
-        surface=Color(0xFF141B23),background=Color(0xFF0E141C),onSurface=Color(0xFFE1E7EF),onBackground=Color(0xFFE1E7EF),
-        surfaceContainer=Color(0xFF1C2530),surfaceContainerLow=Color(0xFF18212B),surfaceContainerHigh=Color(0xFF26313E),
-        onSurfaceVariant=Color(0xFFBDC9D6),outline=Color(0xFF8C9AA9))
+        secondary=accent,onSecondary=Color(0xFF04150D),secondaryContainer=Color(0xFF16271F),onSecondaryContainer=Color(0xFFE8F1EC),
+        surface=Color(0xFF101A15),background=Color(0xFF08100C),onSurface=Color(0xFFE8F1EC),onBackground=Color(0xFFE8F1EC),
+        surfaceContainer=Color(0xFF14221A),surfaceContainerLow=Color(0xFF101A15),surfaceContainerHigh=Color(0xFF1F2E26),
+        onSurfaceVariant=Color(0xFFA6B9AE),outline=Color(0xFF8FA398))
     else lightColorScheme(primary=base,onPrimary=Color.White,primaryContainer=lerp(base,Color.White,0.88f),onPrimaryContainer=base,
         secondary=base,onSecondary=Color.White,secondaryContainer=lerp(base,Color.White,0.91f),onSecondaryContainer=base,
-        surface=Color(0xFFFAFBFD),background=Color(0xFFF0F4F8),onSurface=Color(0xFF182838),onBackground=Color(0xFF182838),
-        surfaceContainer=Color(0xFFEAF0F6),surfaceContainerLow=Color(0xFFF2F6FA),surfaceContainerHigh=Color(0xFFE1E9F1),
-        onSurfaceVariant=Color(0xFF47596C),outline=Color(0xFF687B8D))
+        surface=Color(0xFFFFFFFF),background=Color(0xFFF3F6F4),onSurface=Color(0xFF0C1A14),onBackground=Color(0xFF0C1A14),
+        surfaceContainer=Color(0xFFE6F3EC),surfaceContainerLow=Color(0xFFF3F6F4),surfaceContainerHigh=Color(0xFFE1E9E4),
+        onSurfaceVariant=Color(0xFF5D6F66),outline=Color(0xFF667A6C))
 }
 
 fun workspaceTypography(large:Boolean):Typography {

@@ -29,7 +29,7 @@ private val photoLabels = linkedMapOf("frente" to "Frente", "perfil_direito" to 
     "perfil_esquerdo" to "Perfil esquerdo", "costas" to "Costas", "extra" to "Extra")
 
 @Composable
-fun EvaluationsScreen(repo: AppRepository, onPdf: (Evaluation) -> Unit, createRequest: Int=0, initialStudentId: String="") {
+fun EvaluationsScreen(repo: AppRepository, onPdf: (Evaluation) -> Unit, createRequest: Int=0, initialStudentId: String="",onIndividualBackup:(String,String)->Unit={_,_->}) {
     var editing by remember { mutableStateOf<Evaluation?>(null) }
     var editorOpen by remember { mutableStateOf(false) }
     LaunchedEffect(createRequest) {
@@ -40,20 +40,46 @@ fun EvaluationsScreen(repo: AppRepository, onPdf: (Evaluation) -> Unit, createRe
     }
     var deletePending by remember { mutableStateOf<Evaluation?>(null) }
     var query by remember { mutableStateOf("") }
+    var selectedClient by androidx.compose.runtime.saveable.rememberSaveable(initialStudentId){mutableStateOf(initialStudentId)}
+    var presentation by androidx.compose.runtime.saveable.rememberSaveable{mutableStateOf("Grade")}
+    var backupOpen by remember{mutableStateOf(false)}
+    var backupPassword by remember{mutableStateOf("")}
+    if(backupOpen)AlertDialog(onDismissRequest={backupOpen=false;backupPassword=""},title={Text("Backup do aluno")},
+        text={Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text("Inclui avaliações, formulários, agenda e tarefas vinculadas. Não inclui o financeiro geral.")
+            OutlinedTextField(backupPassword,{backupPassword=it},label={Text("Senha (mínimo 8 caracteres)")},visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
+        }},confirmButton={TextButton(enabled=backupPassword.length>=8,onClick={val password=backupPassword;backupPassword="";backupOpen=false;onIndividualBackup(selectedClient,password)}){Text("Exportar")}},
+        dismissButton={TextButton(onClick={backupOpen=false;backupPassword=""}){Text("Cancelar")}})
+
+
     if (deletePending != null) AlertDialog(
         onDismissRequest = { deletePending = null }, title = { Text("Excluir avaliação?") },
         text = { Text("O registro será excluído. O histórico das demais avaliações não será afetado.") },
         confirmButton = { TextButton(onClick = { deletePending?.let(repo::delete); deletePending = null }) { Text("Excluir") } },
         dismissButton = { TextButton(onClick = { deletePending = null }) { Text("Cancelar") } }
     )
-    if (editorOpen) EvaluationEditor(editing ?: remember(editorOpen) { Evaluation() }, repo.evaluations.distinctBy { it.studentId },
+    if (editorOpen) EvaluationEditor(editing ?: remember(editorOpen) { Evaluation() }, repo.evaluations.distinctBy { it.studentId },isNew=editing==null,
         onCancel = { editorOpen = false }, onSave = { repo.save(it); editorOpen = false })
     else Screen {
         Heading("Avaliações", "Antropometria, Pollock 7, bioimpedância, fotos e reavaliações.")
         Button(onClick = { editing = null; editorOpen = true }) { Text("+ Nova avaliação") }
         Field("Buscar por aluno", query, { query = it })
-        val list = repo.evaluations.filter { br.com.evolufisico.nativo.domain.WorkspaceRules.search(it.name,query) }
-        if (list.isEmpty()) Text("Nenhuma avaliação encontrada.")
+        val profiles=br.com.evolufisico.nativo.domain.WorkspaceRules.latest(repo.evaluations.toList())
+            .filter{br.com.evolufisico.nativo.domain.WorkspaceRules.search(it.name,query)}
+            .sortedWith(compareBy<Evaluation>{br.com.evolufisico.nativo.domain.HtmlParity.sortName(it.name)}.thenBy{it.studentId})
+        if(selectedClient.isBlank()) {
+            PillChoices(listOf("Lista","Grade"),presentation,{presentation=it})
+            Text("Alunos de A–Z · ${profiles.size} encontrados")
+            if(profiles.isEmpty())Text("Nenhuma avaliação encontrada.")
+            CardGrid(profiles,220.0,if(presentation=="Grade")4 else 1) { profile ->
+                DataCard(profile.name,"${repo.evaluations.count{it.studentId==profile.studentId}} avaliações · ID ${profile.studentId.take(6)}") {
+                    TextButton(onClick={selectedClient=profile.studentId}){Text("Abrir histórico")}
+                    TextButton(onClick={editing=profile.newCheckIn();editorOpen=true}){Text("Nova avaliação")}
+                }
+            }
+        } else TextButton(onClick={selectedClient=""}){Text("Voltar aos alunos")}
+        if(selectedClient.isNotBlank())OutlinedButton(onClick={backupOpen=true}){Text("Backup individual do aluno")}
+        val list=repo.evaluations.filter{it.studentId==selectedClient}.sortedWith(compareByDescending<Evaluation>{it.date}.thenByDescending{it.id})
         PagedRecords(list,query,{it.id}) { e ->
             val pg = Anthropometry.pollock7(e.sex,e.age,e.weightKg,e.skinfolds)?.fatPercent
             val earlier = repo.evaluations.filter { it.studentId == e.studentId && it.id != e.id && it.date < e.date }.maxWithOrNull(compareBy<Evaluation>{it.date}.thenBy{it.id})
@@ -78,7 +104,7 @@ fun EvaluationsScreen(repo: AppRepository, onPdf: (Evaluation) -> Unit, createRe
 }
 
 @Composable
-private fun EvaluationEditor(initial: Evaluation, students: List<Evaluation>, onCancel: () -> Unit, onSave: (Evaluation) -> Unit) {
+private fun EvaluationEditor(initial: Evaluation, students: List<Evaluation>, isNew:Boolean, onCancel: () -> Unit, onSave: (Evaluation) -> Unit) {
     TrackEditing()
     var discardRequested by remember(initial.id) { mutableStateOf(false) }
     BackHandler { discardRequested = true }
@@ -115,9 +141,11 @@ private fun EvaluationEditor(initial: Evaluation, students: List<Evaluation>, on
     var phase by remember(initial.id) { mutableStateOf(initial.phase) }
     var week by remember(initial.id) { mutableStateOf(initial.week) }
     var energy by remember(initial.id) { mutableStateOf(initial.energy?.toString() ?: "") }
-    var professional by remember(initial.id) { mutableStateOf(initial.professional) }
-    var registration by remember(initial.id) { mutableStateOf(initial.registration) }
-    var clinic by remember(initial.id) { mutableStateOf(initial.clinic) }
+    val profileContext=androidx.compose.ui.platform.LocalContext.current
+    val profileDefaults=remember(initial.id){profileContext.getSharedPreferences("professional",android.content.Context.MODE_PRIVATE)}
+    var professional by remember(initial.id) { mutableStateOf(initial.professional.ifBlank{if(isNew)profileDefaults.getString("name","").orEmpty() else ""}) }
+    var registration by remember(initial.id) { mutableStateOf(initial.registration.ifBlank{if(isNew)profileDefaults.getString("cref","").orEmpty() else ""}) }
+    var clinic by remember(initial.id) { mutableStateOf(initial.clinic.ifBlank{if(isNew)profileDefaults.getString("workplace","").orEmpty() else ""}) }
     val per = remember(initial.id) { mutableStateMapOf<String, String>().also { m -> initial.perimeters.forEach { (k,v) -> m[k] = v.toString() } } }
     val folds = remember(initial.id) { mutableStateMapOf<String, String>().also { m -> initial.skinfolds.forEach { (k,v) -> m[k] = v.toString() } } }
     val bio = remember(initial.id) { mutableStateMapOf<String, String>().also { m -> initial.bioimpedance.forEach { (k,v) -> m[k] = v.toString() } } }

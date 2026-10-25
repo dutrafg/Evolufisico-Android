@@ -58,7 +58,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         val clear=decrypt(blob)
         return try { JSONObject(String(clear,Charsets.UTF_8)) } finally { clear.fill(0) }
     }
-    private val allowedKinds = setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note", "exercise")
+    private val allowedKinds = setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note", "exercise", "organizationGoal", "formTemplate")
     fun put(kind: String, id: String, data: JSONObject) {
         require(kind in allowedKinds && id.isNotBlank() && id.length <= 128 && data.getString("id") == id)
         val blob = encryptRecord(data)
@@ -98,7 +98,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
     fun delete(kind: String, id: String) { require(kind in allowedKinds); writableDatabase.delete("records", "kind=? AND id=?", arrayOf(kind, id)) }
 
     /** One SQLite snapshot across all categories; encryption happens after releasing the read. */
-    private fun backupRecords(clientId:String?=null):JSONArray {
+    private fun backupRecords(clientId:String?=null,kinds:Set<String>?=null):JSONArray {
         val all=JSONArray()
         var hasProfile=false
         val db=readableDatabase
@@ -108,7 +108,9 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
                 while(cursor.moveToNext()) {
                     val kind=cursor.getString(0)
                     require(kind in allowedKinds) { "Categoria de registro desconhecida. Backup interrompido." }
+                    if(kinds!=null && kind !in kinds)continue
                     val record=decryptRecord(cursor.getBlob(1))
+                    if(clientId!=null && !br.com.evolufisico.nativo.domain.HtmlParity.individualBackupKind(kind)) continue
                     if(clientId!=null && !br.com.evolufisico.nativo.domain.ClientBackupScope.includes(
                         kind,clientId,record.optString("studentId"),record.optString("secondStudentId"),
                         record.optString("secondStudent"),record.optBoolean("isTemplate"))) continue
@@ -124,10 +126,10 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
     }
 
     /** Export is portable and passphrase-encrypted: Keystore device keys never leave the device. */
-    fun exportEncrypted(passphrase: CharArray, clientId: String? = null): ByteArray {
+    fun exportEncrypted(passphrase: CharArray, clientId: String? = null,organizationOnly:Boolean=false): ByteArray {
         require(passphrase.size >= 8) { "Senha deve conter pelo menos 8 caracteres" }
         require(clientId == null || clientId.isNotBlank()) { "Selecione um cliente" }
-        val all=backupRecords(clientId)
+        val all=backupRecords(clientId,if(organizationOnly)setOf("appointment","task","note","organizationGoal") else null)
         val plain = JSONObject().put("schema", 1).put("records", all).toString().toByteArray(Charsets.UTF_8)
         try {
         require(plain.size <= 16_000_000) { "Backup excede 16 MB" }
@@ -152,7 +154,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, derive(passphrase, salt), GCMParameterSpec(128, iv))
         val clear = cipher.doFinal(from64(obj.getString("ciphertext")))
-        val payload = try { JSONObject(String(clear, Charsets.UTF_8)) } finally { clear.fill(0) }
+        val payload = try { require(clear.size<=16_000_000){"Conteúdo do backup acima do limite"};JSONObject(String(clear, Charsets.UTF_8)) } finally { clear.fill(0) }
         require(payload.getInt("schema") == 1) { "Versão dos registros não suportada" }
         val arr = payload.getJSONArray("records")
         require(arr.length() <= 10000) { "Backup excede 10000 registros" }
@@ -214,7 +216,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         require(header.getString("type") == "EF-DEVICE-BACKUP" && header.getInt("version") == 1)
         val plaintext = decrypt(from64(header.getString("ciphertext")))
         // Do not expose plaintext in external storage; wrap only in-memory for the same import machinery.
-        val root = try { JSONObject(String(plaintext,Charsets.UTF_8)) } finally { plaintext.fill(0) }
+        val root = try { require(plaintext.size<=16_000_000){"Conteúdo do backup acima do limite"};JSONObject(String(plaintext,Charsets.UTF_8)) } finally { plaintext.fill(0) }
         val records = root.getJSONArray("records")
         require(root.getInt("schema") == 1 && records.length() <= 10000)
         val stage = mutableListOf<Triple<String,String,JSONObject>>()
@@ -227,6 +229,7 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
         }
         return importStaged(stage)
     }
+    fun importOrganizationJson(file:ByteArray,profiles:List<Evaluation>):Int = importStaged(OrganizationJsonImport.stage(file,profiles))
     private fun importStaged(records: List<Triple<String,String,JSONObject>>): Int {
         // Full validation occurs before starting any write transaction.
         require(records.size <= 10000) { "Limite de itens ultrapassado" }
@@ -244,6 +247,8 @@ class CryptoStore(context: Context) : SQLiteOpenHelper(context, "evolufisico-nat
                 "training" -> WorkspaceRules.validate(TrainingSession.fromJson(record))
                 "habit" -> WorkspaceRules.validate(HabitEntry.fromJson(record))
                 "note" -> WorkspaceRules.validate(NotebookEntry.fromJson(record))
+                "organizationGoal" -> OrganizationGoal.fromJson(record).validate()
+                "formTemplate" -> FormTemplate.fromJson(record).validate()
                 "exercise" -> br.com.evolufisico.nativo.domain.ExerciseCatalog.validate(ExerciseDefinition.fromJson(record))
             }
         }

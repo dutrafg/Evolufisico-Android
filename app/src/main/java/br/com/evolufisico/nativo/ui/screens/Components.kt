@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.ui.semantics.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -22,13 +24,17 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-@Composable fun Screen(bottomInset:Dp=104.dp,content: @Composable ColumnScope.() -> Unit) {
+@Composable fun Screen(bottomInset:Dp=24.dp,content: @Composable ColumnScope.() -> Unit) {
     val inset=if(LocalCompactWorkspace.current)12.dp else 18.dp
     val gap=if(LocalCompactWorkspace.current)8.dp else 12.dp
-    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter) {
-        Column(Modifier.widthIn(max=1120.dp).fillMaxWidth().verticalScroll(rememberScrollState())
+    val scroll=rememberScrollState()
+    val viewport=remember(scroll){DashboardViewport(scroll)}
+    CompositionLocalProvider(LocalDashboardViewport provides viewport) {
+    Box(Modifier.fillMaxSize().onGloballyPositioned{viewport.bounds=it.boundsInWindow()},contentAlignment=Alignment.TopCenter) {
+        Column(Modifier.widthIn(max=1120.dp).fillMaxWidth().verticalScroll(scroll)
             .padding(start=inset,end=inset,top=inset,bottom=bottomInset),
             verticalArrangement=Arrangement.spacedBy(gap),content=content)
+    }
     }
 }
 @Composable fun Heading(title: String, description: String = "") {
@@ -53,13 +59,12 @@ import java.time.ZoneOffset
 }
 @Composable fun DataCard(title: String, detail: String, actions: @Composable RowScope.() -> Unit = {}) {
     val inset=if(LocalCompactWorkspace.current)12.dp else 16.dp
-    OutlinedCard(Modifier.fillMaxWidth(),colors=CardDefaults.outlinedCardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+    EffectsCard(Modifier.fillMaxWidth(),colors=CardDefaults.outlinedCardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(inset), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(detail, style = MaterialTheme.typography.bodyMedium)
-            // Actions scroll rather than stretching/compressing help and action controls on narrow phones.
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp), content = actions)
+            // HTML card actions wrap; no hidden action buttons on narrow screens.
+            FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) { actions() }
         }
     }
 }
@@ -134,4 +139,11 @@ fun studentChoices(students: List<br.com.evolufisico.nativo.data.Evaluation>): L
 @OptIn(ExperimentalLayoutApi::class)
 @Composable fun ActionButtons(content:@Composable ()->Unit) {
     FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){content()}
+}
+
+/** Page navigation mirrors the HTML's single scrolling row; form answer choices still wrap. */
+@Composable fun ReferenceSectionTabs(options:List<String>,selected:String,onSelected:(String)->Unit) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        options.forEach{label->FilterChip(selected=label==selected,onClick={onSelected(label)},label={Text(label)},shape=androidx.compose.foundation.shape.RoundedCornerShape(10.dp))}
+    }
 }

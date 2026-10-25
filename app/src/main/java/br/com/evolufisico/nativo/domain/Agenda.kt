@@ -77,10 +77,10 @@ object Agenda {
 
 /** Policy shared by reminder scheduling and its worker; WorkManager remains approximate. */
 object ReminderPolicy {
-    val allowedLeadMinutes = listOf(15, 30, 60, 1440)
+    val allowedLeadMinutes = listOf(0, 5, 10, 15, 30, 60, 1440)
 
     fun validateLead(minutes: Int): Int {
-        require(minutes in allowedLeadMinutes) { "Escolha 15, 30, 60 ou 1.440 minutos." }
+        require(minutes in allowedLeadMinutes) { "Escolha no horário, 5, 10, 15, 30, 60 ou 1.440 minutos." }
         return minutes
     }
 
@@ -89,5 +89,5 @@ object ReminderPolicy {
 
     /** A delayed worker may notify only while the appointment is still upcoming and within its lead window. */
     fun shouldNotify(secondsUntilVisit: Long, leadMinutes: Int): Boolean =
-        secondsUntilVisit in 1..(validateLead(leadMinutes) * 60L)
+        secondsUntilVisit in 1..maxOf(validateLead(leadMinutes) * 60L, 60L)
 }

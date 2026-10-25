@@ -20,13 +20,13 @@ class Beta3MatrixTest(private val case:Int) {
             0->{val delay=(n%120_000_000).toLong()-60_000L
                 assertEquals(delay>lead*60_000L,ReminderPolicy.shouldSchedule(delay,lead))}
             1->{val seconds=(n%200_000).toLong()-100_000L
-                assertEquals(seconds in 1..(lead*60L),ReminderPolicy.shouldNotify(seconds,lead))}
+                assertEquals(seconds in 1..maxOf(lead*60L,60L),ReminderPolicy.shouldNotify(seconds,lead))}
             2->{val threshold=lead*60_000L+(n%3-1)
                 assertEquals(threshold>lead*60_000L,ReminderPolicy.shouldSchedule(threshold.toLong(),lead))}
             3->{val seconds=lead*60L+(n%3-1)
-                assertEquals(seconds in 1..(lead*60L),ReminderPolicy.shouldNotify(seconds.toLong(),lead))}
+                assertEquals(seconds in 1..maxOf(lead*60L,60L),ReminderPolicy.shouldNotify(seconds.toLong(),lead))}
             4->{assertEquals(lead,ReminderPolicy.validateLead(lead))}
-            5->{val invalid=listOf(-1,0,1,14,16,29,31,59,61,1439,1441)[n%11]
+            5->{val invalid=listOf(-1,1,14,16,29,31,59,61,1439,1441,4320)[n%11]
                 assertFalse(runCatching{ReminderPolicy.validateLead(invalid)}.isSuccess)}
             6->{val before=lead*60_000L-1
                 assertFalse(ReminderPolicy.shouldSchedule(before,lead))}

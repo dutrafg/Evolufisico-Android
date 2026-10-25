@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace = "br.com.evolufisico.nativo"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "br.com.evolufisico.nativo"
         minSdk = 29 // Android 10+
         targetSdk = 36
-        versionCode = 702
-        versionName = "0.1.0-native-beta.100"
+        versionCode = 714
+        versionName = "3.0.0-native-beta.1"
     }
     buildTypes {
         release {
@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2025.06.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.activity:activity-compose:1.12.4")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -40,4 +40,10 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+}
+
+// Keep machine-readable evidence without creating tens of thousands of per-case HTML files.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    reports.html.required.set(false)
 }

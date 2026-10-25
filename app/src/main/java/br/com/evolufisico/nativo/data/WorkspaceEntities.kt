@@ -60,14 +60,14 @@ data class NotebookEntry(
     val id: String = UUID.randomUUID().toString(), val title: String = "",
     val body: String = "", val studentId: String = "", val student: String = "",
     val date: String = LocalDate.now().toString(), val pinned: Boolean = false,
-    val category:String="Geral",val archived:Boolean=false
+    val category:String="Geral",val archived:Boolean=false,val reminder:String=""
 ) {
     fun toJson() = JSONObject().put("id",id).put("title",title).put("body",body)
         .put("studentId",studentId).put("student",student).put("date",date).put("pinned",pinned)
-        .put("category",category).put("archived",archived)
+        .put("category",category).put("archived",archived).put("reminder",reminder)
     companion object {
         fun fromJson(o: JSONObject) = NotebookEntry(o.getString("id"),o.getString("title"),
             o.optString("body"),o.optString("studentId"),o.optString("student"),
-            o.getString("date"),o.optBoolean("pinned"),o.optString("category","Geral"),o.optBoolean("archived"))
+            o.getString("date"),o.optBoolean("pinned"),o.optString("category","Geral"),o.optBoolean("archived"),o.optString("reminder"))
     }
 }

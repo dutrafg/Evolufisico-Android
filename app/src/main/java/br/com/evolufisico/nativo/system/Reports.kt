@@ -180,6 +180,21 @@ object Reports {
         section("Nota técnica")
         line("Comparações refletem medidas registradas; diferenças de protocolo ou equipamentos podem influenciar resultados.")
     }
+    fun monthlyBilling(items:List<Charge>,period:String,professional:String="")=render {
+        section(if(period.isBlank())"Histórico financeiro completo" else "Caixa mensal — $period")
+        if(professional.isNotBlank())line("Profissional",professional)
+        val periods=if(period.isBlank())br.com.evolufisico.nativo.domain.MonthlyLedger.periods(items) else listOf(java.time.YearMonth.parse(period))
+        periods.forEach{month->
+            val report=br.com.evolufisico.nativo.domain.MonthlyLedger.summary(items,month)
+            section(month.toString());line("Recebido",currency(report.receivedCents));line("A receber",currency(report.pendingCents))
+            listOf("Recebimentos" to report.paid,"Pendências" to report.pending).forEach{(title,rows)->
+                section(title)
+                if(rows.isEmpty())line("Nenhum lançamento neste período.")
+                rows.forEach{c->line("${br.com.evolufisico.nativo.domain.MonthlyLedger.date(c)} • ${c.student} ${c.secondStudent}");line(c.service,"${currency(Financial.billable(c.amountCents,c.discountCents,c.exempt))} • ${c.paymentMethod}")}
+            }
+        }
+        line("Não substitui documentos fiscais ou comprovantes bancários.")
+    }
     fun billing(items:List<Charge>)=render{
         section("Relatório financeiro")
         val charged=items.sumOf{Financial.billable(it.amountCents,it.discountCents,it.exempt)}
@@ -248,7 +263,9 @@ object Reports {
         section("Escopo do resumo")
         line("Resumo de registros vinculados por ID, não inclui fotos nem conteúdo das notas. Não substitui o backup criptografado nem os relatórios detalhados.")
     }
-    fun intake(item:br.com.evolufisico.nativo.data.Intake):ByteArray = render {
+    fun intake(item:br.com.evolufisico.nativo.data.Intake):ByteArray {
+        if(item.answers.containsKey("_template"))return br.com.evolufisico.nativo.domain.FillableIntakePdf.generate(item)
+        return render {
         section("Anamnese · ${item.level}")
         line("Cliente",item.student);line("Data",item.date)
         line("Identificador",item.studentId.ifBlank{"Sem vínculo"})
@@ -257,12 +274,26 @@ object Reports {
         if(item.answers["objective"].isNullOrBlank() && item.objective.isNotBlank())line("Objetivo",item.objective)
         if(item.answers["history"].isNullOrBlank() && item.healthHistory.isNotBlank())line("Histórico relatado",item.healthHistory)
         if(item.answers["work"].isNullOrBlank() && item.routine.isNotBlank())line("Rotina",item.routine)
-        item.answers.filterValues{it.isNotBlank()}.forEach{(key,value)->
-            line(br.com.evolufisico.nativo.domain.IntakeQuestionnaire.labels[key] ?: key,value)
+        if(item.answers.containsKey("_template")) {
+            line("Modelo",item.answers.getValue("_template"))
+            item.answers.keys.filter{it.startsWith("_label_")}.sortedBy{it.substringAfterLast('_').toIntOrNull() ?: 0}.forEach{key->
+                val response=item.answers["response_"+key.substringAfterLast('_')].orEmpty()
+                line(item.answers.getValue(key),response.ifBlank{"Não respondido: __________________________________"})
+            }
+        } else {
+            item.answers.filterValues{it.isNotBlank()}.forEach{(key,value)->line(br.com.evolufisico.nativo.domain.IntakeQuestionnaire.labels[key] ?: key,value)}
+            val unanswered=(1..7).count{item.answers["parq_$it"].isNullOrBlank()}
+            line("Perguntas de triagem sem resposta",unanswered.toString())
         }
-        val unanswered=(1..7).count{item.answers["parq_$it"].isNullOrBlank()}
-        line("Perguntas de triagem sem resposta",unanswered.toString())
         section("Observações e encaminhamentos");line(item.observations.ifBlank{"Sem observações."})
+    }
+    }
+    fun analysis(name:String,dates:List<String>,text:String):ByteArray=render {
+        require(dates.distinct().size in 3..4 && text.length<=12000)
+        section("Relatório de análises")
+        line("Aluno",name);line("Avaliações selecionadas",dates.joinToString(", "))
+        line("Síntese do profissional",text)
+        line("Limites","Índices matemáticos exploratórios. Não são diagnóstico nem percentual de precisão clínica. A edição desta síntese não altera as avaliações originais.")
     }
     private fun currency(value:Long)=java.text.NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(value/100.0)
 }
