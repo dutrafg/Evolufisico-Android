@@ -245,6 +245,8 @@ object AnalysisMath {
             lines += "Pollock 7 e bioimpedância registrados na mesma data (diferenças absolutas, em pontos percentuais; não são medições independentes):"
             paired.forEach { lines += "${it.date}: Pollock ${number(it.pollockPercent)}% · BIA ${number(it.bioimpedancePercent)}% · diferença ${number(it.differencePoints)} p.p." }
         }
+        lines += ""
+        lines += EfiaScientificEngines.analyze(rows).asText()
         lines += "Confirme protocolo, equipamento e condições de coleta. Este resumo é descritivo, exploratório e não diagnóstico; não prevê resultados nem recomenda tratamento."
         return lines.joinToString("\n")
     }
