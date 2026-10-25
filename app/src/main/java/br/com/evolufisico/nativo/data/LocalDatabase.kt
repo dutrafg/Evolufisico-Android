@@ -98,7 +98,7 @@ class LocalDatabase(context: Context) :
             listOf("body_fat_percent REAL", "neck_cm REAL", "chest_cm REAL", "arm_cm REAL", "thigh_cm REAL")
                 .forEach { column -> db.execSQL("ALTER TABLE assessments ADD COLUMN $column") }
         }
-        if (oldVersion in 2..4) {
+        if (oldVersion < 5 && !hasColumn(db, "appointments", "kind")) {
             db.execSQL("ALTER TABLE appointments ADD COLUMN kind TEXT NOT NULL DEFAULT 'Atendimento'")
         }
     }
@@ -487,6 +487,15 @@ class LocalDatabase(context: Context) :
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }
+
+    private fun hasColumn(db: SQLiteDatabase, table: String, column: String): Boolean =
+        db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+            var found = false
+            while (cursor.moveToNext()) {
+                if (cursor.getString(1) == column) found = true
+            }
+            found
+        }
 
     private fun validDate(value: String): Boolean = runCatching {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply { isLenient = false }
