@@ -1,10 +1,10 @@
-# EvoluFísico Android nativo — Beta 14
+# EvoluFísico Android nativo — Beta 15
 
 Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
 
 ## Ajustes desta versão
 
-- Início redesenhado com indicadores diários, calendário com seleção de data, agenda editável, lista de tarefas editável, alertas de reavaliação e cobranças com valores mascaráveis.
+- Início redesenhado com indicadores diários, calendário com seleção de data, agenda editável, lista de tarefas editável, alertas de retornos próximos, prazo configurável de reavaliação (30/60/90 dias) e cobranças com valores mascaráveis.
 - Removidos os atalhos grandes Perfil Unificado e Avaliações da Dashboard; os módulos continuam acessíveis pelo seletor flutuante.
 
 
@@ -38,4 +38,4 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-Os registros ficam no aparelho. Exporte um backup antes de atualizar ou restaurar. Versão `0.1.0-native-beta.11`, código `715`.
+Os registros ficam no aparelho. Exporte um backup antes de atualizar ou restaurar. Versão de desenvolvimento `0.1.0-native-beta.15`, código `719`. Nenhum APK foi gerado nesta atualização.
