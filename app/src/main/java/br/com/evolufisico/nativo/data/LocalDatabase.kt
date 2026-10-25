@@ -437,7 +437,7 @@ class LocalDatabase(context: Context) :
             if (bioimpedanceBodyFatPercent == null) putNull("bia_body_fat_percent") else put("bia_body_fat_percent", bioimpedanceBodyFatPercent)
             if (bioimpedanceLeanMassKg == null) putNull("bia_lean_mass_kg") else put("bia_lean_mass_kg", bioimpedanceLeanMassKg)
             put("bia_device", bioimpedanceDevice.trim())
-            put("photo_data_json", JSONArray().apply { photoData.forEach(::put) }.toString())
+            put("photo_data_json", JSONArray().apply { photoData.forEach { put(it) } }.toString())
             put("notes", notes.trim())
         }
         return if (id == null) writableDatabase.insertOrThrow("assessments", null, values)
