@@ -96,6 +96,8 @@ object AssessmentMath {
 }
 
 
+data class LabEvidence(val date: String, val pollockPercent: Double, val bioimpedancePercent: Double, val differencePoints: Double)
+
 data class AnalysisTrend(
     val first: Double,
     val latest: Double,
@@ -117,6 +119,12 @@ object AnalysisMath {
 
     fun isEligibleWindow(dates: List<String>): Boolean =
         dates.size in 3..4 && dates.distinct().size == dates.size && (coverageDays(dates) ?: 0L) >= 21L
+
+    fun pairedEvidence(assessments: List<Assessment>): List<LabEvidence> = assessments.mapNotNull { row ->
+        val pollock = row.pollock7?.bodyFatPercent ?: return@mapNotNull null
+        val bia = row.bioimpedanceBodyFatPercent ?: return@mapNotNull null
+        LabEvidence(row.date, pollock, bia, roundOne(kotlin.math.abs(pollock - bia)))
+    }.sortedBy { it.date }
 
     fun completeness(total: Int, present: Int): Int? {
         if (total <= 0 || present !in 0..total) return null
@@ -152,10 +160,10 @@ object AnalysisMath {
         val dates = rows.map { it.date }
         val days = coverageDays(dates)
         val presentSlots = rows.sumOf { row ->
-            listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent)
+            listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent, row.bioimpedanceBodyFatPercent, row.bioimpedanceLeanMassKg)
                 .count { it != null }
         }
-        val totalSlots = rows.size * 6
+        val totalSlots = rows.size * 8
         val completeness = completeness(totalSlots, presentSlots)
         val lines = mutableListOf(
             "Aluno: $studentName",
@@ -171,7 +179,9 @@ object AnalysisMath {
                 Triple("Cintura", "cm", rows.map { it.waistCm }),
                 Triple("Quadril", "cm", rows.map { it.hipCm }),
                 Triple("Gordura corporal registrada (método não informado)", "%", rows.map { it.bodyFatPercent }),
-                Triple("Gordura estimada por Pollock 7", "%", rows.map { it.pollock7?.bodyFatPercent })
+                Triple("Gordura estimada por Pollock 7", "%", rows.map { it.pollock7?.bodyFatPercent }),
+                Triple("Gordura por bioimpedância", "%", rows.map { it.bioimpedanceBodyFatPercent }),
+                Triple("Massa livre por bioimpedância", "kg", rows.map { it.bioimpedanceLeanMassKg })
             )
             lines += "Mudanças descritivas (primeira → última avaliação; taxa por 30 dias é aritmética, sem projeção):"
             measures.forEach { (label, unit, values) ->
@@ -185,7 +195,12 @@ object AnalysisMath {
                 }
             }
         }
-        lines += "Bioimpedância não é registrada atualmente no formulário Android; não foi feita comparação Pollock/BIA."
+        val paired = pairedEvidence(rows)
+        if (paired.isEmpty()) lines += "Sem datas com Pollock 7 e bioimpedância registrados juntos; nenhuma diferença entre métodos foi calculada."
+        else {
+            lines += "Pollock 7 e bioimpedância registrados na mesma data (diferenças absolutas, em pontos percentuais; não são medições independentes):"
+            paired.forEach { lines += "${it.date}: Pollock ${number(it.pollockPercent)}% · BIA ${number(it.bioimpedancePercent)}% · diferença ${number(it.differencePoints)} p.p." }
+        }
         lines += "Confirme protocolo, equipamento e condições de coleta. Este resumo é descritivo, exploratório e não diagnóstico; não prevê resultados nem recomenda tratamento."
         return lines.joinToString("\n")
     }
