@@ -36,14 +36,26 @@ internal object ProfileReportPdf {
             .forEach { (label, value) -> value?.let { lines += Line("$label: " + number(it) + " cm") } }
         val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar média" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
         if (folds.any { it.second != null }) {
-            lines += Line("Dobras cutâneas · Pollock 7", true)
+            lines += Line("Dobras cutâneas · protocolos Jackson–Pollock", true)
             lines += Line("Sexo: " + assessment.sex + (assessment.ageYears?.let { " · idade: $it anos" } ?: ""))
             folds.forEach { (label, value) -> value?.let { lines += Line("$label: " + number(it) + " mm") } }
+            assessment.pollock3?.let {
+                lines += Line("Jackson–Pollock 3 dobras · estimativa independente do protocolo de 7", true)
+                lines += Line("Soma das 3 dobras: " + number(it.sumMm) + " mm · densidade: " + number(it.density))
+                lines += Line("Gordura estimada: " + number(it.bodyFatPercent) + "% · massa de gordura: " + number(it.fatMassKg) + " kg · massa livre: " + number(it.leanMassKg) + " kg")
+                if (it.wasClamped) lines += Line("Resultado fora da faixa de exibição, limitado; verificar a coleta.")
+            }
             assessment.pollock7?.let {
+                lines += Line("Jackson–Pollock 7 dobras · estimativa com protocolo próprio", true)
                 lines += Line("Soma: " + number(it.sumMm) + " mm · densidade: " + number(it.density))
                 lines += Line("Gordura estimada: " + number(it.bodyFatPercent) + "% · massa de gordura: " + number(it.fatMassKg) + " kg · massa livre: " + number(it.leanMassKg) + " kg")
                 if (it.wasClamped) lines += Line("A estimativa foi limitada ao intervalo válido para o método.")
             }
+        }
+        if (assessment.contextEvent.isNotBlank()) {
+            lines += Line("")
+            lines += Line("Evento registrado · EF81", true)
+            lines += Line(assessment.contextEvent + " · informação declarada, sem inferência de causalidade")
         }
         lines += Line("")
         lines += Line("Observações", true)
