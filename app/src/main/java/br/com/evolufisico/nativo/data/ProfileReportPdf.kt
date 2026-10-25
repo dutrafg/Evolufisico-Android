@@ -48,6 +48,28 @@ internal object ProfileReportPdf {
         return render("EvoluFísico · Relatório de Avaliação", "Avaliação física", professionalName, registration, lines)
     }
 
+    fun analysis(student: Student, assessments: List<Assessment>, summary: String, professionalName: String, registration: String): ByteArray {
+        require(assessments.size in 3..4) { "Selecione três ou quatro avaliações." }
+        val dates = assessments.map { it.date }.distinct().sorted()
+        require(AnalysisMath.isEligibleWindow(dates)) { "O período precisa conter três ou quatro datas distintas e pelo menos 21 dias." }
+        val lines = mutableListOf(
+            Line("Dados do aluno", true),
+            Line("Nome: " + student.name),
+            Line("Telefone: " + student.phone.ifBlank { "Não informado" }),
+            Line("E-mail: " + student.email.ifBlank { "Não informado" }),
+            Line(""),
+            Line("Período analisado", true),
+            Line("Datas: " + dates.joinToString(", ")),
+            Line("Avaliações selecionadas: " + assessments.size),
+            Line(""),
+            Line("Síntese revisada", true),
+            Line(summary),
+            Line(""),
+            Line("Este relatório é descritivo e exploratório; não constitui diagnóstico, previsão ou prescrição.")
+        )
+        return render("EvoluFísico · Relatório de Análise", "Análises Completas", professionalName, registration, lines)
+    }
+
     fun intakeForm(student: Student, form: IntakeForm, professionalName: String, registration: String): ByteArray {
         val lines = listOf(
             Line("Dados do aluno", true),
