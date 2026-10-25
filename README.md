@@ -17,13 +17,13 @@ Android nativo em Kotlin e Jetpack Compose, com referência funcional no EvoluFi
 
 ## Verificação automatizada
 
-O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte contém 40 casos de teste identificados no código: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração de medidas, fotos e backup, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs, inclusão da bioimpedância nos relatórios e agendamento do backup diário.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte contém 41 casos de teste identificados no código: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração de medidas, fotos e backup, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs, inclusão da bioimpedância nos relatórios e agendamento do backup diário.
 
 A verificação automatizada compila o código principal, mas não substitui homologação visual nem validação em aparelhos físicos. Não foi gerado APK nesta etapa.
 
 ## Diferenças em relação ao EvoluFisico2 3.1.5
 
-Os cinco motores EF78–EF82 têm uma adaptação nativa ligada às avaliações locais; isto ainda não é uma certificação de paridade clínica ou algorítmica integral com o web. EF68/EF70/EF77 continuam com a cobertura descritiva previamente implementada, sem toda a lógica avançada da referência. O protocolo adicional Jackson–Pollock 3 dobras não substitui Jackson–Pollock 7 nem BIA. EF81 aceita somente eventos estruturados explicitamente informados (não infere adesão de notas livres); EF79 só calcula MDC quando SEM e fonte são fornecidos programaticamente. Não estão implementados sincronização automática entre aparelhos, notificações de segundo plano nem outros protocolos antropométricos. Persistem pendências de testes em aparelhos reais.
+Os cinco motores EF78–EF82 têm uma adaptação nativa ligada às avaliações locais; isto ainda não é uma certificação de paridade clínica ou algorítmica integral com o web. EF68/EF70/EF77 continuam com a cobertura descritiva previamente implementada, sem toda a lógica avançada da referência. O protocolo adicional Jackson–Pollock 3 dobras não substitui Jackson–Pollock 7 nem BIA. EF81 aceita somente eventos estruturados explicitamente informados (não infere adesão de notas livres); EF79 só calcula MDC com SEM positivo e fonte informada; estes campos agora são editáveis na tela de Análises e acompanhados da procedência no PDF, sem certificação automática da fonte. Não estão implementados sincronização automática entre aparelhos, notificações de segundo plano nem outros protocolos antropométricos. Persistem pendências de testes em aparelhos reais.
 
 ## Compilação e dados
 
@@ -40,13 +40,13 @@ Os dados ficam no aparelho. Exporte um backup antes de restaurar. Versão `0.1.0
 | Motor | Função nativa | Restrições |
 |---|---|---|
 | EF78 | Consistência, lacunas, protocolos e aparelhos | Não confirma padronização não registrada |
-| EF79 | Diferenças descritivas e MDC95 condicionado | SEM positivo **e** origem documental necessários; não inventa precisão |
+| EF79 | Diferenças descritivas e MDC95 condicionado | SEM positivo **e** origem documental necessários; formulário nativo exporta fonte e resultado no PDF; não inventa precisão |
 | EF80 | Auditoria aritmética de massa e fonte | Coletas independentes não são tratadas como uma só aferição |
 | EF81 | Eventos explícitos de treino/alimentação | Sem inferir causa ou adesão de observações livres |
 | EF82 | Tendências exploratórias Theil–Sen e mínimos quadrados | Com 3–4 datas, não atesta estabilidade nem detecta outliers automaticamente |
 
 A migração SQLite **v8 → v9** adiciona `context_event` sem apagar registros preexistentes.
 O backup foi ampliado para **schema 6**, com restauração de versões 1–5 preservada quando compatível.
-Relatórios de análise bloqueiam intervalos menores que 21 dias, menos de sete dias entre as últimas duas coletas, registros de alunos diferentes e séries insuficientes. Comparações derivadas de composição dependem da procedência de protocolo e aparelho declarados. São resultados **exploratórios**, sujeitos à revisão profissional.
+Relatórios de análise bloqueiam intervalos menores que 21 dias, menos de sete dias entre as últimas duas coletas, registros de alunos diferentes e séries insuficientes. A auditoria EF78–EF82 é anexada como seção própria no PDF, independente da síntese editável. Comparações derivadas de composição dependem da procedência de protocolo e aparelho declarados. São resultados **exploratórios**, sujeitos à revisão profissional.
 
 A implementação não ativa serviços em nuvem e continua utilizável offline. Alterações nesta branch não mudam a `main`.
