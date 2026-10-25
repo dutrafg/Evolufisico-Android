@@ -535,10 +535,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     students = students,
                     assessments = allAssessments,
                     onOpenStudent = { selectedStudentId = it },
-                    onExportReportPdf = { student, selectedAssessments, summary ->
+                    onExportReportPdf = { student, selectedAssessments, summary, sem, semSources ->
                         try {
                             requestPdf(
-                                ProfileReportPdf.analysis(student, selectedAssessments, summary, professionalName, professionalRegistration),
+                                ProfileReportPdf.analysis(student, selectedAssessments, summary, professionalName, professionalRegistration, sem, semSources),
                                 "Analise-" + student.name + ".pdf"
                             )
                         } catch (e: Exception) { errorMessage = e.message ?: "Não foi possível preparar a análise em PDF." }
