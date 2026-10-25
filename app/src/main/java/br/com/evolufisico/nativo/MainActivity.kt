@@ -1468,7 +1468,7 @@ private fun CalculatorScreen() {
     var age by rememberSaveable { mutableStateOf("") }
     var sex by rememberSaveable { mutableStateOf("Masculino") }
     val foldLabels = listOf("Tríceps", "Subescapular", "Peitoral", "Axilar média", "Supra-ilíaca", "Abdominal", "Coxa")
-    val foldInputs = rememberSaveable { mutableStateListOf("", "", "", "", "", "", "") }
+    val foldInputs = remember { mutableStateListOf("", "", "", "", "", "", "") }
     var activityIndex by rememberSaveable { mutableIntStateOf(2) }
     val activityOptions = listOf("Sedentária", "Leve", "Moderada", "Alta")
     val activityFactors = listOf(1.2, 1.375, 1.55, 1.725)
