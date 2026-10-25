@@ -747,6 +747,7 @@ private fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text("${appointment.time}  ·  ${appointment.title}", fontWeight = FontWeight.Medium)
+                                Text(appointment.kind, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                 if (appointment.location.isNotBlank()) Text(appointment.location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             TextButton(onClick = { onEditAppointment(appointment) }) { Text("Editar") }
@@ -769,7 +770,7 @@ private fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(appointment.title, fontWeight = FontWeight.Medium)
-                                Text("${displayDate(appointment.date)} · ${appointment.time}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("${appointment.kind} · ${displayDate(appointment.date)} · ${appointment.time}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             TextButton(onClick = { onEditAppointment(appointment) }) { Text("Editar") }
                         }
