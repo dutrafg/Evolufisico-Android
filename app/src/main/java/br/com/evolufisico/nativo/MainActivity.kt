@@ -85,6 +85,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
@@ -1393,7 +1394,9 @@ private fun AssessmentPhotoGallery(photos: List<String>, onRemove: ((Int) -> Uni
     ) {
         photos.forEachIndexed { index, photo ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val bitmap = remember(photo) { AssessmentPhoto.decode(photo) }
+                val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, key1 = photo) {
+                    value = withContext(Dispatchers.IO) { AssessmentPhoto.decode(photo) }
+                }
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
@@ -1445,11 +1448,15 @@ private fun AssessmentFormDialog(
     var error by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val photoData = remember(initial?.id) { mutableStateListOf<String>().apply { addAll(initial?.photoData.orEmpty()) } }
+    val photoScope = rememberCoroutineScope()
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        uris.forEach { uri ->
-            if (photoData.size < 4) runCatching { AssessmentPhoto.fromUri(context, uri) }
-                .onSuccess { photoData.add(it); error = null }
-                .onFailure { error = it.message ?: "Não foi possível anexar esta foto." }
+        val remaining = (4 - photoData.size).coerceAtLeast(0)
+        photoScope.launch {
+            uris.take(remaining).forEach { uri ->
+                runCatching { withContext(Dispatchers.IO) { AssessmentPhoto.fromUri(context, uri) } }
+                    .onSuccess { photoData.add(it); error = null }
+                    .onFailure { error = it.message ?: "Não foi possível anexar esta foto." }
+            }
         }
     }
     AlertDialog(
