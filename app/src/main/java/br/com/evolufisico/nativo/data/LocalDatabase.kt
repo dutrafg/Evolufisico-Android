@@ -402,7 +402,7 @@ class LocalDatabase(context: Context) :
     }
 
     @Synchronized
-    fun saveIntakeForm(studentId: Long?, template: String, date: String, responses: String): Long {
+    fun saveIntakeForm(studentId: Long?, template: String, date: String, responses: String, id: Long? = null): Long {
         require(template.isNotBlank() && responses.isNotBlank()) { "Escolha um modelo e preencha as respostas." }
         require(validDate(date)) { "Informe uma data válida para o formulário." }
         if (studentId != null) require(student(studentId) != null) { "Aluno não encontrado." }
@@ -410,7 +410,11 @@ class LocalDatabase(context: Context) :
             if (studentId == null) putNull("student_id") else put("student_id", studentId)
             put("template", template); put("date", date); put("responses", responses.trim())
         }
-        return writableDatabase.insertOrThrow("intake_forms", null, values)
+        return if (id == null) writableDatabase.insertOrThrow("intake_forms", null, values)
+        else {
+            require(writableDatabase.update("intake_forms", values, "id=?", arrayOf(id.toString())) == 1) { "Formulário não encontrado." }
+            id
+        }
     }
 
     @Synchronized
