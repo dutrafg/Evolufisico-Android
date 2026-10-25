@@ -38,9 +38,11 @@ class LocalDatabaseTest {
         database.updateStudent(studentId, "Ana Silva", "1188", "ana.silva@example.com", "1990-01-01")
         assertEquals("Ana Silva", database.student(studentId)?.name)
 
-        val assessmentId = database.saveAssessment(studentId, "2026-01-10", 70.0, 175.0, 82.0, 95.0, "Inicial", 24.0, 38.0, 98.0, 31.0, 55.0)
+        val assessmentId = database.saveAssessment(studentId, "2026-01-10", 70.0, 175.0, 82.0, 95.0, "Inicial", 24.0, 38.0, 98.0, 31.0, 55.0, sex = "Feminino", ageYears = 34, tricepsFoldMm = 10.0, subscapularFoldMm = 20.0, chestFoldMm = 30.0, axillaryFoldMm = 40.0, suprailiacFoldMm = 50.0, abdominalFoldMm = 60.0, thighFoldMm = 70.0)
         assertEquals(assessmentId, database.assessments(studentId).first().id)
         assertEquals(22.9, database.assessments(studentId).first().bmi!!, 0.0)
+        assertEquals(34, database.assessments(studentId).first().ageYears)
+        assertTrue(database.assessments(studentId).first().pollock7 != null)
 
         database.saveAssessment(studentId, "2026-02-10", 68.5, 175.0, 80.0, 94.0, "Revisada", id = assessmentId)
         assertEquals(1, database.assessments(studentId).size)
@@ -102,7 +104,7 @@ class LocalDatabaseTest {
 
     @Test fun backupRestoreIsCompleteAndInvalidBackupDoesNotEraseCurrentData() {
         val studentId = database.saveStudent("Caio", "1198", "caio@example.com", "1988-04-03")
-        database.saveAssessment(studentId, "2026-01-10", 80.0, 180.0, 88.0, 100.0, "ok", 20.0)
+        database.saveAssessment(studentId, "2026-01-10", 80.0, 180.0, 88.0, 100.0, "ok", 20.0, sex = "Masculino", ageYears = 30, tricepsFoldMm = 10.0, subscapularFoldMm = 20.0, chestFoldMm = 30.0, axillaryFoldMm = 40.0, suprailiacFoldMm = 50.0, abdominalFoldMm = 60.0, thighFoldMm = 70.0)
         database.saveAppointment(null, "Consulta", "2026-03-12", "09:30", "", "", "Atendimento")
         database.saveTask(null, "Ligar", "2026-03-13")
         database.saveIntakeForm(studentId, "Anamnese", "2026-03-10", "Respostas")
@@ -113,6 +115,9 @@ class LocalDatabaseTest {
         database.restoreBackupJson(backup)
         assertEquals(1, database.students().size)
         assertEquals(1, database.allAssessments().size)
+        assertEquals(30, database.allAssessments().single().ageYears)
+        assertEquals(70.0, database.allAssessments().single().thighFoldMm!!, 0.0)
+        assertTrue(database.allAssessments().single().pollock7 != null)
         assertEquals(1, database.appointments().size)
         assertEquals(1, database.tasks().size)
         assertEquals(1, database.intakeForms().size)
