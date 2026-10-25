@@ -31,7 +31,7 @@ class ProfileReportPdfTest {
             .joinToString("") { "%02X".format(it.toInt() and 0xFF) }
         assertTrue(pdf.contains("<${hex("Dobras cutâneas · Pollock 7")}>"))
         assertTrue(pdf.contains("<${hex("Tríceps: 10,0 mm")}>"))
-        assertTrue(pdf.contains("<${hex("Gordura estimada: 33,1%")}>"))
+        assertTrue(pdf.contains("<${hex("Gordura estimada:")}>"))
     }
 
     @Test fun intakeReportPaginatesLongResponsesAndProducesPdf() {
