@@ -17,7 +17,7 @@ Android nativo em Kotlin e Jetpack Compose, com referência funcional no EvoluFi
 
 ## Verificação automatizada
 
-O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte contém 41 casos de teste identificados no código: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração de medidas, fotos e backup, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs, inclusão da bioimpedância nos relatórios e agendamento do backup diário.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte contém 42 casos de teste identificados no código: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração de medidas, fotos e backup, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs, inclusão da bioimpedância nos relatórios e agendamento do backup diário.
 
 A verificação automatizada compila o código principal, mas não substitui homologação visual nem validação em aparelhos físicos. Não foi gerado APK nesta etapa.
 
@@ -47,6 +47,6 @@ Os dados ficam no aparelho. Exporte um backup antes de restaurar. Versão `0.1.0
 
 A migração SQLite **v8 → v9** adiciona `context_event` sem apagar registros preexistentes.
 O backup foi ampliado para **schema 6**, com restauração de versões 1–5 preservada quando compatível.
-Relatórios de análise bloqueiam intervalos menores que 21 dias, menos de sete dias entre as últimas duas coletas, registros de alunos diferentes e séries insuficientes. A auditoria EF78–EF82 é anexada como seção própria no PDF, independente da síntese editável. Comparações derivadas de composição dependem da procedência de protocolo e aparelho declarados. São resultados **exploratórios**, sujeitos à revisão profissional.
+Relatórios de análise bloqueiam intervalos menores que 21 dias, menos de sete dias entre as últimas duas coletas, registros de alunos diferentes e séries insuficientes. A auditoria EF78–EF82 é anexada como seção própria no PDF, independente da síntese editável. Comparações derivadas de composição dependem da procedência de protocolo e aparelho declarados. Indicadores anteriores do resumo e do PDF também bloqueiam comparação longitudinal de BIA com aparelho diferente ou ausente, mudanças de sexo/equação para Pollock 7 e percentuais informados sem método. São resultados **exploratórios**, sujeitos à revisão profissional.
 
 A implementação não ativa serviços em nuvem e continua utilizável offline. Alterações nesta branch não mudam a `main`.
