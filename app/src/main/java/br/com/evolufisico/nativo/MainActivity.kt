@@ -1,6 +1,7 @@
 package br.com.evolufisico.nativo
 
 import android.os.Bundle
+import android.app.TimePickerDialog
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -99,6 +100,7 @@ import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
 import br.com.evolufisico.nativo.data.AssessmentMath
+import br.com.evolufisico.nativo.data.DailyBackupScheduler
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.ProfileReportPdf
 import br.com.evolufisico.nativo.data.Student
@@ -109,6 +111,7 @@ import java.text.NumberFormat
 import java.util.Date
 import java.util.Locale
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -255,6 +258,9 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var reevaluationIntervalDays by remember { mutableIntStateOf(preferences.getInt("reevaluation_interval_days", 90).coerceIn(30, 90)) }
     var professionalName by remember { mutableStateOf(preferences.getString("professional_name", "").orEmpty()) }
     var professionalRegistration by remember { mutableStateOf(preferences.getString("professional_registration", "").orEmpty()) }
+    var autoBackupEnabled by remember { mutableStateOf(preferences.getBoolean("auto_backup_enabled", false)) }
+    var autoBackupTime by remember { mutableStateOf(preferences.getString("auto_backup_time", "22:00") ?: "22:00") }
+    var backupFolderUri by remember { mutableStateOf(preferences.getString("auto_backup_folder_uri", null)) }
     fun toggleFavorite(module: String) {
         val next = favoriteModules.toMutableSet()
         if (!next.add(module)) next.remove(module)
@@ -302,6 +308,20 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) restoreUri = uri
     }
+    val chooseBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                backupFolderUri = uri.toString()
+                preferences.edit().putString("auto_backup_folder_uri", uri.toString()).apply()
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "Não foi possível autorizar o acesso à pasta."
+            }
+        }
+    }
     fun requestPdf(content: ByteArray, fileName: String) {
         pendingPdf = content
         exportPdf.launch(fileName)
@@ -326,6 +346,9 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
 
     LaunchedEffect(reevaluationIntervalDays) { refresh() }
+    LaunchedEffect(autoBackupEnabled, autoBackupTime, backupFolderUri) {
+        DailyBackupScheduler.configure(context, autoBackupEnabled, autoBackupTime, backupFolderUri)
+    }
     LaunchedEffect(selectedStudentId) {
         profileAssessments = if (selectedStudentId == null) emptyList()
         else withContext(Dispatchers.IO) { database.assessments(selectedStudentId!!) }
@@ -438,6 +461,18 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onProfessionalNameChange = { professionalName = it; preferences.edit().putString("professional_name", it).apply() },
                     professionalRegistration = professionalRegistration,
                     onProfessionalRegistrationChange = { professionalRegistration = it; preferences.edit().putString("professional_registration", it).apply() },
+                    autoBackupEnabled = autoBackupEnabled,
+                    autoBackupTime = autoBackupTime,
+                    backupFolderSelected = !backupFolderUri.isNullOrBlank(),
+                    onAutoBackupEnabledChange = { autoBackupEnabled = it; preferences.edit().putBoolean("auto_backup_enabled", it).apply() },
+                    onChooseBackupFolder = { chooseBackupFolder.launch(null) },
+                    onChooseBackupTime = {
+                        val time = runCatching { LocalTime.parse(autoBackupTime) }.getOrDefault(LocalTime.of(22, 0))
+                        TimePickerDialog(context, { _, hour, minute ->
+                            autoBackupTime = String.format(Locale.ROOT, "%02d:%02d", hour, minute)
+                            preferences.edit().putString("auto_backup_time", autoBackupTime).apply()
+                        }, time.hour, time.minute, true).show()
+                    },
                     onBackup = { exportBackup.launch("EvoluFisico-Backup.json") },
                     onRestore = { importBackup.launch(arrayOf("application/json", "text/plain")) }
                 )
@@ -1533,6 +1568,12 @@ private fun SettingsScreen(
     onProfessionalNameChange: (String) -> Unit,
     professionalRegistration: String,
     onProfessionalRegistrationChange: (String) -> Unit,
+    autoBackupEnabled: Boolean,
+    autoBackupTime: String,
+    backupFolderSelected: Boolean,
+    onAutoBackupEnabledChange: (Boolean) -> Unit,
+    onChooseBackupFolder: () -> Unit,
+    onChooseBackupTime: () -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit
 ) {
@@ -1609,11 +1650,26 @@ private fun SettingsScreen(
             Text("Dados e privacidade", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             Text(
-                "Os dados desta Beta ficam no armazenamento local do aplicativo. O backup é exportado manualmente; a restauração substitui os dados locais pelo conteúdo do arquivo.",
+                "Os dados desta Beta ficam no armazenamento local do aplicativo. A restauração substitui os dados locais pelo conteúdo do arquivo escolhido.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(Modifier.height(12.dp))
+            SectionCard("Backup automático diário") {
+                Text("Salva uma cópia JSON na pasta escolhida, no horário definido. O Android pode variar alguns minutos o início em segundo plano.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                androidx.compose.material3.OutlinedButton(onClick = onChooseBackupFolder, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (backupFolderSelected) "Alterar pasta de backup" else "Escolher pasta de backup")
+                }
+                Text(if (backupFolderSelected) "Pasta de destino autorizada." else "Escolha uma pasta para ativar o backup automático.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Ativar backup diário", modifier = Modifier.weight(1f))
+                    Switch(checked = autoBackupEnabled, onCheckedChange = onAutoBackupEnabledChange, enabled = backupFolderSelected)
+                }
+                androidx.compose.material3.OutlinedButton(onClick = onChooseBackupTime, enabled = backupFolderSelected, modifier = Modifier.fillMaxWidth()) {
+                    Text("Horário do backup · $autoBackupTime")
+                }
+            }
+            Spacer(Modifier.height(4.dp))
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
