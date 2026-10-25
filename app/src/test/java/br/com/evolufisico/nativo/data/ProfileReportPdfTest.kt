@@ -25,13 +25,14 @@ class ProfileReportPdfTest {
             tricepsFoldMm = 10.0, subscapularFoldMm = 20.0, chestFoldMm = 30.0,
             axillaryFoldMm = 40.0, suprailiacFoldMm = 50.0, abdominalFoldMm = 60.0, thighFoldMm = 70.0
         )
+        assertTrue("Pollock calculation should be present", measured.pollock7 != null)
         val bytes = ProfileReportPdf.assessment(student, measured, "Profissional", "CREF 0000")
         val pdf = String(bytes, StandardCharsets.ISO_8859_1)
         fun hex(text: String) = text.toByteArray(java.nio.charset.Charset.forName("windows-1252"))
             .joinToString("") { "%02X".format(it.toInt() and 0xFF) }
         assertTrue(pdf.contains("<${hex("Dobras cutâneas · Pollock 7")}>"))
         assertTrue(pdf.contains("<${hex("Tríceps: 10,0 mm")}>"))
-        assertTrue(pdf.contains("<${hex("Gordura estimada:")}>"))
+        assertTrue(pdf.contains("<${hex("Soma:")}>"))
     }
 
     @Test fun intakeReportPaginatesLongResponsesAndProducesPdf() {
