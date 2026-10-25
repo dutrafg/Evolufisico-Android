@@ -57,6 +57,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -103,8 +104,13 @@ import br.com.evolufisico.nativo.data.Student
 import br.com.evolufisico.nativo.data.TaskRecord
 import androidx.core.view.WindowCompat
 import java.text.SimpleDateFormat
+import java.text.NumberFormat
 import java.util.Date
 import java.util.Locale
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -252,6 +258,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         preferences.edit().putStringSet("favorite_modules", next).apply()
     }
     var appointmentDialog by remember { mutableStateOf(false) }
+    var editingAppointment by remember { mutableStateOf<Appointment?>(null) }
     var taskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskRecord?>(null) }
     var chargeDialog by remember { mutableStateOf(false) }
@@ -413,19 +420,34 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } }
                 )
                 activeModule == "Análises" || activeModule == "Análises Completas" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
-                activeModule == "Agenda" || selected == 2 -> AgendaScreen(appointments = appointments, onAdd = { appointmentDialog = true }, onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } })
+                activeModule == "Agenda" || selected == 2 -> AgendaScreen(
+                    appointments = appointments,
+                    onAdd = { editingAppointment = null; appointmentDialog = true },
+                    onEdit = { editingAppointment = it; appointmentDialog = true },
+                    onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } }
+                )
                 activeModule != null -> ModulePlaceholder(activeModule.orEmpty())
                 selected == 0 -> HomeScreen(
                     studentCount = counts.first,
-                    assessmentCount = counts.second,
-                    todayAppointments = appointments.filter { it.date == todayIso() },
-                    pendingTasks = tasks.filterNot { it.completed },
-                    pendingCharges = charges.count { it.status == "Pendente" },
                     studentsWithoutAssessment = studentsWithoutAssessment,
                     reevaluationsDue = reevaluationsDue,
+                    students = students,
+                    assessments = allAssessments,
+                    appointments = appointments,
+                    tasks = tasks,
+                    charges = charges,
+                    maskFinancial = maskFinancial,
                     favoriteModules = favoriteModules.sorted(),
                     onOpen = { activeModule = it },
-                    onAddStudent = { studentDialog = true }
+                    onAddStudent = { studentDialog = true },
+                    onAddAppointment = { editingAppointment = null; appointmentDialog = true },
+                    onEditAppointment = { editingAppointment = it; appointmentDialog = true },
+                    onDeleteAppointment = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } },
+                    onAddTask = { editingTask = null; taskDialog = true },
+                    onToggleTask = { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } },
+                    onEditTask = { editingTask = it; taskDialog = true },
+                    onDeleteTask = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } },
+                    onOpenStudent = { selectedStudentId = it }
                 )
                 else -> ModuleListScreen(
                     favorites = favoriteModules,
@@ -509,11 +531,12 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
 
     if (appointmentDialog) {
-        AppointmentFormDialog(onDismiss = { appointmentDialog = false }, onSave = { title, date, time, location, notes ->
+        AppointmentFormDialog(initial = editingAppointment, onDismiss = { appointmentDialog = false; editingAppointment = null }, onSave = { id, title, date, time, location, notes ->
             scope.launch {
                 try {
-                    withContext(Dispatchers.IO) { database.saveAppointment(title, date, time, location, notes) }
+                    withContext(Dispatchers.IO) { database.saveAppointment(id, title, date, time, location, notes) }
                     appointmentDialog = false
+                    editingAppointment = null
                     errorMessage = null
                     refresh()
                 } catch (exception: Exception) {
@@ -628,77 +651,253 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 @Composable
 private fun HomeScreen(
     studentCount: Int,
-    assessmentCount: Int,
-    todayAppointments: List<Appointment>,
-    pendingTasks: List<TaskRecord>,
-    pendingCharges: Int,
     studentsWithoutAssessment: Int,
     reevaluationsDue: Int,
+    students: List<Student>,
+    assessments: List<Assessment>,
+    appointments: List<Appointment>,
+    tasks: List<TaskRecord>,
+    charges: List<ChargeRecord>,
+    maskFinancial: Boolean,
     favoriteModules: List<String>,
     onOpen: (String) -> Unit,
-    onAddStudent: () -> Unit
+    onAddStudent: () -> Unit,
+    onAddAppointment: () -> Unit,
+    onEditAppointment: (Appointment) -> Unit,
+    onDeleteAppointment: (Long) -> Unit,
+    onAddTask: () -> Unit,
+    onToggleTask: (Long, Boolean) -> Unit,
+    onEditTask: (TaskRecord) -> Unit,
+    onDeleteTask: (Long) -> Unit,
+    onOpenStudent: (Long) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val today = todayIso()
+    var selectedDate by rememberSaveable { mutableStateOf(today) }
+    var monthKey by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
+    val selectedMonth = runCatching { YearMonth.parse(monthKey) }.getOrDefault(YearMonth.now())
+    val pendingTasks = tasks.filterNot { it.completed }.sortedBy { it.dueDate }
+    val pendingCharges = charges.filter { it.status == "Pendente" }
+    val todayAppointments = appointments.filter { it.date == today }
+    val scheduledEvaluations = todayAppointments.count { it.title.contains("avalia", ignoreCase = true) }
+    val amountLabel = if (maskFinancial) "••••" else NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(pendingCharges.sumOf { it.amount })
+    val latestAssessments = remember(students, assessments) {
+        assessments.groupBy { it.studentId }.mapValues { (_, values) -> values.maxByOrNull { it.date } }
+    }
+    val overdueStudents = remember(students, latestAssessments) {
+        students.mapNotNull { student ->
+            val latest = latestAssessments[student.id] ?: return@mapNotNull null
+            val days = runCatching { ChronoUnit.DAYS.between(LocalDate.parse(latest.date), LocalDate.now()) }.getOrNull() ?: return@mapNotNull null
+            if (days >= 90) Triple(student, latest, days) else null
+        }.sortedByDescending { it.third }
+    }
+    val appointmentsOnSelectedDate = appointments.filter { it.date == selectedDate }.sortedBy { it.time }
+    val nextAppointments = appointments.filter { it.date >= today }.sortedWith(compareBy<Appointment> { it.date }.thenBy { it.time }).take(3)
+    val hasNoStudents = studentCount == 0
+
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Dashboard Secretária", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
-            Text("Acompanhe alunos, avaliações e próximos atendimentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
-                MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Dashboard Secretária", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Sua rotina, alunos e próximos acompanhamentos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
-            SectionCard("Agenda de hoje") {
-                if (todayAppointments.isEmpty()) Text("A agenda ainda está vazia.", color = Muted)
-                else todayAppointments.take(3).forEach { Text(it.time + "  ·  " + it.title, color = MaterialTheme.colorScheme.onSurface) }
-                Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetricCard("Atendimentos", todayAppointments.size.toString(), "Hoje", Modifier.weight(1f))
+                    MetricCard("Avaliações", scheduledEvaluations.toString(), "Previstas hoje", Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetricCard("Reavaliações", reevaluationsDue.toString(), "Em atraso", Modifier.weight(1f))
+                    MetricCard("Cobranças", pendingCharges.size.toString(), "Em aberto: $amountLabel", Modifier.weight(1f))
+                }
+            }
+        }
+        item {
+            SectionCard("Calendário e agenda") {
+                HomeCalendar(
+                    month = selectedMonth,
+                    selectedDate = selectedDate,
+                    appointmentDates = appointments.mapTo(mutableSetOf()) { it.date },
+                    onPreviousMonth = { monthKey = selectedMonth.minusMonths(1).toString() },
+                    onNextMonth = { monthKey = selectedMonth.plusMonths(1).toString() },
+                    onSelectDate = {
+                        selectedDate = it
+                        monthKey = runCatching { YearMonth.from(LocalDate.parse(it)).toString() }.getOrDefault(monthKey)
+                    }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    if (selectedDate == today) "Atendimentos de hoje" else "Atendimentos em ${displayDate(selectedDate)}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (appointmentsOnSelectedDate.isEmpty()) {
+                    Text("Nenhum atendimento agendado para esta data.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    appointmentsOnSelectedDate.take(3).forEach { appointment ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("${appointment.time}  ·  ${appointment.title}", fontWeight = FontWeight.Medium)
+                                if (appointment.location.isNotBlank()) Text(appointment.location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            TextButton(onClick = { onEditAppointment(appointment) }) { Text("Editar") }
+                            TextButton(onClick = { onDeleteAppointment(appointment.id) }) { Text("Excluir") }
+                        }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = onAddAppointment) { Text("Novo atendimento") }
+                    TextButton(onClick = { onOpen("Agenda") }) { Text("Agenda completa") }
+                }
+            }
+        }
+        item {
+            SectionCard("Próximos atendimentos") {
+                if (nextAppointments.isEmpty()) {
+                    Text("Nenhum próximo retorno agendado.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    nextAppointments.forEach { appointment ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(appointment.title, fontWeight = FontWeight.Medium)
+                                Text("${displayDate(appointment.date)} · ${appointment.time}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            TextButton(onClick = { onEditAppointment(appointment) }) { Text("Editar") }
+                        }
+                    }
+                }
             }
         }
         item {
             SectionCard("Central de atenção") {
-                val message = when {
-                    studentCount == 0 -> "Cadastre o primeiro aluno para iniciar o acompanhamento."
-                    reevaluationsDue > 0 -> "$reevaluationsDue aluno(s) estão há 90 dias ou mais sem reavaliação."
-                    studentsWithoutAssessment > 0 -> "$studentsWithoutAssessment aluno(s) ainda não têm avaliação registrada."
-                    else -> "Todos os alunos têm avaliações recentes registradas."
-                }
-                Text(message, color = Muted)
-                Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
-                    Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
-                }
-                if (pendingTasks.isNotEmpty()) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Text("Tarefas pendentes", fontWeight = FontWeight.SemiBold)
-                    pendingTasks.take(2).forEach { task ->
-                        Text(task.title + " · " + displayDate(task.dueDate), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                when {
+                    hasNoStudents -> {
+                        Text("Cadastre o primeiro aluno para iniciar o acompanhamento.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Button(onClick = onAddStudent) { Text("Cadastrar aluno") }
                     }
-                    TextButton(onClick = { onOpen("Tarefas") }) {
-                        Text("Ver todas as ${pendingTasks.size} tarefas")
-                    }
-                }
-                if (pendingCharges > 0) {
-                    TextButton(onClick = { onOpen("Cobranças") }) {
-                        Text("$pendingCharges cobrança(s) pendente(s)")
+                    overdueStudents.isEmpty() && studentsWithoutAssessment == 0 && pendingTasks.isEmpty() && pendingCharges.isEmpty() ->
+                        Text("Tudo em dia. Nenhum alerta precisa de atenção agora.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else -> {
+                        if (studentsWithoutAssessment > 0) {
+                            Text("$studentsWithoutAssessment aluno(s) ainda não têm avaliação registrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            TextButton(onClick = { onOpen("Perfil Unificado") }) { Text("Ver alunos") }
+                        }
+                        if (overdueStudents.isNotEmpty()) {
+                            Text("Reavaliações a acompanhar", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            overdueStudents.take(3).forEach { (student, last, days) ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(student.name, fontWeight = FontWeight.Medium)
+                                        Text("Última avaliação ${displayDate(last.date)} · há ${days} dias", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    TextButton(onClick = { onOpenStudent(student.id) }) { Text("Abrir") }
+                                }
+                            }
+                        }
+                        if (pendingCharges.isNotEmpty()) {
+                            Text("Cobranças pendentes: ${pendingCharges.size} · $amountLabel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            TextButton(onClick = { onOpen("Cobranças") }) { Text("Abrir cobranças") }
+                        }
                     }
                 }
             }
         }
         item {
-            if (favoriteModules.isEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
-                    QuickAction("Avaliações", moduleIcon("Avaliações"), Modifier.weight(1f)) { onOpen("Avaliações") }
+            SectionCard("Tarefas") {
+                val pending = pendingTasks.take(3)
+                if (pending.isEmpty()) Text("Nenhuma tarefa pendente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                pending.forEach { task ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = false, onCheckedChange = { onToggleTask(task.id, it) })
+                        Column(Modifier.weight(1f)) {
+                            Text(task.title, fontWeight = FontWeight.Medium)
+                            Text("Prazo: ${displayDate(task.dueDate)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onEditTask(task) }) { Text("Editar") }
+                        TextButton(onClick = { onDeleteTask(task.id) }) { Text("Excluir") }
+                    }
                 }
-            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onAddTask) { Text("Nova tarefa") }
+                    TextButton(onClick = { onOpen("Tarefas") }) { Text("Ver todas") }
+                }
+            }
+        }
+        if (favoriteModules.isNotEmpty()) {
+            item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Favoritos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(favoriteModules) { module ->
                             QuickAction(module, moduleIcon(module), Modifier.width(155.dp)) { onOpen(module) }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeCalendar(
+    month: YearMonth,
+    selectedDate: String,
+    appointmentDates: Set<String>,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onSelectDate: (String) -> Unit
+) {
+    val locale = Locale("pt", "BR")
+    val monthLabel = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
+        .replaceFirstChar { it.uppercase() }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(monthLabel, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        IconButton(onClick = onPreviousMonth) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Mês anterior") }
+        IconButton(onClick = onNextMonth) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Próximo mês") }
+    }
+    Row {
+        listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { day ->
+            Box(Modifier.weight(1f).height(24.dp), contentAlignment = Alignment.Center) {
+                Text(day, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+    val offset = month.atDay(1).dayOfWeek.value % 7
+    val dates: List<LocalDate?> = List(offset) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
+    dates.chunked(7).forEach { week ->
+        Row {
+            week.forEach { date ->
+                if (date == null) {
+                    Spacer(Modifier.weight(1f).height(40.dp))
+                } else {
+                    val iso = date.toString()
+                    val selected = selectedDate == iso
+                    val hasAppointment = iso in appointmentDates
+                    Column(
+                        modifier = Modifier.weight(1f).height(42.dp).clickable { onSelectDate(iso) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.size(28.dp).background(
+                                if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                CircleShape
+                            ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                date.dayOfMonth.toString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Box(
+                            Modifier.size(3.dp).background(
+                                if (hasAppointment) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                CircleShape
+                            )
+                        )
                     }
                 }
             }
@@ -1204,7 +1403,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 13", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 14", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -1232,7 +1431,7 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onDelete: (Long) -> Unit) {
+private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onEdit: (Appointment) -> Unit, onDelete: (Long) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Agenda", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -1249,7 +1448,10 @@ private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onD
                             Text(appointment.title, fontWeight = FontWeight.SemiBold)
                             Text(displayDate(appointment.date) + "  ·  " + appointment.time, color = Teal)
                         }
-                        TextButton(onClick = { onDelete(appointment.id) }) { Text("Excluir") }
+                        Row {
+                            TextButton(onClick = { onEdit(appointment) }) { Text("Editar") }
+                            TextButton(onClick = { onDelete(appointment.id) }) { Text("Excluir") }
+                        }
                     }
                     if (appointment.location.isNotBlank()) Text(appointment.location, color = Muted)
                     if (appointment.notes.isNotBlank()) Text(appointment.notes, color = Muted)
@@ -1260,16 +1462,16 @@ private fun AgendaScreen(appointments: List<Appointment>, onAdd: () -> Unit, onD
 }
 
 @Composable
-private fun AppointmentFormDialog(onDismiss: () -> Unit, onSave: (String, String, String, String, String) -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var date by rememberSaveable { mutableStateOf(todayIso()) }
-    var time by rememberSaveable { mutableStateOf("") }
-    var location by rememberSaveable { mutableStateOf("") }
-    var notes by rememberSaveable { mutableStateOf("") }
+private fun AppointmentFormDialog(initial: Appointment?, onDismiss: () -> Unit, onSave: (Long?, String, String, String, String, String) -> Unit) {
+    var title by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
+    var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
+    var time by rememberSaveable(initial?.id) { mutableStateOf(initial?.time.orEmpty()) }
+    var location by rememberSaveable(initial?.id) { mutableStateOf(initial?.location.orEmpty()) }
+    var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Novo atendimento") },
+        title = { Text(if (initial == null) "Novo atendimento" else "Editar atendimento") },
         text = {
             Column(modifier = Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(title, { title = it; error = null }, label = { Text("Motivo *") }, singleLine = true)
@@ -1293,7 +1495,7 @@ private fun AppointmentFormDialog(onDismiss: () -> Unit, onSave: (String, String
                 if (title.isBlank()) error = "Informe o motivo do atendimento."
                 else if (!validDate) error = "Informe uma data válida no formato AAAA-MM-DD."
                 else if (!validTime) error = "Informe um horário válido no formato HH:MM."
-                else onSave(title, date, time, location, notes)
+                else onSave(initial?.id, title, date, time, location, notes)
             }) { Text("Salvar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }

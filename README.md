@@ -1,8 +1,12 @@
-# EvoluFísico Android nativo — Beta 13
+# EvoluFísico Android nativo — Beta 14
 
 Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
 
 ## Ajustes desta versão
+
+- Início redesenhado com indicadores diários, calendário com seleção de data, agenda editável, lista de tarefas editável, alertas de reavaliação e cobranças com valores mascaráveis.
+- Removidos os atalhos grandes Perfil Unificado e Avaliações da Dashboard; os módulos continuam acessíveis pelo seletor flutuante.
+
 
 - Layout travado no modo compacto em celulares e tablets, com conteúdo central limitado a 600 dp.
 - Removida a variação de quatro indicadores em telas largas; o Início conserva sempre dois cartões.
@@ -10,7 +14,7 @@ Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Rele
 - O seletor flutuante lista apenas módulos principais; Agenda e Tarefas permanecem como funções acessadas pelo Início.
 - Nenhum modo desktop ou estendido está disponível nesta interface nativa.
 
-## Funcionalidades das Betas 5 a 10
+## Funcionalidades das Betas 5 a 13
 
 - Início com tarefas e cobranças pendentes e atalhos.
 - Avaliações com peso, altura, cintura, quadril, percentual de gordura informado e medidas opcionais; migração preserva avaliações anteriores.

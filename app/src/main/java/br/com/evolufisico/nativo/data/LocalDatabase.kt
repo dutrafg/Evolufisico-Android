@@ -160,7 +160,7 @@ class LocalDatabase(context: Context) :
     }
 
     @Synchronized
-    fun saveAppointment(title: String, date: String, time: String, location: String, notes: String): Long {
+    fun saveAppointment(id: Long?, title: String, date: String, time: String, location: String, notes: String): Long {
         require(title.isNotBlank()) { "Informe o motivo do atendimento." }
         require(validDate(date)) { "Confira a data do atendimento." }
         require(time.matches(Regex("\\d{2}:\\d{2}")) && time.substring(0, 2).toInt() in 0..23 && time.substring(3, 5).toInt() in 0..59) { "Confira o horário do atendimento." }
@@ -171,7 +171,11 @@ class LocalDatabase(context: Context) :
             put("location", location.trim())
             put("notes", notes.trim())
         }
-        return writableDatabase.insertOrThrow("appointments", null, values)
+        return if (id == null) writableDatabase.insertOrThrow("appointments", null, values)
+        else {
+            writableDatabase.update("appointments", values, "id=?", arrayOf(id.toString()))
+            id
+        }
     }
 
     @Synchronized
