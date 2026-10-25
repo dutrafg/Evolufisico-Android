@@ -71,7 +71,7 @@ internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessme
                 if (a != null && b != null) ((b - a) / 86_400_000L).toInt() else 0
             } else 0
             val qualified = history.size >= 3 && days >= 21
-            Card(Modifier.fillMaxWidth(), onClick = { onOpenStudent(student.id) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Card(onClick = { onOpenStudent(student.id) }, modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(student.name, fontWeight = FontWeight.SemiBold)
                     if (latest == null) Text("Sem avaliações registradas", color = MaterialTheme.colorScheme.onSurfaceVariant)

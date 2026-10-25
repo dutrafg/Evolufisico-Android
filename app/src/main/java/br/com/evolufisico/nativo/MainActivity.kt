@@ -74,7 +74,6 @@ import br.com.evolufisico.nativo.data.Assessment
 import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
 import br.com.evolufisico.nativo.data.Appointment
-import br.com.evolufisico.nativo.data.Assessment
 import br.com.evolufisico.nativo.data.AssessmentMath
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.Student
@@ -445,8 +444,9 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 
     if (studentDialog) {
         StudentFormDialog(
+            initial = editingStudent,
             onDismiss = { studentDialog = false },
-            onSave = { name, phone, email, birthDate ->
+            onSave = { id, name, phone, email, birthDate ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
