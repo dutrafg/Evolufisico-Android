@@ -58,6 +58,9 @@ internal object ProfileReportPdf {
         require(assessments.all { it.studentId == student.id }) { "As avaliações devem pertencer ao aluno do relatório." }
         val dates = assessments.map { it.date }.distinct().sorted()
         require(AnalysisMath.isEligibleWindow(dates)) { "O período precisa conter três ou quatro datas distintas e pelo menos 21 dias." }
+        require(EfiaScientificEngines.analyze(assessments).eligible) {
+            "Análise bloqueada: confira identidade, medidas, datas e sete dias entre as duas últimas coletas."
+        }
         val lines = mutableListOf(
             Line("Dados do aluno", true),
             Line("Nome: " + student.name),
