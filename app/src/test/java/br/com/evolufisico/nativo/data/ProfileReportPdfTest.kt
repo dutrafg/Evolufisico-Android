@@ -110,4 +110,35 @@ class ProfileReportPdfTest {
         }
     }
 
+    @Test fun scientificPdfShowsDeclaredMdcButNotUnverifiedPrecision() {
+        val assessments = listOf(
+            assessment.copy(id = 11, date = "2026-01-01", weightKg = 70.0),
+            assessment.copy(id = 12, date = "2026-01-15", weightKg = 69.5),
+            assessment.copy(id = 13, date = "2026-02-01", weightKg = 69.0)
+        )
+        val result = ProfileReportPdf.analysis(
+            student, assessments, "Texto revisado pelo profissional.", "Profissional", "CREF",
+            mapOf("peso" to 0.2), mapOf("peso" to "Relatório técnico documentado")
+        )
+        val pdf = String(result, StandardCharsets.ISO_8859_1)
+        val fragments = Regex("<([0-9A-F]+)> Tj").findAll(pdf).map { match ->
+            val code = match.groupValues[1]
+            val bytes = code.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+            String(bytes, java.nio.charset.Charset.forName("windows-1252"))
+        }.joinToString(" ")
+        assertTrue(fragments.contains("Auditoria científica EF78–EF82"))
+        assertTrue(fragments.contains("MDC95 informado"))
+        assertTrue(fragments.contains("Relatório de Análise"))
+        val unavailable = String(
+            ProfileReportPdf.analysis(student, assessments, "Revisado", "", "", mapOf("peso" to 0.2)),
+            StandardCharsets.ISO_8859_1
+        )
+        assertTrue(unavailable.isNotBlank())
+        val withoutSource = Regex("<([0-9A-F]+)> Tj").findAll(unavailable).map { match ->
+            String(match.groupValues[1].chunked(2).map { it.toInt(16).toByte() }.toByteArray(),
+                java.nio.charset.Charset.forName("windows-1252"))
+        }.joinToString(" ")
+        assertTrue(withoutSource.contains("MDC indisponível"))
+    }
+
 }
