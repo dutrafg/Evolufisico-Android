@@ -73,6 +73,50 @@ object AssessmentMath {
         )
     }
 
+
+    /**
+     * Jackson-Pollock three-site equations (Siri conversion), independently documented
+     * from seven-site values. Male: chest + abdomen + thigh, ages 18-61.
+     * Female: triceps + suprailiac + thigh, ages 18-55.
+     * Never interchangeable with BIA or another skinfold protocol.
+     */
+    fun pollock3(
+        sex: String,
+        ageYears: Int,
+        weightKg: Double,
+        chestMm: Double?,
+        abdomenMm: Double?,
+        tricepsMm: Double?,
+        suprailiacMm: Double?,
+        thighMm: Double?
+    ): BodyFatEstimate? {
+        if (sex !in listOf("Masculino", "Feminino") || !weightKg.isFinite() || weightKg !in 2.0..500.0) return null
+        if (ageYears !in (if (sex == "Masculino") 18..61 else 18..55)) return null
+        val requested = if (sex == "Masculino") listOf(chestMm, abdomenMm, thighMm)
+            else listOf(tricepsMm, suprailiacMm, thighMm)
+        val folds = requested.map { it?.takeIf { n -> n.isFinite() && n in 1.0..100.0 } ?: return null }
+        val sum = folds.sum()
+        val density = if (sex == "Masculino") {
+            1.10938 - 0.0008267 * sum + 0.0000016 * sum * sum - 0.0002574 * ageYears
+        } else {
+            1.0994921 - 0.0009929 * sum + 0.0000023 * sum * sum - 0.0001392 * ageYears
+        }
+        if (!density.isFinite() || density <= 0.0) return null
+        val raw = (4.95 / density - 4.50) * 100.0
+        if (!raw.isFinite()) return null
+        val clamped = raw !in 3.0..60.0
+        val percent = raw.coerceIn(3.0, 60.0)
+        val fatKg = weightKg * percent / 100.0
+        return BodyFatEstimate(
+            sumMm = oneDecimal(sum),
+            density = round(density * 10000.0) / 10000.0,
+            bodyFatPercent = oneDecimal(percent),
+            fatMassKg = oneDecimal(fatKg),
+            leanMassKg = oneDecimal(weightKg - fatKg),
+            wasClamped = clamped
+        )
+    }
+
     fun harrisBenedict(sex: String, weightKg: Double, heightCm: Double, ageYears: Int): Double? {
         if (sex !in listOf("Masculino", "Feminino") || !validAdult(weightKg, heightCm, ageYears)) return null
         val result = if (sex == "Masculino") 88.362 + 13.397 * weightKg + 4.799 * heightCm - 5.677 * ageYears
