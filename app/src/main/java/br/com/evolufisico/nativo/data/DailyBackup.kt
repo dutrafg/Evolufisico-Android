@@ -7,11 +7,17 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.time.Duration
 import java.time.LocalTime
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 internal object DailyBackupScheduler {
     const val WORK_NAME = "evolufisico_daily_backup"
+
+    /** Chronologically sortable, unique filename: never replaces a previous verified backup. */
+    fun fileName(at: LocalDateTime): String =
+        "evolufisico-auto-" + at.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss-SSS")) + ".json"
 
     fun nextDelayMillis(now: ZonedDateTime, backupTime: LocalTime): Long {
         var next = now.toLocalDate().atTime(backupTime).atZone(now.zone)
@@ -48,15 +54,26 @@ internal class DailyBackupWorker(
                 ?: return@withContext Result.failure()
             if (!directory.canWrite()) return@withContext Result.failure()
 
-            val date = java.time.LocalDate.now().toString()
-            val fileName = "evolufisico-auto-$date.json"
-            directory.findFile(fileName)?.delete()
+            val json = LocalDatabase(applicationContext).let { database ->
+                try { database.exportBackupJson() } finally { database.close() }
+            }
+            BackupInspector.inspect(json) // refuse to persist incomplete or invalid snapshots
+            val fileName = DailyBackupScheduler.fileName(LocalDateTime.now())
             val file = directory.createFile("application/json", fileName)
                 ?: return@withContext Result.retry()
-            val json = LocalDatabase(applicationContext).exportBackupJson()
-            applicationContext.contentResolver.openOutputStream(file.uri, "wt")?.use {
-                it.write(json.toByteArray(Charsets.UTF_8))
-            } ?: return@withContext Result.retry()
+            try {
+                applicationContext.contentResolver.openOutputStream(file.uri, "wt")?.use {
+                    it.write(json.toByteArray(Charsets.UTF_8))
+                    it.flush()
+                } ?: error("Não foi possível abrir o arquivo de backup.")
+                val writtenSize = file.length()
+                if (writtenSize > 0L && writtenSize < json.toByteArray(Charsets.UTF_8).size.toLong()) {
+                    error("Backup incompleto: tamanho escrito inferior ao esperado.")
+                }
+            } catch (e: Exception) {
+                file.delete() // Never let an incomplete snapshot replace a prior working backup.
+                throw e
+            }
 
             directory.listFiles()
                 .filter { it.name?.startsWith("evolufisico-auto-") == true && it.name?.endsWith(".json") == true }
