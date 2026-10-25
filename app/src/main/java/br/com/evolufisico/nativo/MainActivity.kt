@@ -266,6 +266,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     var editingTask by remember { mutableStateOf<TaskRecord?>(null) }
     var chargeDialog by remember { mutableStateOf(false) }
     var intakeDialog by remember { mutableStateOf(false) }
+    var editingForm by remember { mutableStateOf<IntakeForm?>(null) }
     var studentDialog by remember { mutableStateOf(false) }
     var editingStudent by remember { mutableStateOf<Student?>(null) }
     var assessmentDialog by remember { mutableStateOf(false) }
@@ -368,7 +369,8 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onAddAssessment = { editingAssessment = null; assessmentDialog = true },
                     onEditAssessment = { editingAssessment = it; assessmentDialog = true },
                     onEditStudent = { editingStudent = selectedStudent; studentDialog = true },
-                    onAddForm = { intakeDialog = true },
+                    onAddForm = { editingForm = null; intakeDialog = true },
+                    onEditForm = { editingForm = it; intakeDialog = true },
                     onDeleteForm = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } },
                     onAddCharge = { chargeDialog = true },
                     onReceiveCharge = { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } },
@@ -430,7 +432,13 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     subtitle = "Abra o perfil para consultar o histórico de avaliações."
                 )
                 activeModule == "Calculadora" -> CalculatorScreen()
-                activeModule == "Formulários" || activeModule == "Anamnese" -> FormsScreen(forms, students, { intakeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } })
+                activeModule == "Formulários" || activeModule == "Anamnese" -> FormsScreen(
+                    forms = forms,
+                    students = students,
+                    onAdd = { editingForm = null; intakeDialog = true },
+                    onEdit = { editingForm = it; intakeDialog = true },
+                    onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } }
+                )
                 activeModule == "Cobranças" -> ChargeScreen(charges, students, maskFinancial, { chargeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } })
                 activeModule == "Tarefas" -> TaskScreen(
                     tasks = tasks,
@@ -589,10 +597,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 
     if (intakeDialog) IntakeFormDialog(
         students = students,
+        initial = editingForm,
         initialStudentId = selectedStudentId,
-        onDismiss = { intakeDialog = false },
-        onSave = { studentId, template, answers -> scope.launch {
-            try { withContext(Dispatchers.IO) { database.saveIntakeForm(studentId, template, todayIso(), answers) }; intakeDialog = false; refresh() }
+        onDismiss = { intakeDialog = false; editingForm = null },
+        onSave = { id, studentId, template, answers -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveIntakeForm(studentId, template, editingForm?.date ?: todayIso(), answers, id) }; intakeDialog = false; editingForm = null; refresh() }
             catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar o formulário." }
         } }
     )
@@ -1061,6 +1070,7 @@ private fun ProfileScreen(
     onEditAssessment: (Assessment) -> Unit,
     onEditStudent: () -> Unit,
     onAddForm: () -> Unit,
+    onEditForm: (IntakeForm) -> Unit,
     onDeleteForm: (Long) -> Unit,
     onAddCharge: () -> Unit,
     onReceiveCharge: (Long) -> Unit,
@@ -1165,7 +1175,10 @@ private fun ProfileScreen(
                     Text(form.template, fontWeight = FontWeight.Medium)
                     Text(displayDate(form.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(form.responses, maxLines = 4, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick = { onDeleteForm(form.id) }) { Text("Excluir formulário") }
+                    Row {
+                        TextButton(onClick = { onEditForm(form) }) { Text("Editar") }
+                        TextButton(onClick = { onDeleteForm(form.id) }) { Text("Excluir") }
+                    }
                 }
                 TextButton(onClick = onAddForm) { Text("Adicionar anamnese") }
             }
