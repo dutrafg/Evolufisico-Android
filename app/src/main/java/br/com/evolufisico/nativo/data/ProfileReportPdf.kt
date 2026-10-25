@@ -65,12 +65,21 @@ internal object ProfileReportPdf {
         return render("EvoluFísico · Relatório de Avaliação", "Avaliação física", professionalName, registration, lines, assessment.photoData, assessment.date)
     }
 
-    fun analysis(student: Student, assessments: List<Assessment>, summary: String, professionalName: String, registration: String): ByteArray {
+    fun analysis(
+        student: Student,
+        assessments: List<Assessment>,
+        summary: String,
+        professionalName: String,
+        registration: String,
+        sem: Map<String, Double> = emptyMap(),
+        semSources: Map<String, String> = emptyMap()
+    ): ByteArray {
         require(assessments.size in 3..4) { "Selecione três ou quatro avaliações." }
         require(assessments.all { it.studentId == student.id }) { "As avaliações devem pertencer ao aluno do relatório." }
         val dates = assessments.map { it.date }.distinct().sorted()
         require(AnalysisMath.isEligibleWindow(dates)) { "O período precisa conter três ou quatro datas distintas e pelo menos 21 dias." }
-        require(EfiaScientificEngines.analyze(assessments).eligible) {
+        val audit = EfiaScientificEngines.analyze(assessments, sem, semSources)
+        require(audit.eligible) {
             "Análise bloqueada: confira identidade, medidas, datas e sete dias entre as duas últimas coletas."
         }
         val lines = mutableListOf(
@@ -85,6 +94,9 @@ internal object ProfileReportPdf {
             Line(""),
             Line("Síntese revisada", true),
             Line(summary),
+            Line(""),
+            Line("Auditoria científica EF78–EF82", true),
+            Line(audit.asText()),
             Line(""),
             Line("Este relatório é descritivo e exploratório; não constitui diagnóstico, previsão ou prescrição.")
         )
