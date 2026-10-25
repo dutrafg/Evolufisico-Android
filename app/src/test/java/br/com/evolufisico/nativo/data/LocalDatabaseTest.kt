@@ -166,4 +166,26 @@ class LocalDatabaseTest {
         } catch (_: IllegalArgumentException) { }
     }
 
+    @Test fun rejectsNonFiniteMoneyBeforeSavingCharge() {
+        val invalid = listOf(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN)
+        invalid.forEach { amount ->
+            assertThrows(IllegalArgumentException::class.java) {
+                database.saveCharge(null, "Mensalidade", amount, "2026-10-25", "")
+            }
+        }
+        assertTrue(database.charges().isEmpty())
+    }
+
+    @Test fun invalidForeignKeyInBackupCannotEraseExistingStudentAndAssessment() {
+        val studentId = database.saveStudent("Ana Persistente", "", "", "")
+        database.saveAssessment(studentId, "2026-02-01", 70.0, 170.0, null, null, "")
+        val json = org.json.JSONObject(database.exportBackupJson())
+        json.getJSONArray("assessments").getJSONObject(0).put("student_id", 999_999)
+        assertThrows(IllegalArgumentException::class.java) {
+            database.restoreBackupJson(json.toString())
+        }
+        assertEquals("Ana Persistente", database.students().single().name)
+        assertEquals(1, database.allAssessments().size)
+    }
+
 }
