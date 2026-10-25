@@ -6,7 +6,7 @@ import org.junit.Test
 
 class HtmlParityTest {
     private fun history(vararg dates:String)=dates.map{Evaluation(studentId="same",date=it)}
-    @Test fun nineHtmlModulesInVisibleOrder(){assertEquals(listOf("Início","Organização","Avaliações","Evolução","Calculadora","Formulários","Análises","Cobranças","Configurações"),HtmlParity.navigation.map{HtmlParity.modules[it]})}
+    @Test fun tenNativeDestinationsKeepHomeAndUnifiedProfile(){assertEquals(listOf("Início","Perfil Unificado","Organização","Avaliações","Evolução","Calculadora","Formulários","Análises","Cobranças","Configurações"),HtmlParity.navigation.map{HtmlParity.modules[it]})}
     @Test fun damagedLayoutDropsForeignCardsAndDuplicates(){assertEquals(listOf("tarefas","agenda","calendario","retornos"),HtmlParity.panelOrder("treinos,tarefas,tarefas,notas"))}
     @Test fun movingPanelPreservesIdentityAndContents(){val order=HtmlParity.move(HtmlParity.panels,"tarefas",-1);assertEquals(listOf("agenda","tarefas","calendario","retornos"),order)}
     @Test fun panelMovesAtBoundariesAreSafe(){assertEquals(HtmlParity.panels,HtmlParity.move(HtmlParity.panels,"agenda",-1));assertEquals(HtmlParity.panels,HtmlParity.move(HtmlParity.panels,"retornos",1))}
