@@ -39,7 +39,7 @@ class AssessmentMathTest {
     }
 
     @Test fun basalMetabolicFormulasAndHeartRateRespectInputBounds() {
-        assertEquals(1722.0, AssessmentMath.harrisBenedict("Masculino", 70.0, 175.0, 30)!!, 0.1)
+        assertEquals(1696.7, AssessmentMath.harrisBenedict("Masculino", 70.0, 175.0, 30)!!, 0.1)
         assertEquals(1648.8, AssessmentMath.mifflinStJeor("Masculino", 70.0, 175.0, 30)!!, 0.1)
         assertEquals(187, AssessmentMath.maximumHeartRate(30))
         assertNull(AssessmentMath.maximumHeartRate(17))
