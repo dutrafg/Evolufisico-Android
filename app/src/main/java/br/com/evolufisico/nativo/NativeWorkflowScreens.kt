@@ -153,6 +153,9 @@ internal fun ChargeScreen(
                     Text(charge.title, fontWeight = FontWeight.SemiBold)
                     Text(studentName, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Vencimento: " + displayNativeDate(charge.dueDate), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (charge.status == "Pendente" && charge.dueDate < todayNativeIso()) {
+                        Text("Vencida", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                    }
                     Text(if (maskValues) "Valor oculto" else "R$ " + String.format(Locale("pt","BR"), "%.2f", charge.amount), fontWeight = FontWeight.Medium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (charge.status == "Pendente") Button(onClick = { onReceive(charge.id) }) { Text("Receber") }

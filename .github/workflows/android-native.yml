@@ -26,10 +26,10 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - name: Build Beta 4 layout polish debug APK
+      - name: Build Beta 10 debug APK
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: evolufisico-android-beta4-layout-polish
+          name: evolufisico-android-beta10
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error

@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import java.text.SimpleDateFormat
+import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -160,8 +162,8 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun saveAppointment(title: String, date: String, time: String, location: String, notes: String): Long {
         require(title.isNotBlank()) { "Informe o motivo do atendimento." }
-        require(date.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Confira a data do atendimento." }
-        require(time.matches(Regex("\\d{2}:\\d{2}"))) { "Confira o horário do atendimento." }
+        require(validDate(date)) { "Confira a data do atendimento." }
+        require(time.matches(Regex("\\d{2}:\\d{2}")) && time.substring(0, 2).toInt() in 0..23 && time.substring(3, 5).toInt() in 0..59) { "Confira o horário do atendimento." }
         val values = ContentValues().apply {
             put("title", title.trim())
             put("date", date)
@@ -301,6 +303,7 @@ class LocalDatabase(context: Context) :
         thighCm: Double? = null
     ): Long {
         require(student(studentId) != null) { "Aluno não encontrado." }
+        require(validDate(date)) { "Informe uma data válida para a avaliação." }
         require(AssessmentMath.bmi(weightKg, heightCm) != null) { "Confira peso e altura." }
         require(bodyFatPercent == null || bodyFatPercent in 1.0..70.0) { "Confira o percentual de gordura." }
         require(listOf(neckCm, chestCm, armCm, thighCm).all { it == null || it in 1.0..300.0 }) { "Confira as medidas opcionais." }
@@ -352,7 +355,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun saveTask(id: Long?, title: String, dueDate: String, completed: Boolean = false): Long {
         require(title.isNotBlank()) { "Informe a tarefa." }
-        require(dueDate.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Informe uma data válida." }
+        require(validDate(dueDate)) { "Informe uma data válida." }
         val values = ContentValues().apply { put("title", title.trim()); put("due_date", dueDate); put("completed", if (completed) 1 else 0) }
         return if (id == null) writableDatabase.insertOrThrow("tasks", null, values)
         else { writableDatabase.update("tasks", values, "id=?", arrayOf(id.toString())); id }
@@ -380,6 +383,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun saveIntakeForm(studentId: Long?, template: String, date: String, responses: String): Long {
         require(template.isNotBlank() && responses.isNotBlank()) { "Escolha um modelo e preencha as respostas." }
+        require(validDate(date)) { "Informe uma data válida para o formulário." }
         if (studentId != null) require(student(studentId) != null) { "Aluno não encontrado." }
         val values = ContentValues().apply {
             if (studentId == null) putNull("student_id") else put("student_id", studentId)
@@ -404,7 +408,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun saveCharge(studentId: Long?, title: String, amount: Double, dueDate: String, notes: String): Long {
         require(title.isNotBlank() && amount > 0.0) { "Informe descrição e valor maior que zero." }
-        require(dueDate.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Informe uma data válida." }
+        require(validDate(dueDate)) { "Informe uma data válida." }
         if (studentId != null) require(student(studentId) != null) { "Aluno não encontrado." }
         val values = ContentValues().apply {
             if (studentId == null) putNull("student_id") else put("student_id", studentId)
@@ -428,7 +432,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun exportBackupJson(): String {
         val db = readableDatabase
-        val root = JSONObject().put("format", "evolufisico-native-backup").put("schema", 1)
+        val root = JSONObject().put("format", "evolufisico-native-backup").put("schema", 2)
         fun rows(table: String, columns: Array<String>): JSONArray {
             val result = JSONArray()
             db.query(table, columns, null, null, null, null, null).use { cursor ->
@@ -459,7 +463,7 @@ class LocalDatabase(context: Context) :
     @Synchronized
     fun restoreBackupJson(json: String) {
         val root = JSONObject(json)
-        require(root.optString("format") == "evolufisico-native-backup" && root.optInt("schema") == 1) { "Arquivo de backup incompatível." }
+        require(root.optString("format") == "evolufisico-native-backup" && root.optInt("schema") in 1..2) { "Arquivo de backup incompatível." }
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -473,6 +477,11 @@ class LocalDatabase(context: Context) :
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }
+
+    private fun validDate(value: String): Boolean = runCatching {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply { isLenient = false }
+        formatter.parse(value)?.let { formatter.format(it) == value } == true
+    }.getOrDefault(false)
 
     private fun insertRows(db: SQLiteDatabase, array: JSONArray, table: String) {
         for (i in 0 until array.length()) {

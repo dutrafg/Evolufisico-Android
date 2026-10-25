@@ -11,8 +11,8 @@ android {
         applicationId = "br.com.evolufisico.nativo"
         minSdk = 29
         targetSdk = 36
-        versionCode = 713
-        versionName = "0.1.0-native-beta.9"
+        versionCode = 714
+        versionName = "0.1.0-native-beta.10"
     }
 
     buildTypes {
