@@ -38,6 +38,29 @@ class AssessmentMathTest {
         assertNull(AssessmentMath.rfmBodyFat("Outro", 165.0, 80.0))
     }
 
+    @Test fun pollock7MatchesReferenceForBothSexesAndDerivesMasses() {
+        val folds = listOf(10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0)
+        val male = AssessmentMath.pollock7("Masculino", 30, 80.0, folds)!!
+        assertEquals(280.0, male.sumMm, 0.0)
+        assertEquals(1.0247, male.density, 0.0001)
+        assertEquals(33.1, male.bodyFatPercent, 0.1)
+        assertEquals(26.5, male.fatMassKg, 0.1)
+        assertEquals(53.5, male.leanMassKg, 0.1)
+        val female = AssessmentMath.pollock7("Feminino", 30, 60.0, folds)!!
+        assertTrue(female.bodyFatPercent in 1.0..70.0)
+        assertEquals(60.0, female.fatMassKg + female.leanMassKg, 0.1)
+        assertTrue(!male.wasClamped && !female.wasClamped)
+    }
+
+    @Test fun pollock7RejectsIncompleteAndOutOfRangeInputs() {
+        val complete = listOf(10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0)
+        assertNull(AssessmentMath.pollock7("Outro", 30, 80.0, complete))
+        assertNull(AssessmentMath.pollock7("Masculino", 17, 80.0, complete))
+        assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.dropLast(1)))
+        assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.toMutableList().also { it[3] = null }))
+        assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.toMutableList().also { it[3] = 0.0 }))
+    }
+
     @Test fun basalMetabolicFormulasAndHeartRateRespectInputBounds() {
         assertEquals(1695.7, AssessmentMath.harrisBenedict("Masculino", 70.0, 175.0, 30)!!, 0.1)
         assertEquals(1648.8, AssessmentMath.mifflinStJeor("Masculino", 70.0, 175.0, 30)!!, 0.1)
