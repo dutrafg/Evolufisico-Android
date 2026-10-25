@@ -228,6 +228,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
     var appointmentDialog by remember { mutableStateOf(false) }
     var taskDialog by remember { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<TaskRecord?>(null) }
     var chargeDialog by remember { mutableStateOf(false) }
     var intakeDialog by remember { mutableStateOf(false) }
     var studentDialog by remember { mutableStateOf(false) }
@@ -384,7 +385,13 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                 activeModule == "Calculadora" -> CalculatorScreen()
                 activeModule == "Formulários" -> FormsScreen(forms, students, { intakeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } })
                 activeModule == "Cobranças" -> ChargeScreen(charges, students, maskFinancial, { chargeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } })
-                activeModule == "Tarefas" -> TaskScreen(tasks, { taskDialog = true }, { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } })
+                activeModule == "Tarefas" -> TaskScreen(
+                    tasks = tasks,
+                    onAdd = { editingTask = null; taskDialog = true },
+                    onEdit = { editingTask = it; taskDialog = true },
+                    onToggle = { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } },
+                    onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } }
+                )
                 activeModule == "Análises" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
                 activeModule == "Agenda" || selected == 2 -> AgendaScreen(appointments = appointments, onAdd = { appointmentDialog = true }, onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } })
                 activeModule != null -> ModulePlaceholder(activeModule.orEmpty())
@@ -425,9 +432,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     }
 
     if (taskDialog) TaskFormDialog(
-        onDismiss = { taskDialog = false },
-        onSave = { title, dueDate -> scope.launch {
-            try { withContext(Dispatchers.IO) { database.saveTask(null, title, dueDate) }; taskDialog = false; refresh() }
+        initial = editingTask,
+        onDismiss = { taskDialog = false; editingTask = null },
+        onSave = { id, title, dueDate -> scope.launch {
+            try { withContext(Dispatchers.IO) { database.saveTask(id, title, dueDate, editingTask?.completed ?: false) }; taskDialog = false; editingTask = null; refresh() }
             catch (e: Exception) { errorMessage = e.message ?: "Não foi possível salvar a tarefa." }
         } }
     )
@@ -1109,7 +1117,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 8", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 9", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

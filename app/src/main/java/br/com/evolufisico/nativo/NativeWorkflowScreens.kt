@@ -96,6 +96,7 @@ private fun formatNativeNumber(value: Double): String = String.format(Locale("pt
 internal fun TaskScreen(
     tasks: List<TaskRecord>,
     onAdd: () -> Unit,
+    onEdit: (TaskRecord) -> Unit,
     onToggle: (Long, Boolean) -> Unit,
     onDelete: (Long) -> Unit
 ) {
@@ -114,8 +115,14 @@ internal fun TaskScreen(
                     Column(Modifier.weight(1f)) {
                         Text(task.title, fontWeight = FontWeight.SemiBold)
                         Text(displayNativeDate(task.dueDate), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (!task.completed && task.dueDate < todayNativeIso()) {
+                            Text("Atrasada", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                        }
                     }
-                    TextButton(onClick = { onDelete(task.id) }) { Text("Excluir") }
+                    Column {
+                        TextButton(onClick = { onEdit(task) }) { Text("Editar") }
+                        TextButton(onClick = { onDelete(task.id) }) { Text("Excluir") }
+                    }
                 }
             }
         }
@@ -189,13 +196,13 @@ internal fun FormsScreen(
 }
 
 @Composable
-internal fun TaskFormDialog(onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var date by rememberSaveable { mutableStateOf(todayNativeIso()) }
+internal fun TaskFormDialog(initial: TaskRecord?, onDismiss: () -> Unit, onSave: (Long?, String, String) -> Unit) {
+    var title by rememberSaveable(initial?.id) { mutableStateOf(initial?.title.orEmpty()) }
+    var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.dueDate ?: todayNativeIso()) }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova tarefa") },
+        title = { Text(if (initial == null) "Nova tarefa" else "Editar tarefa") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(title, { title = it; error = null }, label = { Text("Tarefa *") }, singleLine = true)
@@ -206,7 +213,7 @@ internal fun TaskFormDialog(onDismiss: () -> Unit, onSave: (String, String) -> U
         confirmButton = { TextButton(onClick = {
             if (title.isBlank()) error = "Informe a tarefa."
             else if (!validIsoDate(date)) error = "Informe uma data válida no formato AAAA-MM-DD."
-            else onSave(title, date)
+            else onSave(initial?.id, title, date)
         }) { Text("Salvar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
