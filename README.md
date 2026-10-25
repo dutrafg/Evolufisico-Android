@@ -17,7 +17,7 @@ Android nativo em Kotlin e Jetpack Compose, baseado no EvoluFisico2 3.0.0 Releas
 
 ## Verificação automatizada
 
-O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 24 casos: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração das medidas de bioimpedância, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs e agendamento do backup diário.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 25 casos: fórmulas e validação do Laboratório incluindo Pollock 7, janelas temporais, tendências, completude e comparação pareada das análises, persistência/restauração das medidas de bioimpedância, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração/paginação dos PDFs, inclusão da bioimpedância nos relatórios e agendamento do backup diário.
 
 A verificação não substitui homologação visual em aparelhos físicos. Nenhum APK foi gerado nesta etapa.
 
