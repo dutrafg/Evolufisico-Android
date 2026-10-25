@@ -424,14 +424,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onClearError = { errorMessage = null },
                     subtitle = "Escolha um aluno para registrar uma avaliação."
                 )
-                activeModule == "Evolução" -> StudentsScreen(
+                activeModule == "Evolução" -> EvolutionScreen(
                     students = students,
-                    errorMessage = errorMessage,
-                    onAdd = { editingStudent = null; studentDialog = true },
-                    onEdit = { editingStudent = it; studentDialog = true },
-                    onOpen = { selectedStudentId = it },
-                    onClearError = { errorMessage = null },
-                    subtitle = "Abra o perfil para consultar o histórico de avaliações."
+                    assessments = allAssessments,
+                    onOpenStudent = { selectedStudentId = it }
                 )
                 activeModule == "Calculadora" -> CalculatorScreen()
                 activeModule == "Formulários" || activeModule == "Anamnese" -> FormsScreen(
