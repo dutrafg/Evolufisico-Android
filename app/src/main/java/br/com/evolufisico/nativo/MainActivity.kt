@@ -752,11 +752,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             studentName = selectedStudent.name,
             initial = editingAssessment,
             onDismiss = { assessmentDialog = false; editingAssessment = null },
-            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos ->
+            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos, contextEvent ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos)
+                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice, photos, contextEvent)
                         }
                         assessmentDialog = false
                         editingAssessment = null
@@ -1421,7 +1421,7 @@ private fun AssessmentFormDialog(
     studentName: String,
     initial: Assessment? = null,
     onDismiss: () -> Unit,
-    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, List<String>) -> Unit
+    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, List<String>, String) -> Unit
 ) {
     var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
     var weight by rememberSaveable(initial?.id) { mutableStateOf(initial?.weightKg?.let(::formatNumber).orEmpty()) }
@@ -1448,6 +1448,7 @@ private fun AssessmentFormDialog(
     var notes by rememberSaveable(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    var contextEvent by rememberSaveable(initial?.id) { mutableStateOf(initial?.contextEvent.orEmpty()) }
     val photoData = remember(initial?.id) { mutableStateListOf<String>().apply { addAll(initial?.photoData.orEmpty()) } }
     val photoScope = rememberCoroutineScope()
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -1499,6 +1500,21 @@ private fun AssessmentFormDialog(
                     Text(if (photoData.isEmpty()) "Anexar fotos" else "Adicionar fotos · ${photoData.size}/4")
                 }
                 if (photoData.isNotEmpty()) AssessmentPhotoGallery(photoData, onRemove = { photoData.removeAt(it) })
+                Text("Evento informado na avaliação · EF81", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Registre somente um evento explícito, sem inferir efeito ou adesão.", style = MaterialTheme.typography.bodySmall)
+                listOf(
+                    "" to "Nenhum evento",
+                    "Início de treino" to "Início de treino",
+                    "Interrupção de treino" to "Interrupção de treino",
+                    "Início de plano alimentar" to "Início de plano alimentar",
+                    "Interrupção de plano alimentar" to "Interrupção de plano alimentar"
+                ).forEach { (value, label) ->
+                    if (contextEvent == value) {
+                        Button(onClick = { contextEvent = value }, modifier = Modifier.fillMaxWidth()) { Text(label + " · selecionado") }
+                    } else {
+                        androidx.compose.material3.OutlinedButton(onClick = { contextEvent = value }, modifier = Modifier.fillMaxWidth()) { Text(label) }
+                    }
+                }
                 OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
@@ -1534,7 +1550,7 @@ private fun AssessmentFormDialog(
                 else if (parsedWeight == null || parsedHeight == null || invalidOptional ||
                     AssessmentMath.bmi(parsedWeight ?: 0.0, parsedHeight ?: 0.0) == null
                 ) error = "Confira os valores. Peso e altura são obrigatórios; use números válidos."
-                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6], parsedBiaBodyFat, parsedBiaLeanMass, biaDevice.trim(), photoData.toList())
+                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6], parsedBiaBodyFat, parsedBiaLeanMass, biaDevice.trim(), photoData.toList(), contextEvent)
             }) { Text(if (initial == null) "Salvar avaliação" else "Salvar alterações") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
