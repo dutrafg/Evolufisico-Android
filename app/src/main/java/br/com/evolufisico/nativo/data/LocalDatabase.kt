@@ -316,7 +316,8 @@ class LocalDatabase(context: Context) :
         neckCm: Double? = null,
         chestCm: Double? = null,
         armCm: Double? = null,
-        thighCm: Double? = null
+        thighCm: Double? = null,
+        id: Long? = null
     ): Long {
         require(student(studentId) != null) { "Aluno não encontrado." }
         require(validDate(date)) { "Informe uma data válida para a avaliação." }
@@ -337,7 +338,11 @@ class LocalDatabase(context: Context) :
             if (thighCm == null) putNull("thigh_cm") else put("thigh_cm", thighCm)
             put("notes", notes.trim())
         }
-        return writableDatabase.insertOrThrow("assessments", null, values)
+        return if (id == null) writableDatabase.insertOrThrow("assessments", null, values)
+        else {
+            require(writableDatabase.update("assessments", values, "id=? AND student_id=?", arrayOf(id.toString(), studentId.toString())) == 1) { "Avaliação não encontrada para este aluno." }
+            id
+        }
     }
 
     @Synchronized
