@@ -94,3 +94,102 @@ object AssessmentMath {
 
     private fun oneDecimal(value: Double): Double = round(value * 10.0) / 10.0
 }
+
+
+data class AnalysisTrend(
+    val first: Double,
+    val latest: Double,
+    val absoluteChange: Double,
+    val relativeChangePercent: Double?,
+    val changePer30Days: Double,
+    val directionChanged: Boolean
+)
+
+/** Descriptive time-series helpers. These never emit clinical classifications or predictions. */
+object AnalysisMath {
+    fun coverageDays(dates: List<String>): Long? {
+        val parsed = dates.map { runCatching { java.time.LocalDate.parse(it) }.getOrNull() ?: return null }
+        if (parsed.size < 2 || parsed.distinct().size != parsed.size) return null
+        return java.time.temporal.ChronoUnit.DAYS.between(parsed.minOrNull(), parsed.maxOrNull())
+    }
+
+    fun isEligibleWindow(dates: List<String>): Boolean =
+        dates.size in 3..4 && dates.distinct().size == dates.size && (coverageDays(dates) ?: 0L) >= 21L
+
+    fun completeness(total: Int, present: Int): Int? {
+        if (total <= 0 || present !in 0..total) return null
+        return kotlin.math.round(present * 100.0 / total).toInt()
+    }
+
+    fun trend(dates: List<String>, values: List<Double?>): AnalysisTrend? {
+        if (dates.size !in 3..4 || dates.size != values.size || dates.distinct().size != dates.size) return null
+        val ordered = dates.zip(values).map { (date, value) ->
+            val parsed = runCatching { java.time.LocalDate.parse(date) }.getOrNull() ?: return null
+            val checked = value?.takeIf { it.isFinite() } ?: return null
+            parsed to checked
+        }.sortedBy { it.first }
+        val days = java.time.temporal.ChronoUnit.DAYS.between(ordered.first().first, ordered.last().first)
+        if (days < 21) return null
+        val changes = ordered.zipWithNext { a, b -> b.second - a.second }
+        val directions = changes.map { it.compareTo(0.0) }.filter { it != 0 }
+        val first = ordered.first().second
+        val latest = ordered.last().second
+        val delta = latest - first
+        return AnalysisTrend(
+            first = oneDecimal(first),
+            latest = oneDecimal(latest),
+            absoluteChange = oneDecimal(delta),
+            relativeChangePercent = if (first == 0.0) null else oneDecimal(delta / kotlin.math.abs(first) * 100.0),
+            changePer30Days = oneDecimal(delta / days * 30.0),
+            directionChanged = directions.distinct().size > 1
+        )
+    }
+
+    fun report(studentName: String, assessments: List<Assessment>): String {
+        val rows = assessments.distinctBy { it.date }.sortedBy { it.date }
+        val dates = rows.map { it.date }
+        val days = coverageDays(dates)
+        val presentSlots = rows.sumOf { row ->
+            listOf(row.weightKg, row.bmi, row.waistCm, row.hipCm, row.bodyFatPercent, row.pollock7?.bodyFatPercent)
+                .count { it != null }
+        }
+        val totalSlots = rows.size * 6
+        val completeness = completeness(totalSlots, presentSlots)
+        val lines = mutableListOf(
+            "Aluno: $studentName",
+            "Avaliações: ${rows.size} em datas distintas; período ${dates.firstOrNull() ?: "—"} a ${dates.lastOrNull() ?: "—"}; ${days?.let { "$it dias" } ?: "intervalo indisponível"}.",
+            "Completude documental: ${completeness?.let { "$it% ($presentSlots de $totalSlots campos possíveis)" } ?: "não calculável"}. Isso mede preenchimento, não precisão clínica."
+        )
+        if (!isEligibleWindow(dates)) {
+            lines += "Dados insuficientes para tendências: são necessárias três a quatro datas distintas cobrindo pelo menos 21 dias."
+        } else {
+            val measures = listOf(
+                Triple("Peso", "kg", rows.map { it.weightKg }),
+                Triple("IMC", "", rows.map { it.bmi }),
+                Triple("Cintura", "cm", rows.map { it.waistCm }),
+                Triple("Quadril", "cm", rows.map { it.hipCm }),
+                Triple("Gordura corporal registrada (método não informado)", "%", rows.map { it.bodyFatPercent }),
+                Triple("Gordura estimada por Pollock 7", "%", rows.map { it.pollock7?.bodyFatPercent })
+            )
+            lines += "Mudanças descritivas (primeira → última avaliação; taxa por 30 dias é aritmética, sem projeção):"
+            measures.forEach { (label, unit, values) ->
+                val result = trend(dates, values)
+                if (result == null) lines += "$label: dados incompletos para comparar todas as datas."
+                else {
+                    val sign = if (result.absoluteChange > 0) "+" else ""
+                    val suffix = if (unit.isBlank()) "" else " $unit"
+                    val reversal = if (result.directionChanged) " · mudança de direção entre intervalos" else ""
+                    lines += "$label: ${number(result.first)}$suffix → ${number(result.latest)}$suffix (${sign}${number(result.absoluteChange)}$suffix; ${sign}${number(result.changePer30Days)}$suffix por 30 dias)$reversal."
+                }
+            }
+        }
+        lines += "Bioimpedância não é registrada atualmente no formulário Android; não foi feita comparação Pollock/BIA."
+        lines += "Confirme protocolo, equipamento e condições de coleta. Este resumo é descritivo, exploratório e não diagnóstico; não prevê resultados nem recomenda tratamento."
+        return lines.joinToString("\n")
+    }
+
+    private fun number(value: Double): String = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply {
+        minimumFractionDigits = 1
+        maximumFractionDigits = 1
+    }.format(value)
+}
