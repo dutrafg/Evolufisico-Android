@@ -3,6 +3,15 @@ package br.com.evolufisico.nativo.data
 import kotlin.math.ln
 import kotlin.math.round
 
+data class BodyFatEstimate(
+    val sumMm: Double,
+    val density: Double,
+    val bodyFatPercent: Double,
+    val fatMassKg: Double,
+    val leanMassKg: Double,
+    val wasClamped: Boolean
+)
+
 object AssessmentMath {
     fun bmi(weightKg: Double, heightCm: Double): Double? {
         if (!weightKg.isFinite() || !heightCm.isFinite()) return null
@@ -36,6 +45,32 @@ object AssessmentMath {
         if (heightCm <= 0.0 || waistCm <= 0.0) return null
         val base = if (sex == "Masculino") 64.0 else 76.0
         return (base - 20.0 * (heightCm / waistCm)).takeIf { it in 1.0..70.0 }?.let(::oneDecimal)
+    }
+
+    fun pollock7(sex: String, ageYears: Int, weightKg: Double, foldsMm: List<Double?>): BodyFatEstimate? {
+        if (sex !in listOf("Masculino", "Feminino") || ageYears !in 18..80) return null
+        if (!weightKg.isFinite() || weightKg !in 2.0..500.0 || foldsMm.size != 7) return null
+        val folds = foldsMm.map { it?.takeIf { value -> value.isFinite() && value in 1.0..100.0 } ?: return null }
+        val sum = folds.sum()
+        val density = if (sex == "Masculino") {
+            1.112 - (0.00043499 * sum) + (0.00000055 * sum * sum) - (0.00028826 * ageYears)
+        } else {
+            1.097 - (0.00046971 * sum) + (0.00000056 * sum * sum) - (0.00012828 * ageYears)
+        }
+        if (!density.isFinite() || density <= 0.0) return null
+        val rawPercent = ((4.95 / density) - 4.50) * 100.0
+        if (!rawPercent.isFinite()) return null
+        val wasClamped = rawPercent < 3.0 || rawPercent > 60.0
+        val percent = rawPercent.coerceIn(3.0, 60.0)
+        val fatMass = weightKg * percent / 100.0
+        return BodyFatEstimate(
+            sumMm = oneDecimal(sum),
+            density = round(density * 10000.0) / 10000.0,
+            bodyFatPercent = oneDecimal(percent),
+            fatMassKg = oneDecimal(fatMass),
+            leanMassKg = oneDecimal(weightKg - fatMass),
+            wasClamped = wasClamped
+        )
     }
 
     fun harrisBenedict(sex: String, weightKg: Double, heightCm: Double, ageYears: Int): Double? {
