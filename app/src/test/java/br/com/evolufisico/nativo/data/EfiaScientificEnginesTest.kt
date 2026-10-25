@@ -107,4 +107,14 @@ class EfiaScientificEnginesTest {
         assertFalse(result.eligible)
         assertNull(result.ef79Changes.getValue("peso").change)
     }
+    @Test fun explicitlyRegisteredEventsAreVisibleButNotCausal() {
+        val rows = series().mapIndexed { index, row ->
+            if (index == 1) row.copy(contextEvent = "Início de treino") else row
+        }
+        val result = EfiaScientificEngines.analyze(rows)
+        assertEquals(1, result.ef81RecordedFacts.size)
+        assertTrue(result.ef81RecordedFacts.single().contains("2026-01-31: Início de treino"))
+        assertTrue(result.ef81RecordedFacts.single().contains("sem causalidade"))
+    }
+
 }
