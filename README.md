@@ -1,34 +1,29 @@
 # EvoluFísico Android nativo — Beta 15
 
-Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
+Android nativo em Kotlin e Jetpack Compose, baseado no EvoluFisico2 3.0.0 Release (main atualizado em 25/10/2026).
 
-## Ajustes desta versão
+## Funcionalidades
 
-- Início redesenhado com indicadores diários, calendário com seleção de data, agenda editável, lista de tarefas editável, alertas de retornos próximos, prazo configurável de reavaliação (30/60/90 dias) e cobranças com valores mascaráveis.
-- Removidos os atalhos grandes Perfil Unificado e Avaliações da Dashboard; os módulos continuam acessíveis pelo seletor flutuante.
+- **Início:** indicadores do dia, calendário, agenda editável, próximos atendimentos, tarefas, reavaliações vencidas e cobranças pendentes com valores ocultáveis.
+- **Perfil Unificado:** cadastro editável, resumo da última avaliação, histórico com comparação de medidas e gráfico de peso, anamneses e cobranças vinculadas.
+- **Avaliações:** registro e edição de peso, altura, perímetros, percentual de gordura informado e medidas opcionais; validação dos dados e histórico local.
+- **Relatórios do Perfil:** exportação em PDF de avaliações e anamneses, com identificação do aluno, dados disponíveis, observações e dados profissionais definidos em Configurações. Anamneses longas são paginadas.
+- **Evolução e Análises Completas:** seleção de aluno, comparação descritiva e sinalização de dados ausentes ou de baixa comparabilidade.
+- **Calculadora:** IMC, estimativas Navy/RFM, Harris-Benedict, Mifflin-St Jeor, gasto diário e zonas de frequência cardíaca, com validação de limites.
+- **Anamnese:** nove modelos, formulários personalizados, vínculo com aluno, edição, exclusão e exportação em PDF.
+- **Cobranças:** cadastro, edição, recebimento, exclusão e vínculo opcional com aluno.
+- **Configurações:** temas claro/escuro, dez cores, identificação profissional, prazo de reavaliação (30/60/90 dias), ocultação de valores e backup/restauração manual com confirmação.
+- **Navegação compacta:** módulos principais no seletor flutuante; Agenda e Tarefas são funções acessadas pelo Início. Interface limitada a 600 dp, sem modo desktop/estendido.
 
+## Verificação automatizada
 
-- Layout travado no modo compacto em celulares e tablets, com conteúdo central limitado a 600 dp.
-- Removida a variação de quatro indicadores em telas largas; o Início conserva sempre dois cartões.
-- Cada módulo agora usa um ícone correspondente à sua função.
-- O seletor flutuante lista apenas módulos principais; Agenda e Tarefas permanecem como funções acessadas pelo Início.
-- Nenhum modo desktop ou estendido está disponível nesta interface nativa.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 12 casos: fórmulas e validação do Laboratório, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, além de geração e paginação dos PDFs.
 
-## Funcionalidades das Betas 5 a 13
+A verificação não substitui homologação visual em aparelhos físicos. Nenhum APK foi gerado nesta etapa.
 
-- Início com tarefas e cobranças pendentes e atalhos.
-- Avaliações com peso, altura, cintura, quadril, percentual de gordura informado e medidas opcionais; migração preserva avaliações anteriores.
-- Gráfico descritivo de evolução do peso no Perfil Unificado.
-- Nove modelos de anamnese com roteiros próprios.
-- Tarefas editáveis, avisos de vencimento, validação de datas/horários e restauração de backups schema 1 e 2.
+## Diferenças em relação ao EvoluFisico2 3.0.0
 
-## Interface
-
-Tema claro/escuro, dez cores de destaque acessíveis, barra inferior fixa e conteúdo em coluna compacta. Os ícones do sistema acompanham o tema.
-
-## Diferenças conhecidas em relação ao EvoluFisico2 3.0.0
-
-Ainda faltam métodos antropométricos e relatórios EF68/EF70/EF77, exportação PDF de formulários, fotografias, notificações e sincronização entre aparelhos. O percentual de gordura é um valor informado pelo profissional, não calculado pelo app. O APK é beta de avaliação.
+Ainda faltam as equações de dobras e relatórios completos EF68/EF70/EF77, fotografias nas avaliações, notificações e sincronização entre aparelhos. A área de Análises no Android oferece comparações descritivas básicas, não os relatórios analíticos completos do aplicativo web. Percentual de gordura informado é separado das estimativas Navy/RFM e não constitui diagnóstico.
 
 ## Compilação e dados
 
@@ -38,4 +33,4 @@ Requer JDK 17 e Android SDK 36:
 ./gradlew :app:assembleDebug
 ```
 
-Os registros ficam no aparelho. Exporte um backup antes de atualizar ou restaurar. Versão de desenvolvimento `0.1.0-native-beta.15`, código `719`. Nenhum APK foi gerado nesta atualização.
+Os dados ficam no aparelho. Exporte um backup antes de restaurar. Versão `0.1.0-native-beta.15`, código `719`.
