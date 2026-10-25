@@ -1,6 +1,7 @@
 package br.com.evolufisico.nativo.data
 
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.nio.charset.StandardCharsets
 
@@ -33,6 +34,20 @@ class ProfileReportPdfTest {
         assertTrue(pdf.contains("<${hex("Dobras cutâneas · Pollock 7")}>"))
         assertTrue(pdf.contains("<${hex("Tríceps: 10,0 mm")}>"))
         assertTrue(pdf.contains("<${hex("Sexo: Masculino · idade: 30 anos")}>"))
+    }
+
+    @Test fun analysisReportExportsOnlyEligiblePeriods() {
+        val selected = listOf(
+            assessment.copy(id = 1, date = "2026-01-01"),
+            assessment.copy(id = 2, date = "2026-01-15"),
+            assessment.copy(id = 3, date = "2026-02-01")
+        )
+        val bytes = ProfileReportPdf.analysis(student, selected, "Resumo descritivo revisado.", "Profissional", "CREF 0000")
+        assertTrue(String(bytes.take(8).toByteArray(), StandardCharsets.US_ASCII).startsWith("%PDF-"))
+        assertTrue(bytes.size > 800)
+        assertThrows(IllegalArgumentException::class.java) {
+            ProfileReportPdf.analysis(student, selected.take(2), "Resumo", "Profissional", "CREF 0000")
+        }
     }
 
     @Test fun intakeReportPaginatesLongResponsesAndProducesPdf() {
