@@ -49,6 +49,45 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
+internal fun EvolutionScreen(students: List<Student>, assessments: List<Assessment>, onOpenStudent: (Long) -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("Evolução", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Acompanhe mudanças entre as avaliações de cada aluno.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (students.isEmpty()) item { WorkflowEmpty("Sem alunos", "Cadastre um aluno para iniciar o acompanhamento.") }
+        items(students, key = { it.id }) { student ->
+            val history = assessments.filter { it.studentId == student.id }.distinctBy { it.date }.sortedBy { it.date }
+            val first = history.firstOrNull()
+            val latest = history.lastOrNull()
+            Card(
+                onClick = { onOpenStudent(student.id) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(student.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (first == null || latest == null) {
+                        Text("Sem avaliações. Abra o perfil para registrar a primeira.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        Text(history.size.toString() + " avaliação(ões) · " + displayNativeDate(first.date) + " → " + displayNativeDate(latest.date), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (history.size == 1) Text("Registre outra avaliação para iniciar a comparação.")
+                        else {
+                            Text(deltaLabel("Peso", first.weightKg, latest.weightKg, "kg"))
+                            Text(deltaLabel("IMC", first.bmi, latest.bmi, ""))
+                            Text(deltaLabel("Cintura", first.waistCm, latest.waistCm, "cm"))
+                            Text(deltaLabel("Quadril", first.hipCm, latest.hipCm, "cm"))
+                            Text(deltaLabel("Gordura estimada", first.bodyFatPercent, latest.bodyFatPercent, "%"))
+                            Text("Comparação descritiva; confira métodos e condições de coleta.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 internal fun AnalyticsScreen(students: List<Student>, assessments: List<Assessment>, onOpenStudent: (Long) -> Unit) {
     var selectedStudent by remember(students) { mutableStateOf(students.firstOrNull()) }
     val history = assessments.filter { it.studentId == selectedStudent?.id }
