@@ -22,21 +22,41 @@ import java.util.concurrent.TimeUnit
 /** Approximate local reminders, controlled by the user. Not an exact alarm. */
 object AppointmentNotifications {
     const val CHANNEL_ID="evolufisico-agenda"
+    fun channelId(context:Context):String {
+        val p=context.getSharedPreferences("native-notifications",Context.MODE_PRIVATE)
+        if(!p.contains("sound")&&!p.contains("vibration"))return CHANNEL_ID
+        return "$CHANNEL_ID-s${if(p.getBoolean("sound",true))1 else 0}-v${if(p.getBoolean("vibration",true))1 else 0}"
+    }
     private fun enabled(context:Context)=context.getSharedPreferences("native-notifications",Context.MODE_PRIVATE)
         .getBoolean("enabled",false)
     fun leadMinutes(context:Context)=runCatching {
         ReminderPolicy.validateLead(context.getSharedPreferences("native-notifications",Context.MODE_PRIVATE)
             .getInt("lead-minutes",60))
     }.getOrDefault(60)
-    fun permitted(context:Context):Boolean=Build.VERSION.SDK_INT<33 ||
-        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED
+    fun permitted(context:Context):Boolean=(Build.VERSION.SDK_INT<33 ||
+        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) &&
+        androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled() &&
+        context.getSystemService(NotificationManager::class.java).getNotificationChannel(channelId(context))?.importance!=NotificationManager.IMPORTANCE_NONE
     fun configure(context:Context,enabled:Boolean){
         context.getSharedPreferences("native-notifications",Context.MODE_PRIVATE).edit().putBoolean("enabled",enabled).apply()
     }
     fun channel(context:Context){
         val service=context.getSystemService(NotificationManager::class.java)
-        service.createNotificationChannel(NotificationChannel(CHANNEL_ID,"Agenda e reavaliações",NotificationManager.IMPORTANCE_DEFAULT))
+        val p=context.getSharedPreferences("native-notifications",Context.MODE_PRIVATE)
+        val c=NotificationChannel(channelId(context),"Agenda e reavaliações",NotificationManager.IMPORTANCE_DEFAULT)
+        if(p.contains("sound")&&!p.getBoolean("sound",true))c.setSound(null,null)
+        if(p.contains("vibration"))c.enableVibration(p.getBoolean("vibration",true))
+        service.createNotificationChannel(c)
     }
+    fun test(context:Context):String=runCatching {
+        channel(context)
+        if(!permitted(context))return "Notificações bloqueadas. Ative a permissão do aplicativo no Android."
+        val notification=NotificationCompat.Builder(context,channelId(context)).setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setContentTitle("EvoluFísico · teste").setContentText("Teste das preferências de som e vibração.")
+            .setAutoCancel(true).setTimeoutAfter(10000).build()
+        context.getSystemService(NotificationManager::class.java).notify("ef-notification-test",0,notification)
+        "Teste enviado. Confira o volume e as permissões do Android."
+    }.getOrElse {"Não foi possível enviar a notificação de teste."}
     fun schedule(context:Context,item:Appointment){
         val unique="ef-appointment-${item.id}"
         if(!enabled(context)||!permitted(context)||item.status in listOf("Cancelado","Concluído","Faltou")){
@@ -54,7 +74,10 @@ object AppointmentNotifications {
             OneTimeWorkRequestBuilder<AppointmentNotificationWorker>()
                 .setInputData(data).setInitialDelay(delay,TimeUnit.MILLISECONDS).build())
     }
-    fun cancel(context:Context,id:String)=WorkManager.getInstance(context).cancelUniqueWork("ef-appointment-$id")
+    fun cancel(context:Context,id:String) {
+        WorkManager.getInstance(context).cancelUniqueWork("ef-appointment-$id")
+        context.getSystemService(NotificationManager::class.java).apply{cancel(id,0);cancel(id.hashCode())}
+    }
 }
 class AppointmentNotificationWorker(context:Context,params:WorkerParameters):Worker(context,params){
     override fun doWork():Result { return try{
@@ -76,11 +99,11 @@ class AppointmentNotificationWorker(context:Context,params:WorkerParameters):Wor
         val appointment=item.type.take(80)
         val time="${item.date} ${item.time}"
         val open=PendingIntent.getActivity(applicationContext,id.hashCode(),
-            Intent(applicationContext,MainActivity::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val publicNotice=NotificationCompat.Builder(applicationContext,AppointmentNotifications.CHANNEL_ID)
+            Intent(applicationContext,MainActivity::class.java).setData(android.net.Uri.parse("evolufisico://agenda/$id")),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val publicNotice=NotificationCompat.Builder(applicationContext,AppointmentNotifications.channelId(applicationContext))
             .setSmallIcon(android.R.drawable.ic_menu_my_calendar).setContentTitle("EvoluFísico")
             .setContentText("Você tem um atendimento próximo.").build()
-        val notice=NotificationCompat.Builder(applicationContext,AppointmentNotifications.CHANNEL_ID)
+        val notice=NotificationCompat.Builder(applicationContext,AppointmentNotifications.channelId(applicationContext))
             .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
             .setContentTitle("EvoluFísico • $appointment")
             .setContentText("$who às $time")
@@ -89,7 +112,8 @@ class AppointmentNotificationWorker(context:Context,params:WorkerParameters):Wor
             .setPublicVersion(publicNotice)
             .setAutoCancel(true).build()
         val manager=applicationContext.getSystemService(NotificationManager::class.java)
-        manager.notify(id.hashCode(),notice)
+        if(isStopped || !applicationContext.getSharedPreferences("native-notifications",Context.MODE_PRIVATE).getBoolean("enabled",false))return Result.success()
+        manager.notify(id,0,notice)
         Result.success()
     }catch(_:Exception){if(runAttemptCount<3)Result.retry() else Result.failure()}
     }

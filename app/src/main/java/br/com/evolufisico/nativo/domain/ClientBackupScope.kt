@@ -8,6 +8,6 @@ object ClientBackupScope {
         if (studentId != targetId) return false
         if (kind == "training" && isTemplate) return false
         if (kind == "charge" && (secondStudentId.isNotBlank() || secondStudent.isNotBlank())) return false
-        return kind in setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note")
+        return kind in setOf("evaluation", "charge", "intake", "appointment", "task", "training", "habit", "note", "organizationGoal")
     }
 }

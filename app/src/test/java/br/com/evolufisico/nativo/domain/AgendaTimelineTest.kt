@@ -28,6 +28,11 @@ class AgendaTimelineTest {
         Agenda.checkBatch(listOf(visit.copy(time="23:45")),listOf(visit))
     }
 
+    @Test fun appointmentRejectsImpossibleCalendarAndClockValues() {
+        assertThrows(IllegalArgumentException::class.java){Agenda.validate(visit.copy(date="2026-02-31"))}
+        assertThrows(IllegalArgumentException::class.java){Agenda.validate(visit.copy(time="12:99"))}
+    }
+
     @Test fun sameDayEvaluationsRemainIndividuallySelectable() {
         val choices=EvaluationTimeline.choices(listOf(Evaluation(id="one",date="2026-10-21"),
             Evaluation(id="two",date="2026-10-21")))

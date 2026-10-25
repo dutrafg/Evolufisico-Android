@@ -1,0 +1,16 @@
+{
+  "file": "EvoluFisico-Nativo-Beta100-Rev7-debug.apk",
+  "bytes": 64780799,
+  "sha256": "4aa04fd6b1b68f2eae3c75917667402cb465b551a78d02c26df68a541682bd8c",
+  "signatureVerified": true,
+  "certificateSha256": "13143b4f4cf17053b01ab56ed953bb5ed3f3015856624463339860e6a92df7bd",
+  "sameCertificateAsRevision4": true,
+  "versionCode": 706,
+  "minSdk": 29,
+  "targetSdk": 36,
+  "compileSdk": 37,
+  "zipCrc": "PASS",
+  "currentDexMarkers": "PASS",
+  "internetPermission": false,
+  "installedOnDevice": false
+}

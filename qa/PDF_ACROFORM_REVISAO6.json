@@ -1,0 +1,11 @@
+{
+  "sha256": "8b8cf11ad8444e142137e32f1c399b7569e53db5c1026bc2bd70de71c3bc6dc1",
+  "pages": 2,
+  "formType": "AcroForm",
+  "editableResponseFields": 8,
+  "readonlyIdentityFields": 4,
+  "canonicalFieldsMatchWidgets": true,
+  "testIdentity": "synthetic",
+  "visualReview": "PASS: both final pages rendered and inspected; no clipping or overlap",
+  "scope": "Generated JVM fixture, not Android reader interoperability"
+}

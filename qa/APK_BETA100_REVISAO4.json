@@ -1,0 +1,34 @@
+{
+  "filename": "EvoluFisico-Nativo-Beta100-Rev4-debug.apk",
+  "bytes": 65075711,
+  "sha256": "2395e14d8cf5c1502db358029c1faf14390d961f8e391bd1891e987ba1314bbb",
+  "zipCrc": "PASS",
+  "signature": "PASS",
+  "dexMarkers": {
+    "ExerciseDefinition": true,
+    "RestCountdown": true,
+    "IntakeQuestionnaire": true,
+    "BackupScope": true
+  },
+  "metadata": {
+    "version": 3,
+    "artifactType": {
+      "type": "APK",
+      "kind": "Directory"
+    },
+    "applicationId": "br.com.evolufisico.nativo",
+    "variantName": "debug",
+    "elements": [
+      {
+        "type": "SINGLE",
+        "filters": [],
+        "attributes": [],
+        "versionCode": 703,
+        "versionName": "0.1.0-native-beta.100",
+        "outputFile": "app-debug.apk"
+      }
+    ],
+    "elementType": "File",
+    "minSdkVersionForDexing": 29
+  }
+}

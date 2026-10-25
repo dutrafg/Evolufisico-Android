@@ -174,14 +174,14 @@ data class TaskItem(
     val id: String = UUID.randomUUID().toString(), val title: String = "",
     val dueDate: String = LocalDate.now().toString(), val done: Boolean = false,
     val notes: String = "", val priority:Int=1, val category:String="Geral",
-    val studentId:String="",val student:String=""
+    val studentId:String="",val student:String="",val time:String=""
 ) {
     fun toJson() = JSONObject().put("id", id).put("title", title)
         .put("dueDate", dueDate).put("done", done).put("notes", notes)
-        .put("priority",priority).put("category",category).put("studentId",studentId).put("student",student)
+        .put("priority",priority).put("category",category).put("studentId",studentId).put("student",student).put("time",time)
     companion object {
         fun fromJson(o: JSONObject) = TaskItem(o.getString("id"), o.getString("title"),
             o.getString("dueDate"), o.optBoolean("done"), o.optString("notes"),
-            o.optInt("priority",1),o.optString("category","Geral"),o.optString("studentId"),o.optString("student"))
+            o.optInt("priority",1),o.optString("category","Geral"),o.optString("studentId"),o.optString("student"),o.optString("time"))
     }
 }

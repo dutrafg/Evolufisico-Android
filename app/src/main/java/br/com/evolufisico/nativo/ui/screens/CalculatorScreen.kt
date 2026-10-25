@@ -14,6 +14,7 @@ fun CalculatorScreen() = Screen {
     var weight by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
     var waist by remember { mutableStateOf("") }
+    var neck by remember { mutableStateOf("") }
     var hip by remember { mutableStateOf("") }
     var fat by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
@@ -28,6 +29,7 @@ fun CalculatorScreen() = Screen {
     Field("Idade (anos)", age, { age = it })
     PillChoices(listOf("Não informado", "Feminino", "Masculino"), sex, { sex = it })
     Field("Cintura (cm)", waist, { waist = it })
+    Field("Pescoço (cm)", neck, { neck = it })
     Field("Quadril (cm)", hip, { hip = it })
     Field("Gordura aferida por equipamento (%)", fat, { fat = it })
     val w = positive(weight); val h = positive(height); val f = percent(fat)
@@ -48,6 +50,21 @@ fun CalculatorScreen() = Screen {
     DataCard("Gordura estimada", "${Metrics.oneDecimal(pollock?.fatPercent)} %")
     DataCard("Massa magra estimada", "${Metrics.oneDecimal(pollock?.leanMassKg)} kg")
     if (pollock?.clamped == true) Text("Estimativa limitada a 3–60%: confira a coleta.",color=MaterialTheme.colorScheme.error)
+    HorizontalDivider()
+    Heading("Comparador de métodos · EF77", "Equações e limites operacionais do HTML. Dados ausentes ou fora dos limites não viram zero.")
+    val lab=br.com.evolufisico.nativo.domain.HtmlLaboratory.calculate(br.com.evolufisico.nativo.domain.HtmlLaboratory.Input(sex,years,h,w,positive(neck),positive(waist),positive(hip),pollock?.fatPercent,f))
+    if(lab.minor)Text("Menor de 18 anos: Pollock, Navy e RFM adultos não são aplicados.")
+    if(lab.methods.isEmpty())Text("Informe medidas válidas para comparar os métodos.")
+    lab.methods.forEach{(label,value)->DataCard(label,"${Metrics.oneDecimal(value)} %")}
+    DataCard("Média aritmética dos métodos · não clínica","${Metrics.oneDecimal(lab.mean)} %")
+    DataCard("Amplitude entre métodos","${Metrics.oneDecimal(lab.amplitude)} p.p.")
+    if(lab.amplitude!=null&&lab.amplitude>=8)Text("Divergência de pelo menos 8 p.p.: a média não será usada para FFMI ou composição. Confira os protocolos.",color=MaterialTheme.colorScheme.error)
+    DataCard("ABSI",lab.absi?.let{"%.5f".format(java.util.Locale.forLanguageTag("pt-BR"),it)} ?: "—")
+    DataCard("FFMI","${Metrics.oneDecimal(lab.ffmi)} kg/m²")
+    DataCard("FFMI normalizado","${Metrics.oneDecimal(lab.normalizedFfmi)} kg/m²")
+    DataCard("Água corporal total estimada · Watson","${Metrics.oneDecimal(lab.water)} L")
+    DataCard("FC máxima estimada · Tanaka","${Metrics.oneDecimal(lab.fcmax)} bpm")
+    Text("Estimativas distintas não são intercambiáveis. A média aritmética não equivale a uma medida clínica.",style=MaterialTheme.typography.bodySmall)
     HorizontalDivider()
     Heading("Metabolismo estimado", "Equações alternativas não são diretamente intercambiáveis; a calculadora não prescreve dieta.")
     val formulas = listOf("Mifflin–St Jeor", "Harris-Benedict revisada", "Harris-Benedict clássica", "Katch-McArdle")

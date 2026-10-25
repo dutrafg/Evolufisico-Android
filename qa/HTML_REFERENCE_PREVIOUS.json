@@ -1,0 +1,18 @@
+{
+  "filename": "EvoluFisico2_1.0_CORRIGIDO_Organizacao_PDF_TESTE.html",
+  "projectPath": "reference/app.html",
+  "sha256": "80252ee531b5c813fd2bdc079c3e26d30612755620caf8b28038e4bfb78113d6",
+  "sourceType": "user-attached-html",
+  "repositoryLinked": false,
+  "modules": [
+    "Início",
+    "Organização",
+    "Avaliações",
+    "Evolução",
+    "Calculadora",
+    "Formulários",
+    "Análises",
+    "Cobranças",
+    "Configurações"
+  ]
+}

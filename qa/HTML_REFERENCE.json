@@ -1,0 +1,19 @@
+{
+  "filename": "EvoluFisico2_3.0_Release.html",
+  "projectPath": "reference/app.html",
+  "sha256": "03a433c85ef491ccce6a95f4dbd6d87ae5cb1ac2fbebf275dbce28f32edbd066",
+  "sourceType": "published-main-3.0",
+  "repositoryLinked": true,
+  "modules": [
+    "Início",
+    "Perfil Unificado",
+    "Avaliações",
+    "Evolução",
+    "Calculadora",
+    "Formulários",
+    "Análises",
+    "Cobranças",
+    "Configurações",
+    "Organização"
+  ]
+}

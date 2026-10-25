@@ -1,0 +1,70 @@
+{
+  "repository": "dutrafg/Evolufisico2",
+  "branch": "main",
+  "commit": "7381ed1884ff7250a6659ec77762cb5eaf5bbe0d",
+  "commitDate": "2026-10-22T13:16:22Z",
+  "entrypoint": "index.html",
+  "modules": [
+    "Início",
+    "Avaliações",
+    "Evolução",
+    "Calculadora",
+    "Formulários",
+    "Análises",
+    "Cobranças",
+    "Configurações"
+  ],
+  "panels": [
+    "agenda",
+    "calendario",
+    "tarefas",
+    "retornos"
+  ],
+  "sourceFiles": [
+    "index.html",
+    "README.md",
+    "assets/js/26-simple-interface.js",
+    "assets/js/35-dashboard-editor.js",
+    "assets/css/26-modern.css"
+  ],
+  "lastChecked": "2026-10-22",
+  "refreshPolicy": "Consultar main antes de cada ciclo e antes da entrega; sem monitoramento autônomo.",
+  "sourceBlobs": [
+    {
+      "path": "README.md",
+      "sha": "24b69850fd759a0a1560fc0cc0c67b986795fa47",
+      "size": 11055
+    },
+    {
+      "path": "assets/css/23-simple-interface.css",
+      "sha": "23926174591791ac9aeefbd9566dad9393a536f2",
+      "size": 45186
+    },
+    {
+      "path": "assets/css/26-modern.css",
+      "sha": "89767be03e12022f9088fdf1e39247da10be6001",
+      "size": 13064
+    },
+    {
+      "path": "assets/css/35-dashboard-editor.css",
+      "sha": "e44853acb163eb93261350cc602f31ed1688339b",
+      "size": 6775
+    },
+    {
+      "path": "assets/js/26-simple-interface.js",
+      "sha": "eab87dcb7cbf7f6f34533783175c75b78f65bdce",
+      "size": 18485
+    },
+    {
+      "path": "assets/js/35-dashboard-editor.js",
+      "sha": "b05a86c57629182225bd42d23f5894a19d37afd2",
+      "size": 19458
+    },
+    {
+      "path": "index.html",
+      "sha": "7782fdeb26cad4bb9421d1a2f3550062570b4b4d",
+      "size": 134050
+    }
+  ],
+  "deliveryHeadConfirmed": true
+}

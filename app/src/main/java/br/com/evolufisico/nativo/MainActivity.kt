@@ -40,6 +40,10 @@ class MainActivity : ComponentActivity() {
         if(granted)enableReminders() else message="Permissão negada; os lembretes permanecerão desligados."
     }
     private fun enableReminders(){
+        if(!AppointmentNotifications.permitted(this)) {
+            message="Notificações bloqueadas no Android. Libere o aplicativo e o canal de agenda nas configurações do sistema."
+            return
+        }
         AppointmentNotifications.configure(this,true)
         AppointmentNotifications.channel(this)
         repo.appointments.forEach{AppointmentNotifications.schedule(this,it)}
@@ -48,29 +52,26 @@ class MainActivity : ComponentActivity() {
     }
     private val csvPicker=registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")){uri->
         val bytes=csvBytes;csvBytes=null
-        try {
-            if(uri!=null){
-                val data=bytes ?: error("Sem dados para exportar.")
-                contentResolver.openOutputStream(uri)?.use{it.write(data);it.flush()} ?: error("Destino indisponível.")
-                message="CSV salvo com sucesso."
-            }
-        } catch(e:Exception){
-            if(uri!=null)runCatching{contentResolver.delete(uri,null,null)}
-            message="Não foi possível salvar CSV: ${e.localizedMessage}"
-        } finally {bytes?.fill(0)}
+        saveExport(uri,bytes,"CSV")
     }
     private val pdfPicker = registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
-        val data = pdf
-        if (uri != null) try {
-            val bytes = data ?: error("Sem documento para salvar")
-            contentResolver.openOutputStream(uri)?.use { it.write(bytes); it.flush() } ?: error("Destino indisponível")
-            message = "PDF salvo com sucesso."
-        } catch (e: Exception) {
-            runCatching{contentResolver.delete(uri,null,null)}
-            message = "Falha ao salvar PDF: ${e.localizedMessage}"
+        val bytes=pdf;pdf=null
+        saveExport(uri,bytes,"PDF")
+    }
+    private fun saveExport(uri:Uri?,bytes:ByteArray?,label:String) {
+        if(uri==null){bytes?.fill(0);return}
+        if(bytes==null){message="Documento indisponível. Gere o arquivo novamente.";return}
+        if(dataBusy){bytes.fill(0);message="Aguarde e gere o documento novamente.";return}
+        runDataOperation("Falha ao salvar $label") {
+            try {
+                withContext(Dispatchers.IO) {
+                    try {
+                        contentResolver.openOutputStream(uri)?.use{it.write(bytes);it.flush()} ?: error("Destino indisponível")
+                    } catch(e:Exception){runCatching{contentResolver.delete(uri,null,null)};throw e}
+                }
+                message="$label salvo com sucesso."
+            } finally {bytes.fill(0)}
         }
-        finally { data?.fill(0); pdf = null }
-        else { data?.fill(0); pdf = null }
     }
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) try {
@@ -79,6 +80,16 @@ class MainActivity : ComponentActivity() {
             getSharedPreferences("native-backup", MODE_PRIVATE).edit().putString("folder", uri.toString()).apply()
             message = "Pasta de backup selecionada."
         } catch (e: Exception) { message = "Não foi possível acessar pasta: ${e.localizedMessage}" }
+    }
+    private val organizationPicker=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null && !dataBusy)runDataOperation("Importação da organização não efetuada") {
+            var bytes:ByteArray?=null
+            try {
+                val profiles=repo.evaluations.toList()
+                val count=withContext(Dispatchers.IO){bytes=contentResolver.openInputStream(uri)?.use{it.readLimited(3_000_000)} ?: error("Arquivo inacessível");repo.store.importOrganizationJson(requireNotNull(bytes),profiles)}
+                showRestoreResult("$count registros de organização importados. Dados existentes preservados.")
+            } finally {bytes?.fill(0)}
+        }
     }
     private val openBackup = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val password=restorePassword;restorePassword=null
@@ -157,14 +168,16 @@ class MainActivity : ComponentActivity() {
                         csvPicker.launch(name)
                     }.onFailure{csvBytes?.fill(0);csvBytes=null;message=it.message ?: "Falha ao exportar CSV."}
                 },
+                onMonthlyBillingPdf = { rows,period ->
+                    val professional=getSharedPreferences("professional",MODE_PRIVATE).let{listOf(it.getString("name","").orEmpty(),it.getString("cref","").orEmpty(),it.getString("workplace","").orEmpty()).filter{v->v.isNotBlank()}.joinToString(" · ")}
+                    createPdf("Caixa_${period.ifBlank{"completo"}}.pdf"){Reports.monthlyBilling(rows,period,professional)}
+                },
                 onCreateBillingPdf = { createPdf("Cobrancas_${LocalDate.now()}.pdf") { Reports.billing(repo.charges) } },
-                onCreateTrainingPdf = { item -> createPdf("Treino_${item.date}.pdf") { Reports.training(item) } },
                 onIntakePdf = { item -> createPdf("Anamnese_${item.date}.pdf") { Reports.intake(item) } },
-                onClientPdf = { id -> createPdf("Dossie_${LocalDate.now()}.pdf") {
-                    Reports.clientDossier(br.com.evolufisico.nativo.domain.ClientWorkspace.snapshot(id,repo.evaluations.toList(),repo.charges.toList(),
-                        repo.appointments.toList(),repo.tasks.toList(),repo.trainingSessions.toList(),repo.habits.toList(),repo.notes.toList()))
-                } },
-                onClientBackup = { id,password -> prepareBackup(password,id) },
+                onAnalysisPdf = { name,dates,text -> createPdf("Analises_${LocalDate.now()}.pdf") { Reports.analysis(name,dates,text) } },
+                onImportOrganizationJson = { organizationPicker.launch(arrayOf("application/json","text/plain","*/*")) },
+                onOrganizationBackup = { password -> prepareBackup(password,organizationOnly=true) },
+                onIndividualBackup = { id,password -> prepareBackup(password,id) },
                 onChooseFolder = { folderPicker.launch(null) },
                 onBackup = { password -> prepareBackup(password) },
                 onImportLegacy = { password ->
@@ -222,14 +235,14 @@ class MainActivity : ComponentActivity() {
             finally { dataBusy=false }
         }
     }
-    private fun prepareBackup(password:String,clientId:String?=null) {
+    private fun prepareBackup(password:String,clientId:String?=null,organizationOnly:Boolean=false) {
         runDataOperation("Não foi possível preparar o backup") {
             val secret=password.toCharArray()
             var bytes:ByteArray?=null
             try {
-                withContext(Dispatchers.IO) { bytes=repo.store.exportEncrypted(secret,clientId) }
+                withContext(Dispatchers.IO) { bytes=repo.store.exportEncrypted(secret,clientId,organizationOnly) }
                 val payload=requireNotNull(bytes)
-                val folder=if(clientId==null)getPreferences(MODE_PRIVATE).getString("backup-folder",null) else null
+                val folder=if(clientId==null && !organizationOnly)getPreferences(MODE_PRIVATE).getString("backup-folder",null) else null
                 if(folder!=null) {
                     withContext(Dispatchers.IO) {
                         val dir=androidx.documentfile.provider.DocumentFile.fromTreeUri(this@MainActivity,Uri.parse(folder))
@@ -245,7 +258,7 @@ class MainActivity : ComponentActivity() {
                     message="Backup criptografado salvo na pasta escolhida. Guarde a senha."
                 } else {
                     pendingBackup?.fill(0);pendingBackup=payload
-                    try { createBackup.launch("EvoluFisico-${if(clientId==null)"Completo" else "Cliente"}-${LocalDate.now()}.efbackup") }
+                    try { createBackup.launch("EvoluFisico-${if(organizationOnly)"Organizacao" else if(clientId==null)"Completo" else "Cliente"}-${LocalDate.now()}.efbackup") }
                     catch(e:Exception) { pendingBackup=null;throw e }
                     bytes=null // SAF callback now owns the encrypted buffer, including cancellation cleanup.
                 }
@@ -253,8 +266,13 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun createPdf(name:String,build:()->ByteArray) {
-        try { output(name,build()) }
-        catch(e:Exception){pdf?.fill(0);pdf=null;message="Não foi possível gerar PDF: ${e.localizedMessage}"}
+        runDataOperation("Não foi possível gerar PDF") {
+            var bytes:ByteArray?=null
+            try {
+                withContext(Dispatchers.Default){bytes=build()}
+                output(name,requireNotNull(bytes));bytes=null
+            } finally {bytes?.fill(0)}
+        }
     }
     private fun output(name: String, bytes: ByteArray) {
         pdf?.fill(0);pdf=bytes

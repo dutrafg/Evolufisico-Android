@@ -2,367 +2,367 @@
   "checks": 60,
   "threshold": 4.5,
   "pass": true,
-  "minimum": 6.8547,
+  "minimum": 5.2807,
   "scope": "Fixed source text pairs only; no interpolation, disabled states, screenshots or device QA.",
   "results": [
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "light-primary",
-      "contrast": 12.4275,
+      "contrast": 6.8035,
       "pass": true
     },
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "dark-primary",
-      "contrast": 9.7845,
+      "contrast": 10.7754,
       "pass": true
     },
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Azul profundo",
+      "palette": "Verde",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "light-primary",
-      "contrast": 8.9461,
+      "contrast": 6.2928,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "dark-primary",
-      "contrast": 9.9054,
+      "contrast": 8.1837,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Azul clássico",
+      "palette": "Azul",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "light-primary",
-      "contrast": 7.264,
+      "contrast": 6.8735,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "dark-primary",
-      "contrast": 10.2924,
+      "contrast": 7.619,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Azul intenso",
+      "palette": "Roxo",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "light-primary",
-      "contrast": 6.8547,
+      "contrast": 5.2807,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "dark-primary",
-      "contrast": 10.7231,
+      "contrast": 10.425,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Azul aço",
+      "palette": "Laranja",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "light-primary",
-      "contrast": 9.6729,
+      "contrast": 6.0264,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "dark-primary",
-      "contrast": 9.8612,
+      "contrast": 9.8362,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Azul petróleo",
+      "palette": "Rosa",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "light-primary",
-      "contrast": 11.6295,
+      "contrast": 10.5934,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "dark-primary",
-      "contrast": 10.068,
+      "contrast": 7.8631,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Petróleo escuro",
+      "palette": "Azul-marinho",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "light-primary",
-      "contrast": 9.6594,
+      "contrast": 7.6073,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "dark-primary",
-      "contrast": 10.4125,
+      "contrast": 9.0978,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
-      "palette": "Verde floresta",
+      "palette": "Petróleo",
       "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "light-primary",
+      "contrast": 7.2576,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "dark-primary",
+      "contrast": 9.4442,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "dark-surface",
+      "contrast": 15.4364,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "dark-variant",
+      "contrast": 8.616,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "light-surface",
+      "contrast": 17.8953,
+      "pass": true
+    },
+    {
+      "palette": "Esmeralda",
+      "pair": "light-variant",
+      "contrast": 5.3421,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "light-primary",
+      "contrast": 9.8448,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "dark-primary",
+      "contrast": 8.4797,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "dark-surface",
+      "contrast": 15.4364,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "dark-variant",
+      "contrast": 8.616,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "light-surface",
+      "contrast": 17.8953,
+      "pass": true
+    },
+    {
+      "palette": "Índigo",
+      "pair": "light-variant",
+      "contrast": 5.3421,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "light-primary",
-      "contrast": 9.5832,
+      "contrast": 8.9496,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "dark-primary",
-      "contrast": 9.5445,
+      "contrast": 8.908,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "dark-surface",
-      "contrast": 13.9399,
+      "contrast": 15.4364,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "dark-variant",
-      "contrast": 10.3151,
+      "contrast": 8.616,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "light-surface",
-      "contrast": 14.4928,
+      "contrast": 17.8953,
       "pass": true
     },
     {
       "palette": "Ameixa",
       "pair": "light-variant",
-      "contrast": 6.9616,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "light-primary",
-      "contrast": 10.1116,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "dark-primary",
-      "contrast": 9.5421,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "dark-surface",
-      "contrast": 13.9399,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "dark-variant",
-      "contrast": 10.3151,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "light-surface",
-      "contrast": 14.4928,
-      "pass": true
-    },
-    {
-      "palette": "Vinho",
-      "pair": "light-variant",
-      "contrast": 6.9616,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "light-primary",
-      "contrast": 9.5725,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "dark-primary",
-      "contrast": 10.4458,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "dark-surface",
-      "contrast": 13.9399,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "dark-variant",
-      "contrast": 10.3151,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "light-surface",
-      "contrast": 14.4928,
-      "pass": true
-    },
-    {
-      "palette": "Grafite",
-      "pair": "light-variant",
-      "contrast": 6.9616,
+      "contrast": 5.3421,
       "pass": true
     }
   ]

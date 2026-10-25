@@ -1,0 +1,15 @@
+{
+  "revision": 14,
+  "beta": 100,
+  "versionCode": 713,
+  "versionName": "0.1.0-native-beta.100",
+  "reference": "EvoluFisico2_1.0.29_PreBeta_Icones_QA_CORRIGIDO.html",
+  "referenceSha256": "f9c3837590bfb229eb050d5320b1775c19711ac54ff478506f77a69577adf3c1",
+  "apkSha256": "4aae92975b3a0a767566e19f0e7a43346c45a217ca4a9e107766e7e0b415c4cb",
+  "apkBytes": 65141247,
+  "junitTests": 50764,
+  "junitFailures": 0,
+  "lint": "passed",
+  "signing": "Android debug certificate verified",
+  "visualDeviceTest": "not run"
+}

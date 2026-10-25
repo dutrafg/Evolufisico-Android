@@ -1,0 +1,2011 @@
+[
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 27.9,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 25.8,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 32.1,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "change",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "reversal"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": 6.3,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20594,
+        "fat": 21.6,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "gap",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "BIA"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "BIA"
+      },
+      {
+        "day": 20524,
+        "fat": 25.8,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "BIA"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": null,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20594,
+        "fat": 23.7,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "gap",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 32.8,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "change",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "reversal"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": 8.4,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 27.9,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 23.7,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "BIA"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "BIA"
+      },
+      {
+        "day": 20524,
+        "fat": 21.6,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "BIA"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": null,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20594,
+        "fat": 27.9,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "gap",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 25.8,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 21.6,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20594,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "gap",
+      "improvement",
+      "plateau",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "BIA"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "BIA"
+      },
+      {
+        "day": 20524,
+        "fat": 30.7,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "BIA"
+      }
+    ],
+    "events": [
+      "change",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "reversal"
+    ],
+    "deltas": [
+      {
+        "gordura": null,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": 2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 25.8,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 23.7,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 27.9,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 31.4,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "change",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "reversal"
+    ],
+    "deltas": [
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": 4.2,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "BIA"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "BIA"
+      },
+      {
+        "day": 20594,
+        "fat": 23.7,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "BIA"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "gap",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": null,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 21.6,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "baseline"
+    ],
+    "deltas": []
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 29.3,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 28.6,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 27.9,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": -0.7,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 28.6,
+        "lean": 60.7,
+        "waist": 90,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 27.2,
+        "lean": 61.4,
+        "waist": 90,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20594,
+        "fat": 25.8,
+        "lean": 62.1,
+        "waist": 90,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "gap",
+      "improvement",
+      "improvement",
+      "plateau"
+    ],
+    "deltas": [
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      },
+      {
+        "gordura": -1.4,
+        "massaMagra": 0.7,
+        "cintura": 0,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.9,
+        "lean": 60.7,
+        "waist": 89,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 25.8,
+        "lean": 61.4,
+        "waist": 88,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 32.1,
+        "lean": 62.1,
+        "waist": 87,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "change",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "reversal"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.1,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      },
+      {
+        "gordura": 6.3,
+        "massaMagra": 0.7,
+        "cintura": -1,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 27.2,
+        "lean": 60.7,
+        "waist": 88,
+        "weight": 89.5,
+        "method": "Pollock"
+      },
+      {
+        "day": 20489,
+        "fat": 24.4,
+        "lean": 61.4,
+        "waist": 86,
+        "weight": 89,
+        "method": "Pollock"
+      },
+      {
+        "day": 20524,
+        "fat": 21.6,
+        "lean": 62.1,
+        "waist": 84,
+        "weight": 88.5,
+        "method": "Pollock"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      },
+      {
+        "gordura": -2.8,
+        "massaMagra": 0.7,
+        "cintura": -2,
+        "peso": -0.5
+      }
+    ]
+  },
+  {
+    "rows": [
+      {
+        "day": 20454,
+        "fat": 30,
+        "lean": 60,
+        "waist": 90,
+        "weight": 90,
+        "method": "Pollock"
+      },
+      {
+        "day": 20468,
+        "fat": 30,
+        "lean": 60.7,
+        "waist": 87,
+        "weight": 89.5,
+        "method": "BIA"
+      },
+      {
+        "day": 20473,
+        "fat": 30,
+        "lean": 61.4,
+        "waist": 84,
+        "weight": 89,
+        "method": "BIA"
+      },
+      {
+        "day": 20524,
+        "fat": 30,
+        "lean": 62.1,
+        "waist": 81,
+        "weight": 88.5,
+        "method": "BIA"
+      }
+    ],
+    "events": [
+      "consistency",
+      "consistency",
+      "improvement",
+      "improvement"
+    ],
+    "deltas": [
+      {
+        "gordura": null,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      },
+      {
+        "gordura": null,
+        "massaMagra": null,
+        "cintura": null,
+        "peso": null
+      },
+      {
+        "gordura": 0,
+        "massaMagra": 0.7,
+        "cintura": -3,
+        "peso": -0.5
+      }
+    ]
+  }
+]

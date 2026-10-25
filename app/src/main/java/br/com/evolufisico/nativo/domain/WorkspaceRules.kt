@@ -9,7 +9,7 @@ import java.util.Locale
 object WorkspaceRules {
     fun date(value: String): LocalDate {
         require(Regex("\\d{4}-\\d{2}-\\d{2}").matches(value)) { "Use uma data no formato AAAA-MM-DD." }
-        return try { LocalDate.parse(value) } catch (_: java.time.format.DateTimeParseException) { throw IllegalArgumentException("Informe uma data válida.") }
+        return try { LocalDate.parse(value) } catch (e: java.time.format.DateTimeParseException) { throw IllegalArgumentException("Informe uma data válida.",e) }
     }
     private fun identity(id: String, studentId: String, student: String) {
         require(id.isNotBlank() && id.length <= 128) { "Identificador inválido." }
@@ -39,6 +39,7 @@ object WorkspaceRules {
         require(item.notes.length <= 4000) { "Observação acima de 4000 caracteres." }
     }
     fun validate(item: NotebookEntry) {
+        if(item.reminder.isNotBlank())date(item.reminder)
         identity(item.id,item.studentId,item.student); title(item.title); date(item.date)
         require(item.category.isNotBlank() && item.category.length<=60){"Categoria deve ter até 60 caracteres."}
         require(item.body.length <= 12000) { "Nota acima de 12000 caracteres." }
@@ -47,9 +48,10 @@ object WorkspaceRules {
         require(item.id.isNotBlank() && item.id.length <= 128) { "Identificador inválido." }
         title(item.title); date(item.dueDate)
         identity(item.id,item.studentId,item.student)
+        require(item.time.isBlank() || runCatching{java.time.LocalTime.parse(item.time)}.isSuccess){"Horário inválido."}
         require(item.priority in 1..3){"Prioridade inválida."}
         require(item.category.isNotBlank() && item.category.length<=60){"Categoria deve ter até 60 caracteres."}
-        require(item.notes.length <= 4000) { "Observação acima de 4000 caracteres." }
+        require(item.notes.length <= 10000) { "Observação acima de 10000 caracteres." }
     }
     fun habitProgress(value: Double, target: Double): Float? {
         if (!value.isFinite() || !target.isFinite() || value < 0 || target <= 0) return null

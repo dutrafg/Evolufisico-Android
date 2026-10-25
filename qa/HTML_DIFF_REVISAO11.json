@@ -1,0 +1,37 @@
+{
+  "previousSha256": "80252ee531b5c813fd2bdc079c3e26d30612755620caf8b28038e4bfb78113d6",
+  "newSha256": "bf56e2ccbbace941c9e006cc2cf70d1f9f378841a707c40fff617f7f080270a5",
+  "addedBlocks": [
+    "efprof-first-run-style",
+    "ef-billing-monthly-style",
+    "ef-billing-monthly-script",
+    "efprof-first-run-script",
+    "efx-prebeta-visual-style",
+    "efx-prebeta-visual-script",
+    "efg-global-search-css",
+    "efg-global-search-js",
+    "ef-101-polish",
+    "ef-102-decision-center-styles",
+    "ef-101-controls",
+    "ef-104-navigation-correction",
+    "ef-104-direct-shortcuts",
+    "ef-104-fixed-navigation-context"
+  ],
+  "changedBlocks": [
+    "ef-splash-script",
+    "ef-cobranca-script",
+    "ef-home-redesign-script"
+  ],
+  "clinicalJavascriptRegression": {
+    "EF68": 36,
+    "EF70": 48,
+    "EF77": 16,
+    "result": "100 vectors regenerated in VM; results unchanged against this new HTML"
+  },
+  "newNativeTests": {
+    "MonthlyLedger": 7,
+    "DecisionCenter": 7,
+    "WorkspaceSearch": 5
+  },
+  "visualDeviceTests": "NOT_RUN"
+}

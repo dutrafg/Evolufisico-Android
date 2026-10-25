@@ -44,7 +44,7 @@ private fun HelpMetric(label:String,value:String,explanation:String) {
     }
 }
 @Composable
-fun AnalysisScreen(repo:AppRepository,initialClientId:String="")=Screen {
+fun AnalysisScreen(repo:AppRepository,initialClientId:String="",onReport:(String,List<String>,String)->Unit={_,_,_->})=Screen {
     Heading("Análises","Painel auditável: resultados, tendência, adesão e explicação de cada indicador.")
     val pupils=repo.evaluations.distinctBy{it.studentId}
     var selected by androidx.compose.runtime.saveable.rememberSaveable(initialClientId){mutableStateOf(initialClientId)}
@@ -56,9 +56,33 @@ fun AnalysisScreen(repo:AppRepository,initialClientId:String="")=Screen {
     val history=br.com.evolufisico.nativo.domain.EvaluationTimeline.ordered(repo.evaluations.filter{it.studentId==selected})
     if(history.isEmpty())Text("Nenhuma análise disponível. Cadastre uma avaliação primeiro.")
     else {
-        val last=history.last();val first=history.first()
-        val alerts=AssessmentChecks.review(last,history.dropLast(1).lastOrNull())
+        var selectedDates by androidx.compose.runtime.saveable.rememberSaveable(selected){mutableStateOf(listOf<String>())}
+        Text("Selecione três datas e, opcionalmente, uma quarta. O intervalo mínimo é de 21 dias.")
+        history.map{it.date}.distinct().forEach { date ->
+            FilterChip(selected=date in selectedDates,onClick={selectedDates=if(date in selectedDates)selectedDates-date else if(selectedDates.size<4)selectedDates+date else selectedDates},label={Text(date)})
+        }
+        val chosen=history.filter{it.date in selectedDates}.distinctBy{it.date}
+        if(!br.com.evolufisico.nativo.domain.HtmlParity.eligible(chosen)) {
+            Text("Interpretação bloqueada: selecione pelo menos três datas distintas do mesmo aluno, com intervalo total de 21 dias ou mais.")
+            return@Screen
+        }
+        val ordered=br.com.evolufisico.nativo.domain.EvaluationTimeline.ordered(chosen)
+        val last=ordered.last();val first=ordered.first()
+        val trajectory=br.com.evolufisico.nativo.domain.HtmlAnalysis.analyze(ordered.map{br.com.evolufisico.nativo.domain.HtmlAnalysis.point(it)})
+        HelpMetric("Trajetória EF70",trajectory.trajectory?.let{"$it / 100"} ?: "Histórico insuficiente", "Índice matemático exploratório do HTML. A última coleta precisa estar separada por pelo menos sete dias. Não representa diagnóstico.")
+        HelpMetric("Suficiência dos dados",trajectory.sufficiency?.let{"$it / 100"} ?: "Insuficiente","Heurística do HTML: quantidade, intervalo, completude e comparabilidade. Não é percentual de precisão clínica.")
+        trajectory.per30.forEach{(metric,value)->HelpMetric("Tendência de $metric",value?.let{Metrics.oneDecimal(it)+" "+when(metric){"Gordura"->"p.p.";"Cintura"->"cm";else->"kg"}+" por 30 dias"} ?: "Sem série comparável", "Regressão linear das datas selecionadas, sem previsão futura. Métodos diferentes de gordura não são misturados.")}
+
+        AnalysisTimeline(ordered.map{br.com.evolufisico.nativo.domain.HtmlAnalysis.point(it)})
+        val alerts=AssessmentChecks.review(last,ordered.dropLast(1).lastOrNull())
         DataCard(last.name,"Última avaliação ${last.date} • ${history.size} registros")
+        trajectory.signals.forEach{Text(it)}
+        trajectory.actions.forEach{Text("• $it")}
+        var reportText by androidx.compose.runtime.saveable.rememberSaveable(selected,selectedDates){mutableStateOf(
+            "Trajetória: "+(trajectory.trajectory?.toString() ?: "Insuficiente")+" / 100\nSuficiência dos dados: "+(trajectory.sufficiency?.toString() ?: "Insuficiente")+" / 100\n"+trajectory.signals.joinToString("\n")+"\n"+trajectory.actions.joinToString("\n")+"\nÍndices heurísticos; não representam diagnóstico ou precisão clínica."
+        )}
+        Field("Síntese editável do profissional",reportText,{reportText=it.take(12000)},lines=5)
+        Button(onClick={onReport(last.name,ordered.map{it.date},reportText)}){Text("Salvar relatório de análises em PDF")}
         val bmi=Metrics.bmi(last.weightKg,last.heightCm)
         val ratio=Metrics.waistHipRatio(last.waistCm,last.hipCm)
         val fold=Anthropometry.pollock7(last.sex,last.age,last.weightKg,last.skinfolds)
