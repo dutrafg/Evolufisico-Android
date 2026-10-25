@@ -223,19 +223,20 @@ internal fun TaskFormDialog(initial: TaskRecord?, onDismiss: () -> Unit, onSave:
 }
 
 @Composable
-internal fun ChargeFormDialog(students: List<Student>, onDismiss: () -> Unit, onSave: (Long?, String, Double, String, String) -> Unit) {
+internal fun ChargeFormDialog(students: List<Student>, initialStudentId: Long? = null, onDismiss: () -> Unit, onSave: (Long?, String, Double, String, String) -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
     var dueDate by rememberSaveable { mutableStateOf(todayNativeIso()) }
     var notes by rememberSaveable { mutableStateOf("") }
-    var student by remember { mutableStateOf<Student?>(null) }
+    var selectedStudentId by rememberSaveable(initialStudentId) { mutableStateOf(initialStudentId) }
+    val student = students.firstOrNull { it.id == selectedStudentId }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nova cobrança") },
         text = {
             Column(Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StudentPicker(students, student, { student = it })
+                StudentPicker(students, student, { student = it; selectedStudentId = it?.id })
                 OutlinedTextField(title, { title = it; error = null }, label = { Text("Descrição *") }, singleLine = true)
                 OutlinedTextField(amount, { amount = it; error = null }, label = { Text("Valor (R$) *") }, singleLine = true)
                 OutlinedTextField(dueDate, { dueDate = it; error = null }, label = { Text("Vencimento (AAAA-MM-DD)") }, singleLine = true)
@@ -254,11 +255,12 @@ internal fun ChargeFormDialog(students: List<Student>, onDismiss: () -> Unit, on
 }
 
 @Composable
-internal fun IntakeFormDialog(students: List<Student>, onDismiss: () -> Unit, onSave: (Long?, String, String) -> Unit) {
+internal fun IntakeFormDialog(students: List<Student>, initialStudentId: Long? = null, onDismiss: () -> Unit, onSave: (Long?, String, String) -> Unit) {
     var template by rememberSaveable { mutableStateOf(formTemplates.first()) }
     var customTitle by rememberSaveable { mutableStateOf("") }
     var answers by rememberSaveable { mutableStateOf("") }
-    var student by remember { mutableStateOf<Student?>(null) }
+    var selectedStudentId by rememberSaveable(initialStudentId) { mutableStateOf(initialStudentId) }
+    val student = students.firstOrNull { it.id == selectedStudentId }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -267,7 +269,7 @@ internal fun IntakeFormDialog(students: List<Student>, onDismiss: () -> Unit, on
             Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TemplatePicker(template, { template = it; error = null })
                 if (template == "Personalizado") OutlinedTextField(customTitle, { customTitle = it }, label = { Text("Nome do formulário") }, singleLine = true)
-                StudentPicker(students, student, { student = it })
+                StudentPicker(students, student, { student = it; selectedStudentId = it?.id })
                 Text(formQuestions[template] ?: "Registre as informações relevantes ao atendimento.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(answers, { answers = it; error = null }, label = { Text("Respostas *") }, minLines = 5)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
