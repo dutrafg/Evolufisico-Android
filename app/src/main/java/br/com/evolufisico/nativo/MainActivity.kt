@@ -359,7 +359,16 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                 selectedStudent != null -> ProfileScreen(
                     student = selectedStudent,
                     assessments = profileAssessments,
+                    forms = forms.filter { it.studentId == selectedStudent.id },
+                    charges = charges.filter { it.studentId == selectedStudent.id },
+                    maskFinancial = maskFinancial,
                     onAddAssessment = { assessmentDialog = true },
+                    onEditStudent = { editingStudent = selectedStudent; studentDialog = true },
+                    onAddForm = { intakeDialog = true },
+                    onDeleteForm = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } },
+                    onAddCharge = { chargeDialog = true },
+                    onReceiveCharge = { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } },
+                    onDeleteCharge = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } },
                     onDeleteStudent = {
                         scope.launch {
                             withContext(Dispatchers.IO) { database.deleteStudent(selectedStudent.id) }
@@ -455,7 +464,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                 )
                 else -> ModuleListScreen(
                     favorites = favoriteModules,
-                    onOpen = { activeModule = it },
+                    onOpen = { if (it == "Início") { selected = 0; activeModule = null } else activeModule = it },
                     onToggleFavorite = ::toggleFavorite
                 )
                     }
@@ -512,6 +521,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                                                 "Perfil Unificado" -> { selected = 1; activeModule = null }
                                                 "Anamnese" -> { selected = 3; activeModule = "Formulários" }
                                                 "Análises Completas" -> { selected = 3; activeModule = "Análises" }
+                                                "Início" -> { selected = 0; activeModule = null }
                                                 else -> { selected = 3; activeModule = module }
                                             }
                                         },
@@ -561,6 +571,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 
     if (chargeDialog) ChargeFormDialog(
         students = students,
+        initialStudentId = selectedStudentId,
         onDismiss = { chargeDialog = false },
         onSave = { studentId, title, amount, dueDate, notes -> scope.launch {
             try { withContext(Dispatchers.IO) { database.saveCharge(studentId, title, amount, dueDate, notes) }; chargeDialog = false; refresh() }
@@ -570,6 +581,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
 
     if (intakeDialog) IntakeFormDialog(
         students = students,
+        initialStudentId = selectedStudentId,
         onDismiss = { intakeDialog = false },
         onSave = { studentId, template, answers -> scope.launch {
             try { withContext(Dispatchers.IO) { database.saveIntakeForm(studentId, template, todayIso(), answers) }; intakeDialog = false; refresh() }
@@ -1032,19 +1044,29 @@ private fun StudentsScreen(
 private fun ProfileScreen(
     student: Student,
     assessments: List<Assessment>,
+    forms: List<IntakeForm>,
+    charges: List<ChargeRecord>,
+    maskFinancial: Boolean,
     onAddAssessment: () -> Unit,
+    onEditStudent: () -> Unit,
+    onAddForm: () -> Unit,
+    onDeleteForm: (Long) -> Unit,
+    onAddCharge: () -> Unit,
+    onReceiveCharge: (Long) -> Unit,
+    onDeleteCharge: (Long) -> Unit,
     onDeleteStudent: () -> Unit,
     onDeleteAssessment: (Long) -> Unit
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    val latest = assessments.firstOrNull()
+    val pendingCharges = charges.filter { it.status == "Pendente" }
+    val amountLabel = if (maskFinancial) "••••" else NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(pendingCharges.sumOf { it.amount })
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            Text("Perfil Unificado", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
+        item { Text("Perfil Unificado", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
         item {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1052,36 +1074,49 @@ private fun ProfileScreen(
                     if (student.phone.isNotBlank()) Text("Telefone: " + student.phone)
                     if (student.email.isNotBlank()) Text("E-mail: " + student.email)
                     if (student.birthDate.isNotBlank()) Text("Nascimento: " + student.birthDate)
-                    Text("ID do aluno: " + student.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Código do aluno: " + student.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = onEditStudent) { Text("Editar cadastro") }
                 }
             }
         }
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onAddAssessment) { Text("Nova avaliação") }
-                TextButton(onClick = { confirmDelete = true }) { Text("Excluir aluno") }
+            SectionCard("Resumo do acompanhamento") {
+                if (latest == null) Text("Ainda não há avaliações para este aluno.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else {
+                    Text("Última avaliação: " + displayDate(latest.date))
+                    Text("Peso: " + formatNumber(latest.weightKg) + " kg  ·  Altura: " + formatNumber(latest.heightCm) + " cm")
+                    Text("IMC: " + (latest.bmi?.let(::formatNumber) ?: "—"))
+                    if (latest.waistCm != null) Text("Cintura: " + formatNumber(latest.waistCm) + " cm")
+                    if (latest.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(latest.bodyFatPercent) + "%")
+                }
             }
         }
         item {
-            Text("Histórico de avaliações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onAddAssessment, modifier = Modifier.fillMaxWidth()) { Text("Nova avaliação") }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.OutlinedButton(onClick = onAddForm, modifier = Modifier.weight(1f)) { Text("Nova anamnese") }
+                    androidx.compose.material3.OutlinedButton(onClick = onAddCharge, modifier = Modifier.weight(1f)) { Text("Nova cobrança") }
+                }
+                TextButton(onClick = { confirmDelete = true }) { Text("Excluir aluno") }
+            }
         }
+        item { Text("Histórico de avaliações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
         if (assessments.size >= 2) {
-            val latest = assessments[0]
+            val current = assessments[0]
             val previous = assessments[1]
             item {
                 SectionCard("Evolução entre as duas últimas avaliações") {
-                    val weightDelta = latest.weightKg - previous.weightKg
+                    val weightDelta = current.weightKg - previous.weightKg
                     Text("Peso: " + (if (weightDelta > 0) "+" else "") + formatNumber(weightDelta) + " kg")
-                    Text("IMC: " + (previous.bmi?.let(::formatNumber) ?: "—") + " → " + (latest.bmi?.let(::formatNumber) ?: "—"))
-                    if (latest.waistCm != null && previous.waistCm != null) {
-                        val waistDelta = latest.waistCm - previous.waistCm
+                    Text("IMC: " + (previous.bmi?.let(::formatNumber) ?: "—") + " → " + (current.bmi?.let(::formatNumber) ?: "—"))
+                    if (current.waistCm != null && previous.waistCm != null) {
+                        val waistDelta = current.waistCm - previous.waistCm
                         Text("Cintura: " + (if (waistDelta > 0) "+" else "") + formatNumber(waistDelta) + " cm")
                     }
                     Text("Comparação descritiva. Considere diferenças de método e condições de medição.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
             }
-        }
-        if (assessments.size >= 2) {
             item {
                 SectionCard("Variação do peso") {
                     WeightTrendChart(assessments.take(6).reversed())
@@ -1089,25 +1124,53 @@ private fun ProfileScreen(
                 }
             }
         }
-        if (assessments.isEmpty()) {
-            item { EmptyCard("Sem avaliações", "Registre a primeira avaliação para iniciar o acompanhamento.") }
-        }
-        items(assessments, key = { it.id }) { item ->
+        if (assessments.isEmpty()) item { EmptyCard("Sem avaliações", "Registre a primeira avaliação para iniciar o acompanhamento.") }
+        items(assessments, key = { it.id }) { assessment ->
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(item.date, fontWeight = FontWeight.SemiBold)
-                        TextButton(onClick = { onDeleteAssessment(item.id) }) { Text("Excluir") }
+                        Text(displayDate(assessment.date), fontWeight = FontWeight.SemiBold)
+                        TextButton(onClick = { onDeleteAssessment(assessment.id) }) { Text("Excluir") }
                     }
-                    Text("Peso: " + formatNumber(item.weightKg) + " kg  ·  Altura: " + formatNumber(item.heightCm) + " cm")
-                    Text("IMC: " + (item.bmi?.let(::formatNumber) ?: "—"), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
-                    if (item.waistCm != null) Text("Cintura: " + formatNumber(item.waistCm) + " cm")
-                    if (item.hipCm != null) Text("Quadril: " + formatNumber(item.hipCm) + " cm")
-                    if (item.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(item.bodyFatPercent) + "%")
-                    listOf("Pescoço" to item.neckCm, "Peitoral" to item.chestCm, "Braço" to item.armCm, "Coxa" to item.thighCm)
+                    Text("Peso: " + formatNumber(assessment.weightKg) + " kg  ·  Altura: " + formatNumber(assessment.heightCm) + " cm")
+                    Text("IMC: " + (assessment.bmi?.let(::formatNumber) ?: "—"), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                    if (assessment.waistCm != null) Text("Cintura: " + formatNumber(assessment.waistCm) + " cm")
+                    if (assessment.hipCm != null) Text("Quadril: " + formatNumber(assessment.hipCm) + " cm")
+                    if (assessment.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(assessment.bodyFatPercent) + "%")
+                    listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
                         .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
-                    if (item.notes.isNotBlank()) Text(item.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (assessment.notes.isNotBlank()) Text(assessment.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+        }
+        item {
+            SectionCard("Anamneses") {
+                if (forms.isEmpty()) Text("Nenhum formulário vinculado a este aluno.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                forms.sortedByDescending { it.date }.forEach { form ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Text(form.template, fontWeight = FontWeight.Medium)
+                    Text(displayDate(form.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(form.responses, maxLines = 4, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { onDeleteForm(form.id) }) { Text("Excluir formulário") }
+                }
+                TextButton(onClick = onAddForm) { Text("Adicionar anamnese") }
+            }
+        }
+        item {
+            SectionCard("Cobranças") {
+                Text("Pendentes: ${pendingCharges.size} · ${amountLabel}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (charges.isEmpty()) Text("Nenhuma cobrança vinculada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                charges.sortedBy { it.dueDate }.forEach { charge ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Text(charge.title, fontWeight = FontWeight.Medium)
+                    Text("${displayDate(charge.dueDate)} · ${if (charge.status == "Pendente") "Pendente" else "Recebida"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (!maskFinancial) Text(NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(charge.amount))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (charge.status == "Pendente") Button(onClick = { onReceiveCharge(charge.id) }) { Text("Receber") }
+                        TextButton(onClick = { onDeleteCharge(charge.id) }) { Text("Excluir") }
+                    }
+                }
+                TextButton(onClick = onAddCharge) { Text("Adicionar cobrança") }
             }
         }
     }
@@ -1115,10 +1178,8 @@ private fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Excluir aluno?") },
-            text = { Text("O perfil e as avaliações vinculadas serão removidos deste aparelho.") },
-            confirmButton = {
-                TextButton(onClick = { confirmDelete = false; onDeleteStudent() }) { Text("Excluir") }
-            },
+            text = { Text("O cadastro e as avaliações vinculadas serão removidos. Anamneses e cobranças serão mantidas sem vínculo com o aluno.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDeleteStudent() }) { Text("Excluir") } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } }
         )
     }
@@ -1300,7 +1361,7 @@ private fun ModuleListScreen(favorites: Set<String>, onOpen: (String) -> Unit, o
             Text("Módulos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text("Acesso rápido às áreas do EvoluFísico.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        items(moduleNames) { module ->
+        items(primaryModuleNames) { module ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { onOpen(module) },
