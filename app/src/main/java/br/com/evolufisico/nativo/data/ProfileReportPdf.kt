@@ -27,6 +27,8 @@ internal object ProfileReportPdf {
         assessment.waistCm?.let { lines += Line("Cintura: " + number(it) + " cm") }
         assessment.hipCm?.let { lines += Line("Quadril: " + number(it) + " cm") }
         assessment.bodyFatPercent?.let { lines += Line("Gordura corporal informada: " + number(it) + "%") }
+        assessment.bioimpedanceBodyFatPercent?.let { lines += Line("Gordura por bioimpedância: " + number(it) + "%" + assessment.bioimpedanceDevice.takeIf(String::isNotBlank)?.let { device -> " · $device" }.orEmpty()) }
+        assessment.bioimpedanceLeanMassKg?.let { lines += Line("Massa livre de gordura por bioimpedância: " + number(it) + " kg") }
         listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
             .forEach { (label, value) -> value?.let { lines += Line("$label: " + number(it) + " cm") } }
         val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar média" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
