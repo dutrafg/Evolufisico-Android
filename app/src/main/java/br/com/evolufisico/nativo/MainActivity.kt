@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
@@ -223,6 +224,7 @@ private val moduleNames = listOf(
     "Anamnese",
     "Análises Completas",
     "Cobranças",
+    "EvoStore",
     "Agenda",
     "Tarefas",
     "Configurações"
@@ -237,6 +239,7 @@ private val primaryModuleNames = listOf(
     "Anamnese",
     "Análises Completas",
     "Cobranças",
+    "EvoStore",
     "Configurações"
 )
 
@@ -263,6 +266,17 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     val preferences = remember(context) { context.getSharedPreferences("appearance", android.content.Context.MODE_PRIVATE) }
     var favoriteModules by remember {
         mutableStateOf(preferences.getStringSet("favorite_modules", emptySet()).orEmpty().toSet())
+    }
+    var installedMiniApps by remember {
+        mutableStateOf(EvoMiniCatalog.validIds(
+            preferences.getStringSet("evo_installed_minis", setOf("list")).orEmpty()))
+    }
+    fun toggleMiniApp(id: String) {
+        if (EvoMiniCatalog.entries.none { it.id == id }) return
+        val next = installedMiniApps.toMutableSet()
+        if (!next.add(id)) next.remove(id)
+        installedMiniApps = next
+        preferences.edit().putStringSet("evo_installed_minis", next).apply()
     }
     var maskFinancial by remember { mutableStateOf(preferences.getBoolean("mask_financial", false)) }
     var reevaluationIntervalDays by remember { mutableIntStateOf(preferences.getInt("reevaluation_interval_days", 90).coerceIn(30, 90)) }
@@ -531,6 +545,10 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onEdit = { editingForm = it; intakeDialog = true },
                     onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } }
                 )
+                activeModule == "EvoStore" -> EvoStoreScreen(
+                    installed = installedMiniApps,
+                    onToggle = ::toggleMiniApp
+                )
                 activeModule == "Cobranças" -> ChargeScreen(
                     charges = charges,
                     students = students,
@@ -577,7 +595,9 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     appointments = appointments,
                     tasks = tasks,
                     charges = charges,
+                    forms = forms,
                     maskFinancial = maskFinancial,
+                    installedMiniApps = installedMiniApps,
                     favoriteModules = favoriteModules.sorted(),
                     onOpen = { activeModule = it },
                     onAddStudent = { studentDialog = true },
@@ -588,7 +608,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onToggleTask = { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } },
                     onEditTask = { editingTask = it; taskDialog = true },
                     onDeleteTask = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } },
-                    onOpenStudent = { selectedStudentId = it }
+                    onOpenStudent = { selectedStudentId = it },
+                    onReceiveCharge = { id -> scope.launch {
+                        withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh()
+                    } },
+                    onEditForm = { editingForm = it; intakeDialog = true }
                 )
                 else -> ModuleListScreen(
                     favorites = favoriteModules,
@@ -811,7 +835,9 @@ private fun HomeScreen(
     appointments: List<Appointment>,
     tasks: List<TaskRecord>,
     charges: List<ChargeRecord>,
+    forms: List<IntakeForm>,
     maskFinancial: Boolean,
+    installedMiniApps: Set<String>,
     favoriteModules: List<String>,
     onOpen: (String) -> Unit,
     onAddStudent: () -> Unit,
@@ -822,7 +848,9 @@ private fun HomeScreen(
     onToggleTask: (Long, Boolean) -> Unit,
     onEditTask: (TaskRecord) -> Unit,
     onDeleteTask: (Long) -> Unit,
-    onOpenStudent: (Long) -> Unit
+    onOpenStudent: (Long) -> Unit,
+    onReceiveCharge: (Long) -> Unit,
+    onEditForm: (IntakeForm) -> Unit
 ) {
     val today = todayIso()
     var selectedDate by rememberSaveable { mutableStateOf(today) }
@@ -993,16 +1021,22 @@ private fun HomeScreen(
                 }
             }
         }
-        if (favoriteModules.isNotEmpty()) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Favoritos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(favoriteModules) { module ->
-                            QuickAction(module, moduleIcon(module), Modifier.width(155.dp)) { onOpen(module) }
-                        }
-                    }
-                }
+        item {
+            EvoMiniWidgets(
+                installed = installedMiniApps,
+                students = students, assessments = assessments,
+                appointments = appointments, tasks = tasks, charges = charges, forms = forms,
+                maskFinancial = maskFinancial, reevaluationDays = reevaluationIntervalDays,
+                onAddTask = onAddTask, onEditTask = onEditTask, onToggleTask = onToggleTask,
+                onAddAppointment = onAddAppointment, onEditAppointment = onEditAppointment,
+                onReceiveCharge = onReceiveCharge, onOpenStudent = onOpenStudent,
+                onEditForm = onEditForm
+            )
+        }
+        item {
+            TextButton(onClick = { onOpen("EvoStore") }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Storefront, contentDescription = null)
+                Text(" Abrir EvoStore")
             }
         }
     }
@@ -1086,6 +1120,7 @@ private fun moduleIcon(module: String): ImageVector = when (module) {
     "Análises", "Análises Completas" -> Icons.Default.Analytics
     "Cobranças" -> Icons.Default.ReceiptLong
     "Tarefas" -> Icons.Default.Checklist
+    "EvoStore" -> Icons.Default.Storefront
     "Configurações" -> Icons.Default.Settings
     else -> Icons.Default.MoreHoriz
 }
