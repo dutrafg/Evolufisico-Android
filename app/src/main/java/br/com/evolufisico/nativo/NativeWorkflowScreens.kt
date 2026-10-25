@@ -140,7 +140,13 @@ internal fun AnalyticsScreen(
         Triple("Massa livre por bioimpedância", "kg", selected.map { it.bioimpedanceLeanMassKg })
     )
     val trendResults = metrics.map { (label, unit, values) ->
-        Triple(label, unit, AnalysisMath.trend(dateKeys, values))
+        val compatible = when (label) {
+            "Gordura registrada · método não informado" -> false
+            "Gordura estimada · Pollock 7" -> AnalysisMath.comparablePollock7Source(selected)
+            "Gordura por bioimpedância", "Massa livre por bioimpedância" -> AnalysisMath.comparableBiaSource(selected)
+            else -> true
+        }
+        Triple(label, unit, if (compatible) AnalysisMath.trend(dateKeys, values) else null)
     }
     val reportText = selectedStudent?.let { AnalysisMath.report(it.name, selected) }.orEmpty()
     var reportDraft by remember(selectedStudent?.id, selectedDates, reportText) { mutableStateOf(reportText) }
@@ -211,7 +217,7 @@ internal fun AnalyticsScreen(
                                     HorizontalDivider()
                                     Text(label, fontWeight = FontWeight.SemiBold)
                                     if (result == null) {
-                                        Text("Dados incompletos para comparar todas as datas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Dados insuficientes ou métodos/equipamentos não comparáveis entre as datas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     } else {
                                         val suffix = if (unit.isBlank()) "" else " $unit"
                                         val sign = if (result.absoluteChange > 0) "+" else ""
