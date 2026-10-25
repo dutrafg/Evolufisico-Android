@@ -476,7 +476,7 @@ internal fun ChargeFormDialog(
         },
         confirmButton = { TextButton(onClick = {
             val parsed = amount.trim().replace(",", ".").toDoubleOrNull()
-            if (title.isBlank() || parsed == null || parsed <= 0.0) error = "Informe descrição e valor maior que zero."
+            if (title.isBlank() || parsed == null || !parsed.isFinite() || parsed <= 0.0) error = "Informe descrição e valor numérico válido maior que zero."
             else if (!validIsoDate(dueDate)) error = "Informe uma data válida."
             else onSave(initial?.id, student?.id, title, parsed, dueDate, notes)
         }) { Text(if (initial == null) "Salvar cobrança" else "Salvar alterações") } },
