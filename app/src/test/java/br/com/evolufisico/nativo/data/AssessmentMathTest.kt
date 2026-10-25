@@ -57,7 +57,7 @@ class AssessmentMathTest {
         assertNull(AssessmentMath.pollock7("Outro", 30, 80.0, complete))
         assertNull(AssessmentMath.pollock7("Masculino", 17, 80.0, complete))
         assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.dropLast(1)))
-        assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.toMutableList().also { it[3] = null }))
+        assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, listOf<Double?>(10.0, 20.0, 30.0, null, 50.0, 60.0, 70.0)))
         assertNull(AssessmentMath.pollock7("Masculino", 30, 80.0, complete.toMutableList().also { it[3] = 0.0 }))
     }
 
