@@ -15,9 +15,27 @@ android {
         versionName = "0.1.0-native-beta.17"
     }
 
+    val releaseKeystorePath = providers.environmentVariable("EF_RELEASE_KEYSTORE_FILE").orNull
+    val releaseStorePassword = providers.environmentVariable("EF_RELEASE_STORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.environmentVariable("EF_RELEASE_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.environmentVariable("EF_RELEASE_KEY_PASSWORD").orNull
+    val hasReleaseSigning = listOf(releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
+        .all { !it.isNullOrBlank() }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("evoluRelease") {
+                storeFile = file(requireNotNull(releaseKeystorePath))
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("evoluRelease")
         }
     }
 
