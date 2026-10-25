@@ -106,7 +106,7 @@ class AssessmentMathTest {
         val report = AnalysisMath.report("Ana", emptyList())
         assertTrue(report.contains("Dados insuficientes"))
         assertTrue(report.contains("não diagnóstico"))
-        assertTrue(report.contains("bioimpedância registrados juntos"))
+        assertTrue(report.contains("BIA com aparelho identificado na mesma avaliação"))
     }
 
     @Test fun basalMetabolicFormulasAndHeartRateRespectInputBounds() {
