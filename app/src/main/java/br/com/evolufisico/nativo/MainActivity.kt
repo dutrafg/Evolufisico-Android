@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +30,8 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -132,6 +137,7 @@ private val moduleNames = listOf(
     "Avaliações",
     "Evolução",
     "Calculadora",
+    "Agenda",
     "Formulários",
     "Análises",
     "Cobranças",
@@ -152,6 +158,18 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     var profileAssessments by remember { mutableStateOf<List<Assessment>>(emptyList()) }
     var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var counts by remember { mutableStateOf(0 to 0) }
+    var studentsWithoutAssessment by remember { mutableIntStateOf(0) }
+    var reevaluationsDue by remember { mutableIntStateOf(0) }
+    val preferences = remember(context) { context.getSharedPreferences("appearance", android.content.Context.MODE_PRIVATE) }
+    var favoriteModules by remember {
+        mutableStateOf(preferences.getStringSet("favorite_modules", emptySet()).orEmpty().toSet())
+    }
+    fun toggleFavorite(module: String) {
+        val next = favoriteModules.toMutableSet()
+        if (!next.add(module)) next.remove(module)
+        favoriteModules = next
+        preferences.edit().putStringSet("favorite_modules", next).apply()
+    }
     var appointmentDialog by remember { mutableStateOf(false) }
     var studentDialog by remember { mutableStateOf(false) }
     var assessmentDialog by remember { mutableStateOf(false) }
@@ -160,12 +178,14 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
     fun refresh() {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments())
+                listOf(database.students(), database.counts(), selectedStudentId?.let(database::assessments).orEmpty(), database.appointments(), database.studentsWithoutAssessment(), database.reevaluationsDue())
             }
             students = result[0] as List<Student>
             counts = result[1] as Pair<Int, Int>
             profileAssessments = result[2] as List<Assessment>
             appointments = result[3] as List<Appointment>
+            studentsWithoutAssessment = result[4] as Int
+            reevaluationsDue = result[5] as Int
         }
     }
 
@@ -277,10 +297,17 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
                     studentCount = counts.first,
                     assessmentCount = counts.second,
                     todayAppointments = appointments.filter { it.date == todayIso() },
+                    studentsWithoutAssessment = studentsWithoutAssessment,
+                    reevaluationsDue = reevaluationsDue,
+                    favoriteModules = favoriteModules.sorted(),
                     onOpen = { activeModule = it },
                     onAddStudent = { studentDialog = true }
                 )
-                else -> ModuleListScreen(onOpen = { activeModule = it })
+                else -> ModuleListScreen(
+                    favorites = favoriteModules,
+                    onOpen = { activeModule = it },
+                    onToggleFavorite = ::toggleFavorite
+                )
             }
         }
     }
@@ -350,7 +377,16 @@ private fun EvoluFisicoApp(dark: Boolean, onDarkChange: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun HomeScreen(studentCount: Int, assessmentCount: Int, todayAppointments: List<Appointment>, onOpen: (String) -> Unit, onAddStudent: () -> Unit) {
+private fun HomeScreen(
+    studentCount: Int,
+    assessmentCount: Int,
+    todayAppointments: List<Appointment>,
+    studentsWithoutAssessment: Int,
+    reevaluationsDue: Int,
+    favoriteModules: List<String>,
+    onOpen: (String) -> Unit,
+    onAddStudent: () -> Unit
+) {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = Color(0xFF155E49))) {
@@ -361,26 +397,72 @@ private fun HomeScreen(studentCount: Int, assessmentCount: Int, todayAppointment
                 }
             }
         }
-        item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
-            MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
-        } }
+        item {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth >= 600.dp) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
+                        MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
+                        MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
+                        MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MetricCard("Alunos", studentCount.toString(), "Cadastros locais", Modifier.weight(1f))
+                            MetricCard("Avaliações", assessmentCount.toString(), "Histórico salvo", Modifier.weight(1f))
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MetricCard("Sem avaliação", studentsWithoutAssessment.toString(), "Perfis sem histórico", Modifier.weight(1f))
+                            MetricCard("Reavaliações", reevaluationsDue.toString(), "Há 90 dias ou mais", Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
         item { SectionCard("Agenda de hoje") {
             if (todayAppointments.isEmpty()) Text("A agenda ainda está vazia.", color = Muted)
             else todayAppointments.take(3).forEach { Text(it.time + "  ·  " + it.title, color = Graphite) }
             Button(onClick = { onOpen("Agenda") }) { Text("Abrir agenda") }
         } }
         item { SectionCard("Central de atenção") {
-            Text(if (studentCount == 0) "Cadastre o primeiro aluno para iniciar o acompanhamento." else "Acesse os alunos para revisar perfis e avaliações.", color = Muted)
+            val message = when {
+                studentCount == 0 -> "Cadastre o primeiro aluno para iniciar o acompanhamento."
+                reevaluationsDue > 0 -> reevaluationsDue.toString() + " aluno(s) estão há 90 dias ou mais sem reavaliação."
+                studentsWithoutAssessment > 0 -> studentsWithoutAssessment.toString() + " aluno(s) ainda não têm avaliação registrada."
+                else -> "Todos os alunos têm avaliações recentes registradas."
+            }
+            Text(message, color = Muted)
             Button(onClick = if (studentCount == 0) onAddStudent else ({ onOpen("Perfil Unificado") })) {
                 Text(if (studentCount == 0) "Cadastrar aluno" else "Ver alunos")
             }
         } }
-        item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
-            QuickAction("Avaliações", Icons.Default.FitnessCenter, Modifier.weight(1f)) { onOpen("Avaliações") }
-        } }
+        item {
+            if (favoriteModules.isEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QuickAction("Perfil Unificado", Icons.Default.Person, Modifier.weight(1f)) { onOpen("Perfil Unificado") }
+                    QuickAction("Avaliações", Icons.Default.FitnessCenter, Modifier.weight(1f)) { onOpen("Avaliações") }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Favoritos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(favoriteModules) { module ->
+                            QuickAction(module, moduleIcon(module), Modifier.width(155.dp)) { onOpen(module) }
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun moduleIcon(module: String): ImageVector = when (module) {
+    "Agenda" -> Icons.Default.CalendarMonth
+    "Perfil Unificado" -> Icons.Default.Person
+    "Alunos" -> Icons.Default.Groups
+    "Configurações" -> Icons.Default.MoreHoriz
+    else -> Icons.Default.FitnessCenter
 }
 
 @Composable
@@ -637,7 +719,7 @@ private fun CalculatorScreen() {
 }
 
 @Composable
-private fun ModuleListScreen(onOpen: (String) -> Unit) {
+private fun ModuleListScreen(favorites: Set<String>, onOpen: (String) -> Unit, onToggleFavorite: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Módulos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -656,6 +738,13 @@ private fun ModuleListScreen(onOpen: (String) -> Unit) {
                 ) {
                     Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(module, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                    IconButton(onClick = { onToggleFavorite(module) }) {
+                        Icon(
+                            if (module in favorites) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = if (module in favorites) "Remover dos favoritos" else "Adicionar aos favoritos",
+                            tint = if (module in favorites) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

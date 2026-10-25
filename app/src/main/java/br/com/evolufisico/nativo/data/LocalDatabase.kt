@@ -239,6 +239,20 @@ class LocalDatabase(context: Context) :
     }
 
     @Synchronized
+    fun studentsWithoutAssessment(): Int =
+        readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM students s WHERE NOT EXISTS (SELECT 1 FROM assessments a WHERE a.student_id=s.id)",
+            null
+        ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+
+    @Synchronized
+    fun reevaluationsDue(days: Int = 90): Int =
+        readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM (SELECT student_id, MAX(date) latest FROM assessments GROUP BY student_id) WHERE julianday('now') - julianday(latest) >= ?",
+            arrayOf(days.toString())
+        ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+
+    @Synchronized
     fun counts(): Pair<Int, Int> {
         val studentCount = readableDatabase.rawQuery("SELECT COUNT(*) FROM students", null).use {
             if (it.moveToFirst()) it.getInt(0) else 0
