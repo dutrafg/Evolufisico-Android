@@ -149,4 +149,21 @@ class LocalDatabaseTest {
         }
         assertEquals("Caio", database.students().single().name)
     }
+    @Test fun ef81StructuredEventsSurviveSaveAndBackupRestore() {
+        val studentId = database.saveStudent("EF81 pessoa", "", "", "")
+        val id = database.saveAssessment(studentId, "2026-04-01", 70.0, 175.0, null, null,
+            "Observação independente", contextEvent = "Início de treino")
+        assertEquals("Início de treino", database.assessments(studentId).single().contextEvent)
+        val json = database.exportBackupJson()
+        assertTrue(json.contains("\"schema\": 6") || json.contains("\"schema\":6"))
+        database.deleteAssessment(id)
+        database.restoreBackupJson(json)
+        assertEquals("Início de treino", database.assessments(studentId).single().contextEvent)
+        try {
+            database.saveAssessment(studentId, "2026-04-01", 70.0, 175.0, null, null,
+                "", contextEvent = "evento inventado")
+            org.junit.Assert.fail("Evento inválido deveria ter sido rejeitado")
+        } catch (_: IllegalArgumentException) { }
+    }
+
 }
