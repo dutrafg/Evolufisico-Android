@@ -66,6 +66,12 @@ data class Assessment(
             listOf(tricepsFoldMm, subscapularFoldMm, chestFoldMm, axillaryFoldMm, suprailiacFoldMm, abdominalFoldMm, thighFoldMm)
         )
     }
+    val pollock3: BodyFatEstimate? get() = ageYears?.let {
+        AssessmentMath.pollock3(
+            sex, it, weightKg, chestFoldMm, abdominalFoldMm,
+            tricepsFoldMm, suprailiacFoldMm, thighFoldMm
+        )
+    }
 }
 
 class LocalDatabase(context: Context) :
