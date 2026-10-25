@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +50,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -60,8 +64,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
@@ -92,6 +94,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import br.com.evolufisico.nativo.data.Assessment
 import br.com.evolufisico.nativo.data.ChargeRecord
 import br.com.evolufisico.nativo.data.IntakeForm
@@ -161,8 +164,9 @@ private fun EvoluFisicoTheme(dark: Boolean, accentIndex: Int, content: @Composab
         darkColorScheme(
             primary = accents[accentIndex].second.copy(alpha = 0.9f),
             secondary = accents[accentIndex].second,
-            background = Color(0xFF111719),
-            surface = Color(0xFF1B2427)
+            background = Color(0xFF07100D),
+            surface = Color(0xFF142D31),
+            surfaceVariant = Color(0xFF203A45)
         )
     } else {
         lightColorScheme(
@@ -193,13 +197,15 @@ private val destinations = listOf(
 )
 
 private val moduleNames = listOf(
+    "Início",
     "Perfil Unificado",
     "Avaliações",
     "Evolução",
     "Calculadora",
-    "Formulários",
-    "Análises",
+    "Anamnese",
+    "Análises Completas",
     "Cobranças",
+    "Agenda",
     "Tarefas",
     "Configurações"
 )
@@ -211,6 +217,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     val database = remember { LocalDatabase(context) }
     val scope = rememberCoroutineScope()
     var selected by rememberSaveable { mutableIntStateOf(0) }
+    var showModulePicker by rememberSaveable { mutableStateOf(false) }
     var activeModule by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedStudentId by rememberSaveable { mutableStateOf<Long?>(null) }
     var students by remember { mutableStateOf<List<Student>>(emptyList()) }
@@ -286,7 +293,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
     val selectedStudent = students.firstOrNull { it.id == selectedStudentId }
     val title = when {
         selectedStudent != null -> selectedStudent.name
-        activeModule != null -> activeModule.orEmpty()
+        activeModule != null -> when (activeModule) { "Formulários" -> "Anamnese"; "Análises" -> "Análises Completas"; else -> activeModule.orEmpty() }
         else -> destinations[selected].title
     }
 
@@ -303,7 +310,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                 navigationIcon = {
                     if (selectedStudentId != null || activeModule != null) {
                         IconButton(onClick = {
-                            if (selectedStudentId != null) selectedStudentId = null else activeModule = null
+                            if (selectedStudentId != null) selectedStudentId = null else { activeModule = null; selected = 0 }
                         }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                         }
@@ -313,23 +320,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                 }
             )
         },
-        bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, contentColor = Graphite, tonalElevation = 0.dp) {
-                destinations.forEachIndexed { index, destination ->
-                    NavigationBarItem(
-                        selected = selected == index && selectedStudentId == null && activeModule == null,
-                        onClick = {
-                            selected = index
-                            selectedStudentId = null
-                            activeModule = null
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.title) },
-                        label = { Text(destination.title) },
-                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f), selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = Muted, unselectedTextColor = Muted)
-                    )
-                }
-            }
-        }
+        // A navegação por abas foi substituída pelo seletor compacto de módulos.
     ) { padding ->
         Surface(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -337,6 +328,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Box(Modifier.widthIn(max = 600.dp).fillMaxSize()) {
+                    Box(Modifier.fillMaxSize().padding(bottom = 70.dp)) {
                     when {
                 selectedStudent != null -> ProfileScreen(
                     student = selectedStudent,
@@ -393,7 +385,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     subtitle = "Abra o perfil para consultar o histórico de avaliações."
                 )
                 activeModule == "Calculadora" -> CalculatorScreen()
-                activeModule == "Formulários" -> FormsScreen(forms, students, { intakeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } })
+                activeModule == "Formulários" || activeModule == "Anamnese" -> FormsScreen(forms, students, { intakeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteIntakeForm(id) }; refresh() } })
                 activeModule == "Cobranças" -> ChargeScreen(charges, students, maskFinancial, { chargeDialog = true }, { id -> scope.launch { withContext(Dispatchers.IO) { database.markChargeReceived(id) }; refresh() } }, { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteCharge(id) }; refresh() } })
                 activeModule == "Tarefas" -> TaskScreen(
                     tasks = tasks,
@@ -402,7 +394,7 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onToggle = { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } },
                     onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } }
                 )
-                activeModule == "Análises" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
+                activeModule == "Análises" || activeModule == "Análises Completas" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
                 activeModule == "Agenda" || selected == 2 -> AgendaScreen(appointments = appointments, onAdd = { appointmentDialog = true }, onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteAppointment(id) }; refresh() } })
                 activeModule != null -> ModulePlaceholder(activeModule.orEmpty())
                 selected == 0 -> HomeScreen(
@@ -423,6 +415,76 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onToggleFavorite = ::toggleFavorite
                 )
                     }
+                    }
+                    Surface(
+                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 12.dp).clickable { showModulePicker = true },
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = RoundedCornerShape(18.dp),
+                        shadowElevation = 6.dp
+                    ) {
+                        Row(Modifier.padding(horizontal = 16.dp, vertical = 11.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Menu, contentDescription = null)
+                            Text("Módulos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showModulePicker) {
+        Dialog(onDismissRequest = { showModulePicker = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp).heightIn(max = 720.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Módulos do EvoluFísico", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Selecione onde deseja acessar", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = { showModulePicker = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        }
+                    }
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(moduleNames.size) { index ->
+                            val module = moduleNames[index]
+                            Card(
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                                onClick = {
+                                    showModulePicker = false
+                                    selectedStudentId = null
+                                    when (module) {
+                                        "Início" -> { selected = 0; activeModule = null }
+                                        "Perfil Unificado" -> { selected = 1; activeModule = null }
+                                        "Agenda" -> { selected = 2; activeModule = null }
+                                        "Anamnese" -> { selected = 3; activeModule = "Formulários" }
+                                        "Análises Completas" -> { selected = 3; activeModule = "Análises" }
+                                        else -> { selected = 3; activeModule = module }
+                                    }
+                                },
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(Modifier.padding(horizontal = 12.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(moduleIcon(module), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
+                                    Text(module, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Text("Acesso rápido aos módulos e ferramentas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -627,14 +689,15 @@ private fun HomeScreen(
 }
 
 private fun moduleIcon(module: String): ImageVector = when (module) {
+    "Início" -> Icons.Default.Home
     "Agenda" -> Icons.Default.CalendarMonth
     "Perfil Unificado" -> Icons.Default.Person
     "Alunos" -> Icons.Default.Groups
     "Avaliações" -> Icons.Default.Assignment
     "Evolução" -> Icons.Default.ShowChart
     "Calculadora" -> Icons.Default.Calculate
-    "Formulários" -> Icons.Default.Description
-    "Análises" -> Icons.Default.Analytics
+    "Formulários", "Anamnese" -> Icons.Default.Description
+    "Análises", "Análises Completas" -> Icons.Default.Analytics
     "Cobranças" -> Icons.Default.ReceiptLong
     "Tarefas" -> Icons.Default.Checklist
     "Configurações" -> Icons.Default.Settings
@@ -1123,7 +1186,7 @@ private fun SettingsScreen(
         }
         item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
         item {
-            Text("EvoluFísico Android — Beta 11", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("EvoluFísico Android — Beta 12", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Versão nativa baseada no EvoluFisico2 3.0.0.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

@@ -1,4 +1,4 @@
-# EvoluFísico Android nativo — Beta 11
+# EvoluFísico Android nativo — Beta 12
 
 Android nativo em Kotlin e Jetpack Compose, inspirado no EvoluFisico2 3.0.0 Release.
 
