@@ -129,4 +129,27 @@ class AssessmentMathTest {
         assertNull(AssessmentMath.pollock3("Feminino", 28, 60.0, null, null, 10.0, null, 20.0))
     }
 
+    @Test fun legacyAnalyticsRequiresProtocolAndDeviceComparability() {
+        val first = Assessment(
+            id = 1, studentId = 10, date = "2026-01-01",
+            weightKg = 80.0, heightCm = 180.0, waistCm = 90.0, hipCm = 105.0,
+            notes = "", sex = "Masculino", ageYears = 30, bodyFatPercent = 25.0,
+            tricepsFoldMm = 10.0, subscapularFoldMm = 12.0,
+            chestFoldMm = 14.0, axillaryFoldMm = 16.0,
+            suprailiacFoldMm = 18.0, abdominalFoldMm = 20.0, thighFoldMm = 22.0,
+            bioimpedanceBodyFatPercent = 25.0, bioimpedanceLeanMassKg = 60.0,
+            bioimpedanceDevice = "Aparelho A"
+        )
+        val changedDevice = first.copy(id = 2, date = "2026-01-15", bioimpedanceDevice = "Aparelho B")
+        val third = first.copy(id = 3, date = "2026-02-01")
+        assertTrue(!AnalysisMath.comparableBiaSource(listOf(first, changedDevice, third)))
+        assertTrue(AnalysisMath.comparablePollock7Source(listOf(first, changedDevice, third)))
+        assertTrue(AnalysisMath.pairedEvidence(listOf(first.copy(bioimpedanceDevice = ""))).isEmpty())
+        val report = AnalysisMath.report("Aluno teste", listOf(first, changedDevice, third))
+        assertTrue(report.contains("Gordura por bioimpedância: dados insuficientes ou métodos/equipamentos não comparáveis"))
+        assertTrue(report.contains("Gordura corporal registrada (método não informado): dados insuficientes"))
+        assertTrue(!AnalysisMath.comparablePollock7Source(listOf(first, third.copy(sex = "Feminino"))))
+        assertTrue(!AnalysisMath.comparableBiaSource(listOf(first, third.copy(bioimpedanceLeanMassKg = 100.0))))
+    }
+
 }
