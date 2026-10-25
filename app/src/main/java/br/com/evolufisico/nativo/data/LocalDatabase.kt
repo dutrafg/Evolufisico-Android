@@ -431,15 +431,20 @@ class LocalDatabase(context: Context) :
     }
 
     @Synchronized
-    fun saveCharge(studentId: Long?, title: String, amount: Double, dueDate: String, notes: String): Long {
+    fun saveCharge(studentId: Long?, title: String, amount: Double, dueDate: String, notes: String, id: Long? = null): Long {
         require(title.isNotBlank() && amount > 0.0) { "Informe descrição e valor maior que zero." }
         require(validDate(dueDate)) { "Informe uma data válida." }
         if (studentId != null) require(student(studentId) != null) { "Aluno não encontrado." }
         val values = ContentValues().apply {
             if (studentId == null) putNull("student_id") else put("student_id", studentId)
-            put("title", title.trim()); put("amount", amount); put("due_date", dueDate); put("status", "Pendente"); put("notes", notes.trim())
+            put("title", title.trim()); put("amount", amount); put("due_date", dueDate); put("notes", notes.trim())
+            if (id == null) put("status", "Pendente")
         }
-        return writableDatabase.insertOrThrow("charges", null, values)
+        return if (id == null) writableDatabase.insertOrThrow("charges", null, values)
+        else {
+            require(writableDatabase.update("charges", values, "id=?", arrayOf(id.toString())) == 1) { "Cobrança não encontrada." }
+            id
+        }
     }
 
     @Synchronized
