@@ -613,8 +613,8 @@ class LocalDatabase(context: Context) :
 
     @Synchronized
     fun restoreBackupJson(json: String) {
+        BackupInspector.inspect(json) // validate before deleting even a single row
         val root = JSONObject(json)
-        require(root.optString("format") == "evolufisico-native-backup" && root.optInt("schema") in 1..6) { "Arquivo de backup incompatível." }
         val db = writableDatabase
         db.beginTransaction()
         try {
