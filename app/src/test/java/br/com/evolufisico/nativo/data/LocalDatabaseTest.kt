@@ -44,9 +44,11 @@ class LocalDatabaseTest {
         assertEquals(34, database.assessments(studentId).first().ageYears)
         assertTrue(database.assessments(studentId).first().pollock7 != null)
 
-        database.saveAssessment(studentId, "2026-02-10", 68.5, 175.0, 80.0, 94.0, "Revisada", id = assessmentId)
+        database.saveAssessment(studentId, "2026-02-10", 68.5, 175.0, 80.0, 94.0, "Revisada", id = assessmentId, sex = "Feminino", ageYears = 34, tricepsFoldMm = 11.0, subscapularFoldMm = 21.0, chestFoldMm = 31.0, axillaryFoldMm = 41.0, suprailiacFoldMm = 51.0, abdominalFoldMm = 61.0, thighFoldMm = 71.0)
         assertEquals(1, database.assessments(studentId).size)
         assertEquals("Revisada", database.assessments(studentId).first().notes)
+        assertEquals(71.0, database.assessments(studentId).first().thighFoldMm!!, 0.0)
+        assertTrue(database.assessments(studentId).first().pollock7 != null)
         assertThrows(IllegalArgumentException::class.java) {
             database.saveAssessment(studentId, "10/02/2026", 68.5, 175.0, null, null, "")
         }
