@@ -50,6 +50,7 @@ internal object ProfileReportPdf {
 
     fun analysis(student: Student, assessments: List<Assessment>, summary: String, professionalName: String, registration: String): ByteArray {
         require(assessments.size in 3..4) { "Selecione três ou quatro avaliações." }
+        require(assessments.all { it.studentId == student.id }) { "As avaliações devem pertencer ao aluno do relatório." }
         val dates = assessments.map { it.date }.distinct().sorted()
         require(AnalysisMath.isEligibleWindow(dates)) { "O período precisa conter três ou quatro datas distintas e pelo menos 21 dias." }
         val lines = mutableListOf(
