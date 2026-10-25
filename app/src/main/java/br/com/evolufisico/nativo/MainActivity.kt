@@ -1635,7 +1635,7 @@ private fun CalculatorScreen() {
                 Text("Jackson–Pollock 3 · soma: " + (pollock3?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e as três dobras do protocolo"))
                 Text("Gordura corporal · Pollock 3: " + (pollock3?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
                 if (pollock3 != null) Text("Pollock 3 · gordura: ${formatNumber(pollock3.fatMassKg)} kg · massa livre: ${formatNumber(pollock3.leanMassKg)} kg" + if (pollock3.wasClamped) " · estimativa limitada" else "")
-                Text("Pollock 7 · soma: " + (pollock7?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e sete dobras")
+                Text("Pollock 7 · soma: " + (pollock7?.let { formatNumber(it.sumMm) + " mm" } ?: "Informe idade, peso e sete dobras"))
                 Text("Gordura corporal · Pollock 7: " + (pollock7?.let { formatNumber(it.bodyFatPercent) + "%" } ?: "—"))
                 if (pollock7 != null) Text("Massa de gordura: ${formatNumber(pollock7.fatMassKg)} kg · Massa livre de gordura: ${formatNumber(pollock7.leanMassKg)} kg${if (pollock7.wasClamped) " · estimativa limitada ao intervalo do método" else ""}")
                 if (navy != null && rfm != null) Text("Diferença entre métodos: " + formatNumber(kotlin.math.abs(navy - rfm)) + " pontos percentuais.")
