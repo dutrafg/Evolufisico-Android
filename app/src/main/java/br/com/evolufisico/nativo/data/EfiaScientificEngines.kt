@@ -195,7 +195,12 @@ internal object EfiaScientificEngines {
         }
 
         // EF81 requires explicit structured context; free text notes never becomes adherence evidence.
-        val facts = emptyList<String>()
+        val facts = points.mapNotNull { point ->
+            point.assessment.contextEvent.takeIf { it in setOf(
+                "Início de treino", "Interrupção de treino",
+                "Início de plano alimentar", "Interrupção de plano alimentar"
+            ) }?.let { point.assessment.date + ": " + it + " (registro explícito, sem causalidade presumida)" }
+        }
 
         // EF82: Theil-Sen and OLS are exploratory. With 3-4 samples, stability and outliers
         // are deliberately NOT certified (the reference requires at least five).
