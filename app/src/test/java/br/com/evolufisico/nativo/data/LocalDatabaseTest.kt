@@ -107,6 +107,20 @@ class LocalDatabaseTest {
         assertTrue(database.charges().isEmpty())
     }
 
+    @Test fun assessmentPhotosAreSavedAndIncludedInBackupRestore() {
+        val studentId = database.saveStudent("Luiza", "", "", "")
+        val photos = listOf(
+            "data:image/jpeg;base64,/9j/first-photo",
+            "data:image/jpeg;base64,/9j/second-photo"
+        )
+        database.saveAssessment(studentId, "2026-04-10", 63.0, 168.0, null, null, "Registro", photoData = photos)
+        assertEquals(photos, database.assessments(studentId).single().photoData)
+        val backup = database.exportBackupJson()
+        database.deleteAssessment(database.assessments(studentId).single().id)
+        database.restoreBackupJson(backup)
+        assertEquals(photos, database.allAssessments().single().photoData)
+    }
+
     @Test fun backupRestoreIsCompleteAndInvalidBackupDoesNotEraseCurrentData() {
         val studentId = database.saveStudent("Caio", "1198", "caio@example.com", "1988-04-03")
         database.saveAssessment(studentId, "2026-01-10", 80.0, 180.0, 88.0, 100.0, "ok", 20.0, sex = "Masculino", ageYears = 30, tricepsFoldMm = 10.0, subscapularFoldMm = 20.0, chestFoldMm = 30.0, axillaryFoldMm = 40.0, suprailiacFoldMm = 50.0, abdominalFoldMm = 60.0, thighFoldMm = 70.0, bioimpedanceBodyFatPercent = 25.1, bioimpedanceLeanMassKg = 59.9, bioimpedanceDevice = "BIA Demo")
