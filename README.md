@@ -12,12 +12,12 @@ Android nativo em Kotlin e Jetpack Compose, baseado no EvoluFisico2 3.0.0 Releas
 - **Calculadora:** IMC, estimativas Navy/RFM, Harris-Benedict, Mifflin-St Jeor, gasto diário e zonas de frequência cardíaca, com validação de limites.
 - **Anamnese:** nove modelos, formulários personalizados, vínculo com aluno, edição, exclusão e exportação em PDF.
 - **Cobranças:** cadastro, edição, recebimento, exclusão e vínculo opcional com aluno.
-- **Configurações:** temas claro/escuro, dez cores, identificação profissional, prazo de reavaliação (30/60/90 dias), ocultação de valores e backup/restauração manual com confirmação.
+- **Configurações:** temas claro/escuro, dez cores, identificação profissional, prazo de reavaliação (30/60/90 dias), ocultação de valores, backup/restauração manual e backup automático diário para uma pasta escolhida, em horário configurável (o Android pode adiá-lo por economia de bateria).
 - **Navegação compacta:** módulos principais no seletor flutuante; Agenda e Tarefas são funções acessadas pelo Início. Interface limitada a 600 dp, sem modo desktop/estendido.
 
 ## Verificação automatizada
 
-O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 12 casos: fórmulas e validação do Laboratório, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, além de geração e paginação dos PDFs.
+O CI executa `:app:testDebugUnitTest`, que também compila o código principal. A suíte atual cobre 15 casos: fórmulas e validação do Laboratório, operações de cadastro/edição/exclusão dos dados locais, vínculos e restauração de backup, geração e paginação dos PDFs, e cálculo do próximo horário do backup diário.
 
 A verificação não substitui homologação visual em aparelhos físicos. Nenhum APK foi gerado nesta etapa.
 
