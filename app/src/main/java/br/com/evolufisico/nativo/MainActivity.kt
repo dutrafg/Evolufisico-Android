@@ -744,11 +744,11 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
             studentName = selectedStudent.name,
             initial = editingAssessment,
             onDismiss = { assessmentDialog = false; editingAssessment = null },
-            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold ->
+            onSave = { id, date, weight, height, waist, hip, bodyFat, neck, chest, arm, thigh, notes, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold)
+                            database.saveAssessment(selectedStudent.id, date, weight, height, waist, hip, notes, bodyFat, neck, chest, arm, thigh, id, sex, ageYears, tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold, biaBodyFat, biaLeanMass, biaDevice)
                         }
                         assessmentDialog = false
                         editingAssessment = null
@@ -1254,7 +1254,9 @@ private fun ProfileScreen(
                     Text("IMC: " + (assessment.bmi?.let(::formatNumber) ?: "—"), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                     if (assessment.waistCm != null) Text("Cintura: " + formatNumber(assessment.waistCm) + " cm")
                     if (assessment.hipCm != null) Text("Quadril: " + formatNumber(assessment.hipCm) + " cm")
-                    if (assessment.bodyFatPercent != null) Text("Gordura estimada: " + formatNumber(assessment.bodyFatPercent) + "%")
+                    if (assessment.bodyFatPercent != null) Text("Gordura informada · método não registrado: " + formatNumber(assessment.bodyFatPercent) + "%")
+                    if (assessment.bioimpedanceBodyFatPercent != null) Text("Gordura por bioimpedância: " + formatNumber(assessment.bioimpedanceBodyFatPercent) + "%" + assessment.bioimpedanceDevice.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty())
+                    if (assessment.bioimpedanceLeanMassKg != null) Text("Massa livre de gordura por bioimpedância: " + formatNumber(assessment.bioimpedanceLeanMassKg) + " kg")
                     listOf("Pescoço" to assessment.neckCm, "Peitoral" to assessment.chestCm, "Braço" to assessment.armCm, "Coxa" to assessment.thighCm)
                         .forEach { (label, value) -> if (value != null) Text("$label: " + formatNumber(value) + " cm") }
                     val folds = listOf("Tríceps" to assessment.tricepsFoldMm, "Subescapular" to assessment.subscapularFoldMm, "Peitoral" to assessment.chestFoldMm, "Axilar" to assessment.axillaryFoldMm, "Supra-ilíaca" to assessment.suprailiacFoldMm, "Abdominal" to assessment.abdominalFoldMm, "Coxa" to assessment.thighFoldMm)
@@ -1379,7 +1381,7 @@ private fun AssessmentFormDialog(
     studentName: String,
     initial: Assessment? = null,
     onDismiss: () -> Unit,
-    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?) -> Unit
+    onSave: (Long?, String, Double, Double, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String, String, Int?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, Double?, String) -> Unit
 ) {
     var date by rememberSaveable(initial?.id) { mutableStateOf(initial?.date ?: todayIso()) }
     var weight by rememberSaveable(initial?.id) { mutableStateOf(initial?.weightKg?.let(::formatNumber).orEmpty()) }
@@ -1387,6 +1389,9 @@ private fun AssessmentFormDialog(
     var waist by rememberSaveable(initial?.id) { mutableStateOf(initial?.waistCm?.let(::formatNumber).orEmpty()) }
     var hip by rememberSaveable(initial?.id) { mutableStateOf(initial?.hipCm?.let(::formatNumber).orEmpty()) }
     var bodyFat by rememberSaveable(initial?.id) { mutableStateOf(initial?.bodyFatPercent?.let(::formatNumber).orEmpty()) }
+    var biaBodyFat by rememberSaveable(initial?.id) { mutableStateOf(initial?.bioimpedanceBodyFatPercent?.let(::formatNumber).orEmpty()) }
+    var biaLeanMass by rememberSaveable(initial?.id) { mutableStateOf(initial?.bioimpedanceLeanMassKg?.let(::formatNumber).orEmpty()) }
+    var biaDevice by rememberSaveable(initial?.id) { mutableStateOf(initial?.bioimpedanceDevice.orEmpty()) }
     var neck by rememberSaveable(initial?.id) { mutableStateOf(initial?.neckCm?.let(::formatNumber).orEmpty()) }
     var chest by rememberSaveable(initial?.id) { mutableStateOf(initial?.chestCm?.let(::formatNumber).orEmpty()) }
     var arm by rememberSaveable(initial?.id) { mutableStateOf(initial?.armCm?.let(::formatNumber).orEmpty()) }
@@ -1412,7 +1417,7 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(height, { height = it; error = null }, label = { Text("Altura (cm) *") }, singleLine = true)
                 OutlinedTextField(waist, { waist = it; error = null }, label = { Text("Cintura (cm)") }, singleLine = true)
                 OutlinedTextField(hip, { hip = it; error = null }, label = { Text("Quadril (cm)") }, singleLine = true)
-                OutlinedTextField(bodyFat, { bodyFat = it; error = null }, label = { Text("Gordura corporal estimada (%)") }, singleLine = true)
+                OutlinedTextField(bodyFat, { bodyFat = it; error = null }, label = { Text("Gordura corporal informada · método não registrado (%)") }, singleLine = true)
                 OutlinedTextField(neck, { neck = it; error = null }, label = { Text("Pescoço (cm)") }, singleLine = true)
                 OutlinedTextField(chest, { chest = it; error = null }, label = { Text("Peitoral (cm)") }, singleLine = true)
                 OutlinedTextField(arm, { arm = it; error = null }, label = { Text("Braço (cm)") }, singleLine = true)
@@ -1432,6 +1437,10 @@ private fun AssessmentFormDialog(
                 OutlinedTextField(suprailiacFold, { suprailiacFold = it; error = null }, label = { Text("Supra-ilíaca (mm)") }, singleLine = true)
                 OutlinedTextField(abdominalFold, { abdominalFold = it; error = null }, label = { Text("Abdominal (mm)") }, singleLine = true)
                 OutlinedTextField(thighFold, { thighFold = it; error = null }, label = { Text("Coxa (mm)") }, singleLine = true)
+                Text("Bioimpedância", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                OutlinedTextField(biaBodyFat, { biaBodyFat = it; error = null }, label = { Text("Gordura corporal por BIA (%)") }, singleLine = true)
+                OutlinedTextField(biaLeanMass, { biaLeanMass = it; error = null }, label = { Text("Massa livre de gordura por BIA (kg)") }, singleLine = true)
+                OutlinedTextField(biaDevice, { biaDevice = it.take(120); error = null }, label = { Text("Aparelho / método de BIA (opcional)") }, singleLine = true)
                 OutlinedTextField(notes, { notes = it }, label = { Text("Observações") }, minLines = 2)
                 if (error != null) Text(error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
@@ -1447,6 +1456,8 @@ private fun AssessmentFormDialog(
                 val parsedWaist = if (waist.isBlank()) null else AssessmentMath.parseNumber(waist)
                 val parsedHip = if (hip.isBlank()) null else AssessmentMath.parseNumber(hip)
                 val parsedBodyFat = if (bodyFat.isBlank()) null else AssessmentMath.parseNumber(bodyFat)
+                val parsedBiaBodyFat = if (biaBodyFat.isBlank()) null else AssessmentMath.parseNumber(biaBodyFat)
+                val parsedBiaLeanMass = if (biaLeanMass.isBlank()) null else AssessmentMath.parseNumber(biaLeanMass)
                 val parsedNeck = if (neck.isBlank()) null else AssessmentMath.parseNumber(neck)
                 val parsedChest = if (chest.isBlank()) null else AssessmentMath.parseNumber(chest)
                 val parsedArm = if (arm.isBlank()) null else AssessmentMath.parseNumber(arm)
@@ -1454,16 +1465,18 @@ private fun AssessmentFormDialog(
                 val parsedAge = if (age.isBlank()) null else age.toIntOrNull()
                 val rawFolds = listOf(tricepsFold, subscapularFold, chestFold, axillaryFold, suprailiacFold, abdominalFold, thighFold)
                 val folds = rawFolds.map { if (it.isBlank()) null else AssessmentMath.parseNumber(it) }
-                val optionalInputs = listOf(waist to parsedWaist, hip to parsedHip, bodyFat to parsedBodyFat, neck to parsedNeck, chest to parsedChest, arm to parsedArm, thigh to parsedThigh) + rawFolds.zip(folds)
+                val optionalInputs = listOf(waist to parsedWaist, hip to parsedHip, bodyFat to parsedBodyFat, biaBodyFat to parsedBiaBodyFat, biaLeanMass to parsedBiaLeanMass, neck to parsedNeck, chest to parsedChest, arm to parsedArm, thigh to parsedThigh) + rawFolds.zip(folds)
                 val invalidOptional = optionalInputs.any { (raw, parsed) -> raw.isNotBlank() && parsed == null } ||
                     (parsedBodyFat != null && parsedBodyFat !in 1.0..70.0) ||
+                    (parsedBiaBodyFat != null && parsedBiaBodyFat !in 1.0..70.0) ||
+                    (parsedBiaLeanMass != null && parsedBiaLeanMass !in 2.0..500.0) ||
                     listOf(parsedNeck, parsedChest, parsedArm, parsedThigh).any { it != null && it !in 1.0..300.0 } ||
                     (age.isNotBlank() && parsedAge !in 18..100) || folds.any { it != null && it !in 1.0..100.0 }
                 if (!validDate) error = "Informe uma data válida no formato AAAA-MM-DD."
                 else if (parsedWeight == null || parsedHeight == null || invalidOptional ||
                     AssessmentMath.bmi(parsedWeight ?: 0.0, parsedHeight ?: 0.0) == null
                 ) error = "Confira os valores. Peso e altura são obrigatórios; use números válidos."
-                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6])
+                else onSave(initial?.id, date, parsedWeight, parsedHeight, parsedWaist, parsedHip, parsedBodyFat, parsedNeck, parsedChest, parsedArm, parsedThigh, notes, sex, parsedAge, folds[0], folds[1], folds[2], folds[3], folds[4], folds[5], folds[6], parsedBiaBodyFat, parsedBiaLeanMass, biaDevice.trim())
             }) { Text(if (initial == null) "Salvar avaliação" else "Salvar alterações") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
