@@ -553,7 +553,7 @@ class LocalDatabase(context: Context) :
 
     @Synchronized
     fun saveCharge(studentId: Long?, title: String, amount: Double, dueDate: String, notes: String, id: Long? = null): Long {
-        require(title.isNotBlank() && amount > 0.0) { "Informe descrição e valor maior que zero." }
+        require(title.isNotBlank() && amount.isFinite() && amount > 0.0) { "Informe descrição e valor finito maior que zero." }
         require(validDate(dueDate)) { "Informe uma data válida." }
         if (studentId != null) require(student(studentId) != null) { "Aluno não encontrado." }
         val values = ContentValues().apply {
