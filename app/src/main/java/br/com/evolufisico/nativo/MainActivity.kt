@@ -71,11 +71,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.evolufisico.nativo.data.Assessment
@@ -86,6 +90,7 @@ import br.com.evolufisico.nativo.data.AssessmentMath
 import br.com.evolufisico.nativo.data.LocalDatabase
 import br.com.evolufisico.nativo.data.Student
 import br.com.evolufisico.nativo.data.TaskRecord
+import androidx.core.view.WindowCompat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -117,6 +122,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             var dark by rememberSaveable { mutableStateOf(preferences.getBoolean("dark", false)) }
             var accentIndex by rememberSaveable { mutableIntStateOf(preferences.getInt("accent", 0).coerceIn(0, accents.lastIndex)) }
+            SideEffect {
+                val bars = WindowCompat.getInsetsController(window, window.decorView)
+                bars.isAppearanceLightStatusBars = !dark
+                bars.isAppearanceLightNavigationBars = !dark
+            }
             EvoluFisicoTheme(dark = dark, accentIndex = accentIndex) {
                 EvoluFisicoApp(
                     dark = dark,
@@ -978,7 +988,11 @@ private fun SettingsScreen(
                         val index = rowIndex * 5 + columnIndex
                         Box(
                             modifier = Modifier.weight(1f).size(42.dp).background(accent.second, CircleShape)
-                                .clickable { onAccentChange(index) },
+                                .clickable { onAccentChange(index) }
+                                .semantics {
+                                    contentDescription = "Cor de destaque: " + accent.first
+                                    selected = index == accentIndex
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             if (index == accentIndex) {

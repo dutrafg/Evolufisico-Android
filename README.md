@@ -5,7 +5,7 @@ Aplicativo Android nativo em Kotlin e Jetpack Compose, com navegação e identid
 ## Nesta versão
 
 - Dashboard com composição próxima à referência 3.0: dois indicadores no celular, agenda e central de atenção; cartões adaptáveis em tablets.
-- Acabamento do tema com texto grafite, fundo verde claro, cartões arredondados e paleta de destaque em amostras circulares.
+- Acabamento do tema com texto grafite, fundo verde claro, cartões arredondados, paleta de destaque em amostras circulares acessíveis e ícones do sistema com contraste adequado nos temas claro/escuro.
 - Agenda aparece apenas na navegação inferior, sem repetição na lista de Módulos.
 - Busca de alunos aparece quando já existem cadastros, preservando o estado vazio mais limpo.
 - Cadastro, busca, edição, perfil e exclusão de alunos; registro e histórico de avaliações.
