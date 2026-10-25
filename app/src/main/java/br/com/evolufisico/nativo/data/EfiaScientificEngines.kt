@@ -31,7 +31,8 @@ internal object EfiaScientificEngines {
         val mdc95: Double?,
         val detectable: Boolean?,
         val comparable: Boolean,
-        val reason: String
+        val reason: String,
+        val semSource: String? = null
     )
     data class Trend(
         val status: String,
@@ -71,7 +72,11 @@ internal object EfiaScientificEngines {
                 val change = delta.change?.let { format(it) + " " + (measures[key]?.second ?: "") } ?: "indisponível"
                 val mdc = delta.mdc95?.let {
                     "; MDC95 informado: " + format(it) + " " + (measures[key]?.second ?: "") +
-                        "; diferença acima do limiar: " + (if (delta.detectable == true) "sim" else "não")
+                        "; diferença acima do limiar: " + when (delta.detectable) {
+                            true -> "sim"
+                            false -> "não"
+                            null -> "não avaliável"
+                        } + delta.semSource?.let { "; fonte informada: " + it }.orEmpty()
                 } ?: ""
                 appendLine("• " + label + ": " + change + mdc + " — " + delta.reason)
             }
@@ -185,7 +190,7 @@ internal object EfiaScientificEngines {
                 points.firstOrNull()?.measures?.get(key) != null && points.lastOrNull()?.measures?.get(key) != null
             val rawChange = if (canCompare) points.last().measures.getValue(key)!! - points.first().measures.getValue(key)!! else null
             val semValue = sem[key]?.takeIf { it.isFinite() && it > 0.0 }
-            val sourced = semSources[key]?.trim()?.takeIf { it.length > 3 }
+            val sourced = semSources[key]?.trim()?.takeIf { it.length > 3 }?.take(250)
             val mdc = if (semValue != null && sourced != null) 1.96 * sqrt(2.0) * semValue else null
             Delta(rawChange?.let(::round2), mdc?.let(::round2),
                 if (rawChange != null && mdc != null) abs(rawChange) > mdc else null,
@@ -196,7 +201,8 @@ internal object EfiaScientificEngines {
                     !canCompare -> "série insuficiente ou extremidades ausentes"
                     mdc == null -> "MDC indisponível: SEM e fonte não informados"
                     else -> "SEM com fonte informada; validação técnica externa necessária"
-                })
+                },
+                if (mdc != null) sourced else null)
         }
 
         // EF81 requires explicit structured context; free text notes never becomes adherence evidence.
