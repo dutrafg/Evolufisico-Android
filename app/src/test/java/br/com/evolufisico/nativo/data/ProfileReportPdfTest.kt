@@ -45,6 +45,7 @@ class ProfileReportPdfTest {
         val pdf = String(ProfileReportPdf.assessment(student, measured, "Profissional", "CREF 0000"), StandardCharsets.ISO_8859_1)
         fun hex(text: String) = text.toByteArray(java.nio.charset.Charset.forName("windows-1252"))
             .joinToString("") { "%02X".format(it.toInt() and 0xFF) }
+        assertTrue(pdf.contains("<${hex("Gordura corporal informada · método não registrado: 24,0%")}>"))
         assertTrue(pdf.contains("<${hex("Gordura por bioimpedância: 27,5% · BIA InBody")}>"))
         assertTrue(pdf.contains("<${hex("Massa livre de gordura por bioimpedância: 50,8 kg")}>"))
     }
