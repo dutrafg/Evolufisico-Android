@@ -136,11 +136,11 @@ object AnalysisMath {
         val latest = ordered.last().second
         val delta = latest - first
         return AnalysisTrend(
-            first = oneDecimal(first),
-            latest = oneDecimal(latest),
-            absoluteChange = oneDecimal(delta),
-            relativeChangePercent = if (first == 0.0) null else oneDecimal(delta / kotlin.math.abs(first) * 100.0),
-            changePer30Days = oneDecimal(delta / days * 30.0),
+            first = roundOne(first),
+            latest = roundOne(latest),
+            absoluteChange = roundOne(delta),
+            relativeChangePercent = if (first == 0.0) null else roundOne(delta / kotlin.math.abs(first) * 100.0),
+            changePer30Days = roundOne(delta / days * 30.0),
             directionChanged = directions.distinct().size > 1
         )
     }
@@ -187,6 +187,8 @@ object AnalysisMath {
         lines += "Confirme protocolo, equipamento e condições de coleta. Este resumo é descritivo, exploratório e não diagnóstico; não prevê resultados nem recomenda tratamento."
         return lines.joinToString("\n")
     }
+
+    private fun roundOne(value: Double): Double = kotlin.math.round(value * 10.0) / 10.0
 
     private fun number(value: Double): String = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply {
         minimumFractionDigits = 1
