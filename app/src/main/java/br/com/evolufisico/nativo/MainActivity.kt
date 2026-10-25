@@ -523,7 +523,19 @@ private fun EvoluFisicoApp(dark: Boolean, accentIndex: Int, onDarkChange: (Boole
                     onToggle = { id, done -> scope.launch { withContext(Dispatchers.IO) { database.setTaskCompleted(id, done) }; refresh() } },
                     onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { database.deleteTask(id) }; refresh() } }
                 )
-                activeModule == "Análises" || activeModule == "Análises Completas" -> AnalyticsScreen(students, allAssessments, onOpenStudent = { selectedStudentId = it })
+                activeModule == "Análises" || activeModule == "Análises Completas" -> AnalyticsScreen(
+                    students = students,
+                    assessments = allAssessments,
+                    onOpenStudent = { selectedStudentId = it },
+                    onExportReportPdf = { student, selectedAssessments, summary ->
+                        try {
+                            requestPdf(
+                                ProfileReportPdf.analysis(student, selectedAssessments, summary, professionalName, professionalRegistration),
+                                "Analise-" + student.name + ".pdf"
+                            )
+                        } catch (e: Exception) { errorMessage = e.message ?: "Não foi possível preparar a análise em PDF." }
+                    }
+                )
                 activeModule == "Agenda" || selected == 2 -> AgendaScreen(
                     appointments = appointments,
                     onAdd = { editingAppointment = null; appointmentDialog = true },
